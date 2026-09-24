@@ -551,7 +551,7 @@
             document.getElementById('media-preview-bar').classList.remove('hidden');
             document.getElementById('media-preview-bar').classList.add('flex');
             
-            progressBar.style.width = '10%';
+            progressBar.style.width = '10%A';
             statusText.textContent = 'Reading file stream...';
 
             reader.onprogress = (data) => {
@@ -827,26 +827,27 @@
         function subscribeToMessages() {
             if (!navigator.onLine) return;
 
-            // Sort usernames alphabetically to create a uniform, unique room channel name
-            const sortedUsers = [currentUser.username, targetUsername].sort();
-            const channelName = `room_${sortedUsers[0]}_${sortedUsers[1]}`;
-
             if (messageSubscription) {
                 supabaseClient.removeChannel(messageSubscription);
             }
 
             messageSubscription = supabaseClient
-                .channel(channelName)
+                .channel('public:messages')
                 .on(
                     'postgres_changes',
                     {
                         event: 'INSERT',
                         schema: 'public',
-                        table: 'messages',
-                        filter: `receiver_username=eq.${currentUser.username}`
+                        table: 'messages'
                     },
                     payload => {
-                        fetchMessages();
+                        const newMsg = payload.new;
+                        if (
+                            (newMsg.sender_username === targetUsername && newMsg.receiver_username === currentUser.username) ||
+                            (newMsg.sender_username === currentUser.username && newMsg.receiver_username === targetUsername)
+                        ) {
+                            fetchMessages();
+                        }
                     }
                 )
                 .subscribe();
