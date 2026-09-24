@@ -754,10 +754,12 @@
 
             if (error) {
                 queueOfflineMessage(localMessage);
+                renderMessages(messagesCache); // make sure the pending clock icon shows
             } else {
                 messagesCache = messagesCache.filter(m => m !== localMessage);
                 saveLocalCache(messagesCache);
-                await fetchMessages();
+                renderMessages(messagesCache);   // render immediately, don't wait on fetchMessages
+                fetchMessages();                 // background sync to swap in real id/timestamps
             }
         }
 
