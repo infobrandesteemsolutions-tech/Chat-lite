@@ -31,16 +31,19 @@
             animation: welcomeSwirl 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* --- ROBUST OFFLINE SAFETY FALLBACK STYLES --- */
-        body { background-color: #020617; color: #f1f5f9; margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; }
+        /* --- ROBUST OFFLINE & LAYOUT SAFETY FALLBACK STYLES --- */
+        body { background-color: #020617; color: #f1f5f9; margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; height: 100vh; overflow: hidden; }
         
-        /* Layout & Display fallbacks so 'hidden' and flex states never fail */
+        /* Layout & Display fallbacks */
         .hidden { display: none !important; }
         .flex { display: flex !important; }
         .fixed { position: fixed !important; }
         .absolute { position: absolute !important; }
         .relative { position: relative !important; }
         .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        
+        /* Grid fallbacks to prevent button stretching */
+        .grid-cols-2 { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.75rem !important; align-items: center !important; }
         
         /* Background & Positioning fallbacks */
         .bg-cover { background-size: cover !important; }
@@ -65,20 +68,20 @@
         .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden flex flex-col font-sans">
 
-    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-full">
         
-        <!-- Background Image Container with explicit fallback styles and high-priority stacking -->
+        <!-- Background Image Container with proper z-index and gradient -->
         <div class="absolute inset-0 bg-slate-950 bg-cover bg-center" style="background-image: url('image1-bg.jpg'); z-index: 0;">
-            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(2, 6, 23, 0.95) 0%, rgba(2, 6, 23, 0.7) 50%, rgba(2, 6, 23, 0.3) 100%);"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.75) 55%, rgba(2, 6, 23, 0.4) 100%);"></div>
         </div>
 
-        <!-- Content Area (Pushed to bottom like an onboarding mobile frame, above background) -->
-        <div class="relative z-10 flex flex-col justify-end flex-1 p-6 pb-8 space-y-6">
+        <!-- Content Area (Properly proportioned and padded at the bottom) -->
+        <div class="relative z-10 flex flex-col justify-end flex-1 p-6 pb-10 space-y-5">
             
-            <!-- Left-aligned Welcome Copy with Centered, Big, Bold Fancy App Title with Welcome Swirl Animation -->
-            <div class="space-y-4 text-left">
+            <!-- Welcome Copy with Centered Fancy App Title -->
+            <div class="space-y-3 text-left">
                 <div class="text-center w-full pb-1 overflow-hidden">
                     <h2 class="text-5xl tracking-wide text-white drop-shadow-md animate-swirl inline-block" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
                         CHAT<span class="text-orange-500">lite</span>
@@ -94,13 +97,13 @@
 
             <!-- Pagination Dots Indicator -->
             <div class="flex items-center space-x-1.5 py-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-slate-600" style="background-color: #475569; display: inline-block; width: 0.375rem; height: 0.375rem; border-radius: 9999px;"></span>
-                <span class="w-6 h-1.5 rounded-full bg-orange-500" style="background-color: #f97316; display: inline-block; width: 1.5rem; height: 0.375rem; border-radius: 9999px;"></span>
-                <span class="w-1.5 h-1.5 rounded-full bg-slate-600" style="background-color: #475569; display: inline-block; width: 0.375rem; height: 0.375rem; border-radius: 9999px;"></span>
+                <span class="rounded-full bg-slate-600" style="background-color: #475569; display: inline-block; width: 0.375rem; height: 0.375rem; border-radius: 9999px;"></span>
+                <span class="rounded-full bg-orange-500" style="background-color: #f97316; display: inline-block; width: 1.5rem; height: 0.375rem; border-radius: 9999px;"></span>
+                <span class="rounded-full bg-slate-600" style="background-color: #475569; display: inline-block; width: 0.375rem; height: 0.375rem; border-radius: 9999px;"></span>
             </div>
 
-            <!-- Side-by-Side Action Buttons -->
-            <div class="grid grid-cols-2 gap-3 pt-2" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem;">
+            <!-- Side-by-Side Action Buttons with locked grid styles -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
                 <button onclick="window.location.href='register.html'" class="w-full py-3.5 px-4 bg-slate-800/80 hover:bg-slate-800 text-white font-semibold rounded-xl border border-slate-700/60 backdrop-blur-md transition-all text-center cursor-pointer shadow-lg">
                     Create Profile
                 </button>
@@ -110,7 +113,7 @@
             </div>
         </div>
 
-        <!-- Login Popup Modal (Properly hidden by default via robust fallback rule) -->
+        <!-- Login Popup Modal (Hidden by default) -->
         <div id="login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
             <div class="bg-slate-900/90 border border-white/15 backdrop-blur-xl rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
                 <div class="flex items-center justify-between">
