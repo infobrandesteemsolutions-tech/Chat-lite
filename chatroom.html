@@ -151,7 +151,6 @@
         document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
 
         const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
-        const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
 
         let messageSubscription = null;
         let messagesCache = loadLocalCache();
@@ -168,7 +167,6 @@
         let pendingDeleteTimer = null;
         let undoTargetMessage = null;
 
-        // Load cached messages instantly on boot (Offline First)
         if (messagesCache.length > 0) {
             renderMessages(messagesCache);
         }
@@ -187,19 +185,6 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
         }
 
-        function getOfflineQueue() {
-            try {
-                const data = localStorage.getItem(QUEUE_KEY);
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveOfflineQueue(queue) {
-            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-        }
-
         function toggleAttachmentMenu() {
             const menu = document.getElementById('attachment-menu');
             menu.classList.toggle('hidden');
@@ -216,8 +201,6 @@
         }
 
         async function fetchMessages() {
-            if (!navigator.onLine) return;
-
             const { data: messages, error } = await supabaseClient
                 .from('messages')
                 .select('*')
@@ -237,7 +220,6 @@
         }
 
         async function markIncomingMessagesAsRead(messages) {
-            if (!navigator.onLine) return;
             let hiddenForMe = [];
             try {
                 hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
@@ -267,9 +249,6 @@
             const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
 
             filtered.forEach(msg => appendMessageToDOM(msg, false));
-            
-            const queue = getOfflineQueue();
-            queue.forEach(qMsg => appendMessageToDOM(qMsg, false));
 
             container.scrollTop = container.scrollHeight;
         }
@@ -375,14 +354,8 @@
             if (isMe) {
                 const tickSpan = document.createElement('span');
                 tickSpan.className = 'font-bold text-xs ';
-                if (msg.is_pending) {
-                    tickSpan.textContent = '🕒'; 
-                    tickSpan.title = 'Waiting for network...';
-                    tickSpan.classList.add('text-slate-500');
-                } else {
-                    tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
-                    tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
-                }
+                tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
                 metaRow.appendChild(tickSpan);
             }
 
@@ -713,25 +686,6 @@
         }
 
         async function sendPayloadToSupabase(content, type) {
-            const localMessage = {
-                sender_username: currentUser.username,
-                receiver_username: targetUsername,
-                content: content,
-                message_type: type,
-                is_read: false,
-                created_at: new Date().toISOString(),
-                is_pending: true
-            };
-
-            messagesCache.push(localMessage);
-            saveLocalCache(messagesCache);
-            renderMessages(messagesCache);
-
-            if (!navigator.onLine) {
-                queueOfflineMessage(localMessage);
-                return;
-            }
-
             const payload = {
                 sender_username: currentUser.username,
                 receiver_username: targetUsername,
@@ -756,42 +710,13 @@
 
             if (error) {
                 console.error('Error sending message:', error);
-                queueOfflineMessage(localMessage);
+                alert('Failed to send message. Check console for details.');
             } else if (data && data.length > 0) {
-                const index = messagesCache.indexOf(localMessage);
-                if (index !== -1) {
-                    messagesCache[index] = data[0];
-                } else {
-                    messagesCache.push(data[0]);
-                }
+                messagesCache.push(data[0]);
                 saveLocalCache(messagesCache);
                 renderMessages(messagesCache);
             }
         }
-
-        function queueOfflineMessage(msg) {
-            const queue = getOfflineQueue();
-            queue.push(msg);
-            saveOfflineQueue(queue);
-        }
-
-        window.addEventListener('online', async () => {
-            const queue = getOfflineQueue();
-            if (queue.length > 0) {
-                for (const msg of queue) {
-                    const payload = {
-                        sender_username: msg.sender_username,
-                        receiver_username: msg.receiver_username,
-                        content: msg.content,
-                        message_type: msg.message_type || 'text',
-                        is_read: false
-                    };
-                    await supabaseClient.from('messages').insert([payload]);
-                }
-                saveOfflineQueue([]);
-            }
-            fetchMessages();
-        });
 
         function openMediaGallery(typeFilter) {
             const modal = document.getElementById('media-gallery-modal');
@@ -833,8 +758,6 @@
         }
 
         function subscribeToMessages() {
-            if (!navigator.onLine) return;
-
             if (messageSubscription) {
                 supabaseClient.removeChannel(messageSubscription);
             }
@@ -859,10 +782,6 @@
                     }
                 )
                 .subscribe();
-        }
-
-        if (navigator.onLine && getOfflineQueue().length > 0) {
-            window.dispatchEvent(new Event('online'));
         }
 
         fetchMessages();
