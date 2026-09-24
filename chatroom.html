@@ -54,13 +54,17 @@
             <!-- Standard Text Input -->
             <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white">
             
-            <!-- Live Recording Indicator UI (Hidden by default) -->
+            <!-- Live Recording Indicator & Controls UI (Hidden by default) -->
             <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl">
                 <div class="flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
                     <span id="recording-timer" class="text-xs font-semibold text-red-400">0:00</span>
                 </div>
-                <button type="button" onclick="cancelRecording()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">Cancel</button>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" id="pause-rec-btn" onclick="togglePauseRecording()" class="text-xs text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">⏸ Pause</button>
+                    <button type="button" onclick="stopRecordingOnly()" class="text-xs text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">⏹ Stop</button>
+                    <button type="button" onclick="cancelRecording()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Discard</button>
+                </div>
             </div>
 
             <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="Record Voice Note">
@@ -90,7 +94,9 @@
         let messageSubscription = null;
         let mediaRecorder = null;
         let audioChunks = [];
+        let recordedBlob = null;
         let isRecording = false;
+        let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
 
@@ -128,7 +134,7 @@
             wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`;
 
             const bubble = document.createElement('div');
-            bubble.className = `max-w-[80%] px-3 py-2 rounded-2xl text-sm ${
+            bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
                 isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
             }`;
 
@@ -138,19 +144,48 @@
             } else if (type === 'video') {
                 bubble.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
             } else if (type === 'audio') {
-                // Compact Custom Styled Voice Note Bubble
+                // Unique ID for scoped player controls
+                const audioId = 'audio_' + Math.random().toString(36.20).substring(2, 9);
                 bubble.innerHTML = `
-                    <div class="flex items-center gap-3 py-1 px-1 min-w-[160px]">
-                        <button onclick="const audio = this.nextElementSibling; if(audio.paused){audio.play(); this.textContent='⏸';}else{audio.pause(); this.textContent='▶';}" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
-                        <audio src="${msg.content}" class="hidden"></audio>
-                        <div class="flex flex-col flex-1">
-                            <span class="text-[11px] font-medium tracking-wide opacity-90">Voice Note</span>
-                            <div class="w-full bg-white/20 h-1 rounded-full mt-1 overflow-hidden">
-                                <div class="bg-white h-full w-full opacity-60"></div>
+                    <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
+                        <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
+                        <audio id="${audioId}" src="${msg.content}" preload="metadata"></audio>
+                        <div class="flex flex-col flex-1 gap-1">
+                            <div class="flex justify-between items-center text-[10px] opacity-80">
+                                <span class="audio-current-time">0:00</span>
+                                <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
                             </div>
+                            <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
                         </div>
                     </div>
                 `;
+
+                // Setup Audio metadata & time updating listeners after injection
+                setTimeout(() => {
+                    const audioEl = document.getElementById(audioId);
+                    if (!audioEl) return;
+                    const container = audioEl.closest('[data-audio-container]');
+                    const rangeEl = container.querySelector('.audio-range');
+                    const timeEl = container.querySelector('.audio-current-time');
+
+                    audioEl.addEventListener('loadedmetadata', () => {
+                        timeEl.textContent = formatAudioTime(audioEl.duration);
+                    });
+
+                    audioEl.addEventListener('timeupdate', () => {
+                        if (!audioEl.duration) return;
+                        const progress = (audioEl.currentTime / audioEl.duration) * 100;
+                        rangeEl.value = progress;
+                        timeEl.textContent = formatAudioTime(audioEl.currentTime);
+                    });
+
+                    audioEl.addEventListener('ended', () => {
+                        const playBtn = container.querySelector('button');
+                        playBtn.textContent = '▶';
+                        audioEl.currentTime = 0;
+                    });
+                }, 50);
+
             } else if (type === 'file') {
                 bubble.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
             } else {
@@ -164,6 +199,45 @@
             wrapper.appendChild(bubble);
             wrapper.appendChild(time);
             container.appendChild(wrapper);
+        }
+
+        // Audio Player Helper Functions
+        function toggleAudioPlay(audioId, btn) {
+            const audio = document.getElementById(audioId);
+            if (audio.paused) {
+                audio.play();
+                btn.textContent = '⏸';
+            } else {
+                audio.pause();
+                btn.textContent = '▶';
+            }
+        }
+
+        function seekAudio(audioId, value) {
+            const audio = document.getElementById(audioId);
+            if (!audio.duration) return;
+            const targetTime = (value / 100) * audio.duration;
+            audio.currentTime = targetTime;
+        }
+
+        function toggleAudioSpeed(audioId, speedBtn) {
+            const audio = document.getElementById(audioId);
+            let currentRate = audio.playbackRate;
+            let nextRate = 1;
+            if (currentRate === 1) nextRate = 1.5;
+            else if (currentRate === 1.5) nextRate = 2;
+            else if (currentRate === 2) nextRate = 0.5;
+            else if (currentRate === 0.5) nextRate = 1;
+
+            audio.playbackRate = nextRate;
+            speedBtn.textContent = nextRate + 'x';
+        }
+
+        function formatAudioTime(secs) {
+            if (isNaN(secs)) return '0:00';
+            const mins = Math.floor(secs / 60);
+            const remainingSecs = Math.floor(secs % 60);
+            return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`;
         }
 
         async function handleFileSelected(event) {
@@ -218,27 +292,35 @@
                     audioChunks.push(event.data);
                 };
 
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    recordedBlob = audioBlob;
+                };
+
                 mediaRecorder.start();
                 isRecording = true;
+                isPaused = false;
+                recordedBlob = null;
 
-                // UI Adjustments for Recording Mode
+                // UI adjustments
                 document.getElementById('message-input').classList.add('hidden');
                 document.getElementById('recording-ui').classList.remove('hidden');
                 document.getElementById('recording-ui').classList.add('flex');
                 
-                // Change Mic button to a stop/square symbol or highlight it red
                 const micBtn = document.getElementById('mic-btn');
-                micBtn.innerHTML = '⏹';
-                micBtn.setAttribute('onclick', 'stopAndSendVoiceRecording()');
-                micBtn.classList.add('text-red-500', 'animate-pulse');
+                micBtn.classList.add('hidden'); // Hide regular mic button, controls are in the recording UI bar
 
                 recordingSeconds = 0;
                 document.getElementById('recording-timer').textContent = '0:00';
+                document.getElementById('pause-rec-btn').textContent = '⏸ Pause';
+                
                 recordingTimerInterval = setInterval(() => {
-                    recordingSeconds++;
-                    const mins = Math.floor(recordingSeconds / 60);
-                    const secs = recordingSeconds % 60;
-                    document.getElementById('recording-timer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    if (!isPaused) {
+                        recordingSeconds++;
+                        const mins = Math.floor(recordingSeconds / 60);
+                        const secs = recordingSeconds % 60;
+                        document.getElementById('recording-timer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    }
                 }, 1000);
 
             } catch (err) {
@@ -246,50 +328,76 @@
             }
         }
 
-        function cancelRecording() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
-                mediaRecorder.ondataavailable = null; // Discard data
+        function togglePauseRecording() {
+            if (!mediaRecorder) return;
+            const pauseBtn = document.getElementById('pause-rec-btn');
+            if (!isPaused) {
+                mediaRecorder.pause();
+                isPaused = true;
+                pauseBtn.textContent = '▶ Resume';
+                pauseBtn.classList.add('text-indigo-400');
+            } else {
+                mediaRecorder.resume();
+                isPaused = false;
+                pauseBtn.textContent = '⏸ Pause';
+                pauseBtn.classList.remove('text-indigo-400');
             }
-            resetRecordingUI();
         }
 
-        function stopAndSendVoiceRecording() {
+        function stopRecordingOnly() {
             if (mediaRecorder && isRecording) {
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.readAsDataURL(audioBlob);
-                    reader.onloadend = async () => {
-                        await sendMediaPayload(reader.result, 'audio');
-                    };
-                };
                 mediaRecorder.stop();
                 isRecording = false;
+                clearInterval(recordingTimerInterval);
             }
+        }
+
+        function cancelRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.ondataavailable = null; // discard chunks
+                if (isRecording || isPaused) {
+                    mediaRecorder.stop();
+                }
+            }
+            recordedBlob = null;
             resetRecordingUI();
         }
 
         function resetRecordingUI() {
             clearInterval(recordingTimerInterval);
             isRecording = false;
+            isPaused = false;
 
             document.getElementById('recording-ui').classList.add('hidden');
             document.getElementById('recording-ui').classList.remove('flex');
             document.getElementById('message-input').classList.remove('hidden');
 
             const micBtn = document.getElementById('mic-btn');
-            micBtn.innerHTML = '🎤';
-            micBtn.setAttribute('onclick', 'startVoiceRecording()');
-            micBtn.classList.remove('text-red-500', 'animate-pulse');
+            micBtn.classList.remove('hidden');
         }
 
         async function handleFormSubmit(e) {
             e.preventDefault();
             
-            // If currently recording, hitting send button acts as "Stop & Send Voice Note"
+            // If we are currently recording, hitting send should stop the recording and then dispatch it
             if (isRecording) {
-                stopAndSendVoiceRecording();
+                stopRecordingOnly();
+                // Wait briefly for onstop blob assembly
+                setTimeout(async () => {
+                    if (recordedBlob) {
+                        await uploadAndSendRecordedAudio(recordedBlob);
+                        recordedBlob = null;
+                    }
+                    resetRecordingUI();
+                }, 200);
+                return;
+            }
+
+            // If recording was stopped beforehand via the stop button, hitting send uploads the finalized recorded blob
+            if (recordedBlob) {
+                await uploadAndSendRecordedAudio(recordedBlob);
+                recordedBlob = null;
+                resetRecordingUI();
                 return;
             }
 
@@ -323,6 +431,14 @@
             }
 
             input.value = '';
+        }
+
+        async function uploadAndSendRecordedAudio(blob) {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = async () => {
+                await sendMediaPayload(reader.result, 'audio');
+            };
         }
 
         function subscribeToMessages() {
