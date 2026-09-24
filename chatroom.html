@@ -551,7 +551,7 @@
             document.getElementById('media-preview-bar').classList.remove('hidden');
             document.getElementById('media-preview-bar').classList.add('flex');
             
-            progressBar.style.width = '10%A';
+            progressBar.style.width = '10%';
             statusText.textContent = 'Reading file stream...';
 
             reader.onprogress = (data) => {
@@ -740,7 +740,8 @@
                 is_read: false
             };
 
-            let { error } = await supabaseClient.from('messages').insert([payload]);
+            let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+
             if (error && error.message && error.message.includes('message_type')) {
                 const fallback = {
                     sender_username: currentUser.username,
@@ -748,16 +749,23 @@
                     content: content,
                     is_read: false
                 };
-                const retry = await supabaseClient.from('messages').insert([fallback]);
+                const retry = await supabaseClient.from('messages').insert([fallback]).select();
+                data = retry.data;
                 error = retry.error;
             }
 
             if (error) {
+                console.error('Error sending message:', error);
                 queueOfflineMessage(localMessage);
-            } else {
-                messagesCache = messagesCache.filter(m => m !== localMessage);
+            } else if (data && data.length > 0) {
+                const index = messagesCache.indexOf(localMessage);
+                if (index !== -1) {
+                    messagesCache[index] = data[0];
+                } else {
+                    messagesCache.push(data[0]);
+                }
                 saveLocalCache(messagesCache);
-                await fetchMessages();
+                renderMessages(messagesCache);
             }
         }
 
