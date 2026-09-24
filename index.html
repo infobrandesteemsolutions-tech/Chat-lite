@@ -9,6 +9,28 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes welcomeSwirl {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotate(-10deg) translateY(20px);
+                filter: blur(10px);
+            }
+            60% {
+                opacity: 1;
+                transform: scale(1.05) rotate(3deg) translateY(-5px);
+                filter: blur(0px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg) translateY(0);
+                filter: blur(0px);
+            }
+        }
+        .animate-swirl {
+            animation: welcomeSwirl 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+    </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
@@ -22,10 +44,10 @@
         <!-- Content Area (Pushed to bottom like an onboarding mobile frame) -->
         <div class="relative z-10 flex flex-col justify-end flex-1 p-6 pb-8 space-y-6">
             
-            <!-- Left-aligned Welcome Copy with Centered, Big, Bold Fancy App Title -->
+            <!-- Left-aligned Welcome Copy with Centered, Big, Bold Fancy App Title with Welcome Swirl Animation -->
             <div class="space-y-4 text-left">
-                <div class="text-center w-full pb-1">
-                    <h2 class="text-5xl tracking-wide text-white drop-shadow-md" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
+                <div class="text-center w-full pb-1 overflow-hidden">
+                    <h2 class="text-5xl tracking-wide text-white drop-shadow-md animate-swirl inline-block" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
                         CHAT<span class="text-orange-500">lite</span>
                     </h2>
                 </div>
