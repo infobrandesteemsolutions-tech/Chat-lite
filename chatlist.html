@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Lite - Chats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+            <div>
+                <h2 class="font-bold text-lg" id="current-user-display">Chats</h2>
+                <span class="text-xs text-emerald-400 flex items-center gap-1.5 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Online</span>
+            </div>
+            <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-red-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition-all cursor-pointer">Sign Out</button>
+        </div>
+        
+        <div class="p-3 bg-slate-950 border-b border-slate-800">
+            <p class="text-xs text-slate-400 px-1">Select a family member to start chatting:</p>
+        </div>
+
+        <div id="members-list" class="flex-1 overflow-y-auto divide-y divide-slate-800/50">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('current-user-display').textContent = `${currentUser.name} (@${currentUser.username})`;
+            loadChatList();
+        }
+
+        async function loadChatList() {
+            const { data: members, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .neq('username', currentUser.username);
+
+            const listContainer = document.getElementById('members-list');
+            listContainer.innerHTML = '';
+
+            if (error || !members || members.length === 0) {
+                listContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-sm">No other members found yet. Have your family members create their profiles!</div>`;
+                return;
+            }
+
+            members.forEach(member => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 p-4 hover:bg-slate-900/60 cursor-pointer transition-all';
+                item.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-sm">
+                        ${member.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-sm truncate">${member.name}</h4>
+                        <p class="text-xs text-slate-400 truncate">@${member.username} &bull; ${member.gender}</p>
+                    </div>
+                    <span class="text-xs text-indigo-400 font-medium">Chat &rarr;</span>
+                `;
+                item.onclick = () => {
+                    window.location.href = `chatroom.html?to=${member.username}&name=${encodeURIComponent(member.name)}&gender=${member.gender}`;
+                };
+                listContainer.appendChild(item);
+            });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('chatlite_user');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

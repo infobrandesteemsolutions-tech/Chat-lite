@@ -3,119 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Lite</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Chat Lite - Welcome</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- App Container -->
-    <div id="app" class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800">
-
-        <!-- 1. WELCOME VIEW -->
-        <div id="view-welcome" class="view flex flex-col items-center justify-center flex-1 p-8 text-center space-y-8">
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800">
+        
+        <!-- Welcome View Container -->
+        <div class="flex flex-col items-center justify-center flex-1 p-8 text-center space-y-8">
             <div class="space-y-3">
                 <h1 class="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-sky-400 to-indigo-500 bg-clip-text text-transparent">
                     Chat Lite
                 </h1>
-                <p class="text-slate-400 text-sm">Your private, lightweight family messaging space.</p>
+                <p class="text-slate-400 text-sm">Your private family messaging space.</p>
             </div>
             
             <div class="w-full space-y-4">
-                <button onclick="switchView('view-register')" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all">
+                <!-- Directs to separate Register Page -->
+                <button onclick="window.location.href='register.html'" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
                     Create a Profile
                 </button>
-                <button onclick="openLoginModal()" class="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition-all">
+                <!-- Opens Login Modal -->
+                <button onclick="openLoginModal()" class="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition-all cursor-pointer">
                     Access Chats
                 </button>
             </div>
         </div>
 
-        <!-- 2. REGISTER VIEW -->
-        <div id="view-register" class="view hidden flex flex-col flex-1 p-6 justify-between">
-            <div class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <button onclick="switchView('view-welcome')" class="text-slate-400 hover:text-white text-sm flex items-center gap-1">&larr; Back</button>
-                    <h2 class="text-xl font-bold">Create Profile</h2>
-                    <div class="w-8"></div>
-                </div>
-
-                <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
-                        <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Gender</label>
-                        <select id="reg-gender" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
-                        <input type="text" id="reg-username" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
-                        <input type="password" id="reg-password" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Access Code</label>
-                        <input type="text" id="reg-code" placeholder="Krinox1803" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                    </div>
-                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all mt-4">
-                        Register Profile
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- 3. CHAT LIST VIEW -->
-        <div id="view-chatlist" class="view hidden flex flex-col flex-1 h-screen">
-            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-                <div>
-                    <h2 class="font-bold text-lg" id="current-user-display">Chats</h2>
-                    <span class="text-xs text-emerald-400 flex items-center gap-1.5 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Online</span>
-                </div>
-                <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-red-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition-all">Sign Out</button>
-            </div>
-            <div class="p-3 bg-slate-950 border-b border-slate-800">
-                <p class="text-xs text-slate-400 px-1">Select a family member to start chatting:</p>
-            </div>
-            <div id="members-list" class="flex-1 overflow-y-auto divide-y divide-slate-800/50">
-                <!-- Dynamically populated members list -->
-            </div>
-        </div>
-
-        <!-- 4. CHAT ROOM VIEW -->
-        <div id="view-chatroom" class="view hidden flex flex-col flex-1 h-screen">
-            <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-900">
-                <button onclick="switchView('view-chatlist')" class="text-slate-400 hover:text-white text-sm">&larr;</button>
-                <div class="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-sm" id="active-chat-avatar">U</div>
-                <div>
-                    <h3 class="font-bold text-sm" id="active-chat-name">Username</h3>
-                    <span class="text-[10px] text-slate-400" id="active-chat-gender">Gender</span>
-                </div>
-            </div>
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
-                <!-- Messages populate here -->
-            </div>
-            <form id="chat-form" onsubmit="sendMessage(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
-                <input type="text" id="message-input" placeholder="Type a message..." required class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-                <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all">Send</button>
-            </form>
-        </div>
-
-        <!-- LOGIN POPUP MODAL -->
-        <div id="login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <!-- Login Popup Modal -->
+        <div id="login-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-bold">Access Chats</h3>
-                    <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white">&times;</button>
+                    <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-xl cursor-pointer">&times;</button>
                 </div>
                 <form onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
@@ -126,8 +48,8 @@
                         <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
                         <input type="password" id="login-password" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
                     </div>
-                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all mt-2">
-                        Sign In
+                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all mt-2 cursor-pointer">
+                        Sign In &rarr;
                     </button>
                 </form>
             </div>
@@ -135,7 +57,38 @@
 
     </div>
 
-    <!-- Main Logic Script -->
-    <script src="app.js"></script>
+    <script src="supabase.js"></script>
+    <script>
+        function openLoginModal() {
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('login-modal').classList.add('flex');
+        }
+        function closeLoginModal() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('flex');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', username)
+                .eq('password', password)
+                .maybeSingle();
+
+            if (error || !data) {
+                alert('Invalid username or password.');
+                return;
+            }
+
+            // Save user session locally and redirect to chat list page
+            localStorage.setItem('chatlite_user', JSON.stringify(data));
+            window.location.href = 'chatlist.html';
+        }
+    </script>
 </body>
 </html>

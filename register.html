@@ -7,74 +7,86 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col p-6">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <div class="flex items-center mb-6 max-w-sm mx-auto w-full">
-        <a href="index.html" class="text-slate-400 hover:text-white mr-4 text-sm font-semibold">&larr; Back</a>
-        <h2 class="text-xl font-bold text-emerald-400">Create Your Profile</h2>
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 p-6 justify-between">
+        <div class="space-y-6">
+            <div class="flex items-center justify-between">
+                <button onclick="window.location.href='index.html'" class="text-slate-400 hover:text-white text-sm flex items-center gap-1 cursor-pointer">&larr; Back</button>
+                <h2 class="text-xl font-bold">Create Profile</h2>
+                <div class="w-8"></div>
+            </div>
+
+            <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Full Name</label>
+                    <input type="text" id="reg-name" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Gender</label>
+                    <select id="reg-gender" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
+                    <input type="text" id="reg-username" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
+                    <input type="password" id="reg-password" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Access Code</label>
+                    <input type="text" id="reg-code" placeholder="Krinox1803" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all mt-4 cursor-pointer">
+                    Register Profile
+                </button>
+            </form>
+        </div>
     </div>
 
-    <form id="register-form" class="space-y-4 max-w-sm mx-auto w-full flex-1">
-        <div>
-            <label class="block text-xs text-slate-400 mb-1 font-medium">Full Name</label>
-            <input type="text" id="reg-name" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 text-white">
-        </div>
-        <div>
-            <label class="block text-xs text-slate-400 mb-1 font-medium">Gender</label>
-            <select id="reg-gender" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 text-white">
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs text-slate-400 mb-1 font-medium">Username</label>
-            <input type="text" id="reg-username" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 text-white">
-        </div>
-        <div>
-            <label class="block text-xs text-slate-400 mb-1 font-medium">Password</label>
-            <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 text-white">
-        </div>
-        <div>
-            <label class="block text-xs text-slate-400 mb-1 font-medium">Access Code (Krinox1803)</label>
-            <input type="text" id="reg-accesscode" placeholder="Required system code" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500 text-white">
-        </div>
-        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-semibold transition text-white mt-4">Register Profile</button>
-    </form>
-
+    <script src="supabase.js"></script>
     <script>
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const CORRECT_ACCESS_CODE = 'Krinox1803';
-
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
+        async function handleRegister(e) {
             e.preventDefault();
             const name = document.getElementById('reg-name').value.trim();
             const gender = document.getElementById('reg-gender').value;
             const username = document.getElementById('reg-username').value.trim().toLowerCase();
             const password = document.getElementById('reg-password').value;
-            const accessCode = document.getElementById('reg-accesscode').value.trim();
+            const code = document.getElementById('reg-code').value.trim();
 
-            if (accessCode !== CORRECT_ACCESS_CODE) {
-                alert('Invalid Access Code! Registration denied.');
+            if (code !== 'Krinox1803') {
+                alert('Invalid Access Code! Please enter the correct code.');
                 return;
             }
 
-            const { data: existing } = await client.from('profiles').select('*').eq('username', username);
-            if (existing && existing.length > 0) {
-                alert('Username is already taken. Choose another.');
+            const { data: existing } = await supabaseClient
+                .from('profiles')
+                .select('username')
+                .eq('username', username)
+                .maybeSingle();
+
+            if (existing) {
+                alert('Username is already taken. Please choose another.');
                 return;
             }
 
-            const { error } = await client.from('profiles').insert([{ name, gender, username, password }]);
+            const { error } = await supabaseClient
+                .from('profiles')
+                .insert([{ name, gender, username, password }]);
+
             if (error) {
                 alert('Error creating profile: ' + error.message);
-            } else {
-                alert('Profile created successfully! Please sign in.');
-                window.location.href = 'index.html';
+                return;
             }
-        });
+
+            alert('Profile created successfully! Please sign in from the welcome page.');
+            window.location.href = 'index.html';
+        }
     </script>
 </body>
 </html>
