@@ -59,6 +59,15 @@
             </div>
         </div>
 
+        <!-- Reply Preview Bar (Shown when replying to a message) -->
+        <div id="reply-preview-bar" class="hidden p-2.5 bg-slate-900 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
+            <div class="flex flex-col border-l-2 border-indigo-500 pl-2 overflow-hidden">
+                <span class="text-[10px] font-bold text-indigo-400" id="reply-target-sender">Replying to...</span>
+                <span class="text-xs text-slate-300 truncate" id="reply-target-content">Message content...</span>
+            </div>
+            <button type="button" onclick="cancelReply()" class="text-slate-400 hover:text-white text-base px-2 cursor-pointer">&times;</button>
+        </div>
+
         <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
         <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
             <div class="flex items-center justify-between">
@@ -163,6 +172,7 @@
         let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
+        let replyingToMessage = null;
 
         // Undo & Deletion management variables
         let pendingDeleteTimer = null;
@@ -299,12 +309,13 @@
             const isMe = msg.sender_username === currentUser.username;
 
             const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row`;
+            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row relative transition-transform duration-200`;
             if (msg.id) wrapper.setAttribute('data-id', msg.id);
 
+            // --- Long Press Handlers ---
             let pressTimer = null;
             const startPress = () => {
-                if (msg.is_offline_pending) return; // Don't open options for offline pending messages
+                if (msg.is_offline_pending) return; 
                 pressTimer = setTimeout(() => openMessageOptions(msg), 600);
             };
             const cancelPress = () => {
@@ -318,19 +329,54 @@
             wrapper.addEventListener('mouseup', cancelPress);
             wrapper.addEventListener('mouseleave', cancelPress);
 
+            // --- Swipe Right to Reply Handlers ---
+            let touchStartX = 0;
+            let touchCurrentX = 0;
+
+            wrapper.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+            }, { passive: true });
+
+            wrapper.addEventListener('touchmove', (e) => {
+                touchCurrentX = e.touches[0].clientX;
+                const diff = touchCurrentX - touchStartX;
+                if (diff > 0 && diff < 100) {
+                    wrapper.style.transform = `translateX(${diff}px)`;
+                }
+            }, { passive: true });
+
+            wrapper.addEventListener('touchend', () => {
+                const diff = touchCurrentX - touchStartX;
+                wrapper.style.transform = 'translateX(0px)';
+                if (diff > 60) {
+                    setReplyTarget(msg);
+                }
+                touchStartX = 0;
+                touchCurrentX = 0;
+            });
+
             const bubble = document.createElement('div');
             bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
                 isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
             }`;
 
+            // Render Replied Context if available in payload
+            if (msg.reply_to) {
+                const replySnippet = document.createElement('div');
+                replySnippet.className = `mb-1 p-1.5 rounded text-xs border-l-2 ${isMe ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100' : 'bg-slate-900/60 border-indigo-500 text-slate-300'}`;
+                replySnippet.innerHTML = `<span class="font-bold block text-[10px] opacity-90">${msg.reply_to.sender}</span><span class="truncate block">${msg.reply_to.content}</span>`;
+                bubble.appendChild(replySnippet);
+            }
+
+            const contentBody = document.createElement('div');
             const type = msg.message_type || 'text';
             if (type === 'image') {
-                bubble.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="window.open('${msg.content}')">`;
+                contentBody.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="window.open('${msg.content}')">`;
             } else if (type === 'video') {
-                bubble.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
+                contentBody.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
             } else if (type === 'audio') {
                 const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
-                bubble.innerHTML = `
+                contentBody.innerHTML = `
                     <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
                         <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
                         <audio id="${audioId}" src="${msg.content}" preload="metadata"></audio>
@@ -366,10 +412,11 @@
                 }, 50);
 
             } else if (type === 'file') {
-                bubble.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
+                contentBody.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
             } else {
-                bubble.textContent = msg.content;
+                contentBody.textContent = msg.content;
             }
+            bubble.appendChild(contentBody);
 
             const metaRow = document.createElement('div');
             metaRow.className = 'flex items-center gap-1 px-1 text-[10px] text-slate-400';
@@ -400,6 +447,35 @@
             }
         }
 
+        // --- REPLY MANAGEMENT FUNCTIONS ---
+        function setReplyTarget(msg) {
+            replyingToMessage = msg;
+            const replyBar = document.getElementById('reply-preview-bar');
+            const senderNameEl = document.getElementById('reply-target-sender');
+            const contentEl = document.getElementById('reply-target-content');
+
+            const senderLabel = msg.sender_username === currentUser.username ? 'You' : targetName;
+            senderNameEl.textContent = `Replying to ${senderLabel}`;
+            
+            let previewText = msg.content;
+            if (msg.message_type === 'image') previewText = '[Photo Attachment]';
+            else if (msg.message_type === 'video') previewText = '[Video Attachment]';
+            else if (msg.message_type === 'audio') previewText = '[Voice Note]';
+            else if (msg.message_type === 'file') previewText = '[File Attachment]';
+
+            contentEl.textContent = previewText;
+            replyBar.classList.remove('hidden');
+            replyBar.classList.add('flex');
+            document.getElementById('message-input').focus();
+        }
+
+        function cancelReply() {
+            replyingToMessage = null;
+            const replyBar = document.getElementById('reply-preview-bar');
+            replyBar.classList.remove('flex');
+            replyBar.classList.add('hidden');
+        }
+
         // --- OFFLINE QUEUE MANAGEMENT & SYNC ---
         async function flushOfflineQueue() {
             const queue = loadOfflineQueue();
@@ -412,6 +488,7 @@
                     receiver_username: item.receiver_username,
                     content: item.content,
                     message_type: item.message_type,
+                    reply_to: item.reply_to,
                     is_read: false
                 };
 
@@ -430,7 +507,6 @@
                 }
 
                 if (error) {
-                    // Still offline or failed, keep in queue
                     remainingQueue.push(item);
                 } else if (data && data.length > 0) {
                     messagesCache.push(data[0]);
@@ -446,19 +522,52 @@
             await fetchMessages();
         });
 
-        // --- MESSAGE DELETE & OPTIONS LOGIC ---
+        // --- MESSAGE OPTIONS (LONG PRESS) & ACTIONS ---
         function openMessageOptions(msg) {
             const modal = document.getElementById('message-options-modal');
             const actionsContainer = document.getElementById('message-options-actions');
             actionsContainer.innerHTML = '';
 
             const isSender = msg.sender_username === currentUser.username;
-            
             const msgTime = new Date(msg.created_at).getTime();
             const now = new Date().getTime();
             const diffHours = (now - msgTime) / (1000 * 60 * 60);
             const within3Hours = diffHours <= 3;
 
+            // 1. Reply Option
+            const replyBtn = document.createElement('button');
+            replyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            replyBtn.textContent = '↩️ Reply';
+            replyBtn.onclick = () => {
+                closeMessageOptions();
+                setReplyTarget(msg);
+            };
+            actionsContainer.appendChild(replyBtn);
+
+            // 2. Copy Option (Text only)
+            if (msg.message_type === 'text' && msg.content) {
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+                copyBtn.textContent = '📋 Copy';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(msg.content);
+                    closeMessageOptions();
+                };
+                actionsContainer.appendChild(copyBtn);
+            }
+
+            // 3. Forward Option
+            const forwardBtn = document.createElement('button');
+            forwardBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            forwardBtn.textContent = '↗️ Forward';
+            forwardBtn.onclick = () => {
+                closeMessageOptions();
+                localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: msg.content, type: msg.message_type || 'text' }));
+                window.location.href = 'chatlist.html?forward=true';
+            };
+            actionsContainer.appendChild(forwardBtn);
+
+            // 4. Delete for me Option
             const deleteForMeBtn = document.createElement('button');
             deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             deleteForMeBtn.textContent = '🗑️ Delete for me';
@@ -468,6 +577,7 @@
             };
             actionsContainer.appendChild(deleteForMeBtn);
 
+            // 5. Delete for everyone Option
             if (isSender && within3Hours) {
                 const deleteForEveryoneBtn = document.createElement('button');
                 deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
@@ -737,21 +847,31 @@
                 return;
             }
 
+            let replyMeta = null;
+            if (replyingToMessage) {
+                replyMeta = {
+                    sender: replyingToMessage.sender_username === currentUser.username ? 'You' : targetName,
+                    content: replyingToMessage.message_type === 'text' ? replyingToMessage.content : `[${replyingToMessage.message_type}]`
+                };
+            }
+
             if (recordedBlob) {
                 const reader = new FileReader();
                 reader.readAsDataURL(recordedBlob);
                 reader.onloadend = async () => {
-                    await sendPayloadToSupabase(reader.result, 'audio');
+                    await sendPayloadToSupabase(reader.result, 'audio', replyMeta);
                     recordedBlob = null;
                     resetRecordingUI();
                     clearStagedMedia();
+                    cancelReply();
                 };
                 return;
             }
 
             if (stagedPayload) {
-                await sendPayloadToSupabase(stagedPayload.content, stagedPayload.type);
+                await sendPayloadToSupabase(stagedPayload.content, stagedPayload.type, replyMeta);
                 clearStagedMedia();
+                cancelReply();
                 return;
             }
 
@@ -760,20 +880,22 @@
             if (!content) return;
 
             input.value = '';
-            await sendPayloadToSupabase(content, 'text');
+            await sendPayloadToSupabase(content, 'text', replyMeta);
+            cancelReply();
         }
 
-        async function sendPayloadToSupabase(content, type) {
+        async function sendPayloadToSupabase(content, type, replyMeta = null) {
             const payload = {
                 sender_username: currentUser.username,
                 receiver_username: targetUsername,
                 content: content,
                 message_type: type,
+                reply_to: replyMeta,
                 is_read: false,
                 created_at: new Date().toISOString()
             };
 
-            // If offline, queue it locally immediately instead of throwing error popup
+            // If offline, queue it locally immediately
             if (!navigator.onLine) {
                 const offlineQueue = loadOfflineQueue();
                 const pendingItem = { ...payload, is_offline_pending: true };
@@ -785,7 +907,7 @@
 
             let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
 
-            if (error && error.message && error.message.includes('message_type')) {
+            if (error && error.message && (error.message.includes('message_type') || error.message.includes('reply_to'))) {
                 const fallback = {
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
@@ -800,7 +922,6 @@
 
             if (error) {
                 console.error('Error sending message:', error);
-                // Fallback to queue if request fails due to sudden network drop
                 const offlineQueue = loadOfflineQueue();
                 offlineQueue.push({ ...payload, is_offline_pending: true });
                 saveOfflineQueue(offlineQueue);
