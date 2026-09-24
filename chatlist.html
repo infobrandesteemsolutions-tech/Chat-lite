@@ -10,20 +10,33 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
     <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
-        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-            <div>
-                <h2 class="font-bold text-lg" id="current-user-display">Chats</h2>
-                <span class="text-xs text-emerald-400 flex items-center gap-1.5 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Online</span>
+        
+        <!-- Header with Tappable Profile Area -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur-md">
+            <div onclick="window.location.href='profile.html'" class="flex items-center gap-3 cursor-pointer group">
+                <div id="header-avatar" class="w-10 h-10 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center font-bold text-orange-400 text-sm overflow-hidden shadow-inner">
+                    <!-- Loaded dynamically -->
+                </div>
+                <div>
+                    <h2 class="font-bold text-base text-white group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
+                        <span id="current-user-name">Loading...</span> 
+                        <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </h2>
+                    <span class="text-xs text-emerald-400 flex items-center gap-1.5 mt-0.5"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span> Online</span>
+                </div>
             </div>
-            <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-red-400 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition-all cursor-pointer">Sign Out</button>
+            <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-red-400 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 transition-all cursor-pointer backdrop-blur-md">Sign Out</button>
         </div>
         
-        <div class="p-3 bg-slate-950 border-b border-slate-800">
-            <p class="text-xs text-slate-400 px-1">Select a family member to start chatting:</p>
+        <!-- WhatsApp style subheader -->
+        <div class="px-4 py-2.5 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Recent Chats</span>
+            <span class="text-[10px] text-slate-500">End-to-end encrypted</span>
         </div>
 
-        <div id="members-list" class="flex-1 overflow-y-auto divide-y divide-slate-800/50">
-            <!-- Dynamically populated -->
+        <!-- Members / Chat List Container -->
+        <div id="members-list" class="flex-1 overflow-y-auto divide-y divide-slate-800/40 bg-slate-900/40">
+            <div class="p-8 text-center text-slate-500 text-sm">Loading conversations...</div>
         </div>
     </div>
 
@@ -33,40 +46,134 @@
         if (!currentUser) {
             window.location.href = 'index.html';
         } else {
-            document.getElementById('current-user-display').textContent = `${currentUser.name} (@${currentUser.username})`;
+            initHeaderProfile();
             loadChatList();
+            // Poll for message status updates every 4 seconds
+            setInterval(loadChatList, 4000);
+        }
+
+        function initHeaderProfile() {
+            document.getElementById('current-user-name').textContent = currentUser.name;
+            const avatarContainer = document.getElementById('header-avatar');
+            if (currentUser.avatar_url) {
+                avatarContainer.innerHTML = `<img src="${currentUser.avatar_url}" class="w-full h-full object-cover">`;
+            } else {
+                avatarContainer.textContent = currentUser.name.charAt(0).toUpperCase();
+            }
         }
 
         async function loadChatList() {
+            // Fetch latest profile info to keep session fresh
+            const { data: freshProfile } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', currentUser.username)
+                .maybeSingle();
+
+            if (freshProfile) {
+                currentUser = freshProfile;
+                localStorage.setItem('chatlite_user', JSON.stringify(currentUser));
+                initHeaderProfile();
+            }
+
+            // Fetch all other members
             const { data: members, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
                 .neq('username', currentUser.username);
 
             const listContainer = document.getElementById('members-list');
-            listContainer.innerHTML = '';
 
             if (error || !members || members.length === 0) {
-                listContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-sm">No other members found yet. Have your family members create their profiles!</div>`;
+                listContainer.innerHTML = `<div class="p-8 text-center text-slate-500 text-sm">No other family members found yet. Have them create profiles!</div>`;
                 return;
             }
 
+            // Fetch all messages involving current user to compute last messages & unread stats
+            const { data: messages } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .or(`sender.eq.${currentUser.username},receiver.eq.${currentUser.username}`)
+                .order('created_at', { ascending: false });
+
+            listContainer.innerHTML = '';
+
             members.forEach(member => {
+                // Find latest message between current user and this member
+                const conversationMessages = messages ? messages.filter(m => 
+                    (m.sender === currentUser.username && m.receiver === member.username) ||
+                    (m.sender === member.username && m.receiver === currentUser.username)
+                ) : [];
+
+                const lastMessage = conversationMessages.length > 0 ? conversationMessages[0] : null;
+                
+                // Determine unread count / status
+                const unreadMessages = conversationMessages.filter(m => m.receiver === currentUser.username && !m.is_read);
+                const hasUnread = unreadMessages.length > 0;
+
+                // Format timestamp
+                let timeString = '';
+                if (lastMessage) {
+                    const date = new Date(lastMessage.created_at);
+                    const now = new Date();
+                    if (date.toDateString() === now.toDateString()) {
+                        timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } else {
+                        timeString = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    }
+                }
+
+                // Status indicator formatting (WhatsApp style ticks)
+                let statusIndicator = '';
+                if (lastMessage) {
+                    if (lastMessage.sender === currentUser.username) {
+                        // Outgoing message checkmarks
+                        if (lastMessage.is_read) {
+                            // Read: glowing blue double check (✓✓)
+                            statusIndicator = `<span class="text-sky-400 font-bold drop-shadow-[0_0_6px_rgba(56,189,248,0.7)] text-xs tracking-tighter" title="Read">✓✓</span>`;
+                        } else {
+                            // Delivered/Unread by other end: single tick (✓)
+                            statusIndicator = `<span class="text-slate-400 font-semibold text-xs" title="Delivered / Unread">✓</span>`;
+                        }
+                    } else {
+                        // Incoming message indicator handled by unread highlight
+                        statusIndicator = '';
+                    }
+                }
+
                 const item = document.createElement('div');
-                item.className = 'flex items-center gap-3 p-4 hover:bg-slate-900/60 cursor-pointer transition-all';
+                item.className = `flex items-center gap-3.5 p-3.5 hover:bg-slate-800/50 cursor-pointer transition-all border-b border-slate-800/40 ${hasUnread ? 'bg-emerald-950/20' : ''}`;
+                
+                let avatarHTML = member.avatar_url 
+                    ? `<img src="${member.avatar_url}" class="w-12 h-12 rounded-full object-cover">`
+                    : `<div class="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-orange-400 text-base">${member.name.charAt(0).toUpperCase()}</div>`;
+
                 item.innerHTML = `
-                    <div class="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-sm">
-                        ${member.name.charAt(0).toUpperCase()}
+                    <div class="relative">
+                        ${avatarHTML}
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h4 class="font-semibold text-sm truncate">${member.name}</h4>
-                        <p class="text-xs text-slate-400 truncate">@${member.username} &bull; ${member.gender}</p>
+                        <div class="flex items-center justify-between mb-0.5">
+                            <h4 class="font-semibold text-sm truncate text-white ${hasUnread ? 'text-emerald-400 font-bold' : ''}">${member.name}</h4>
+                            <span class="text-[11px] ${hasUnread ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${timeString}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs truncate pr-2 ${hasUnread ? 'text-emerald-300 font-semibold' : 'text-slate-400'}">
+                                ${lastMessage ? (lastMessage.sender === currentUser.username ? 'You: ' : '') + lastMessage.message : 'Tap to start chatting'}
+                            </p>
+                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                                ${statusIndicator}
+                                ${hasUnread ? `<span class="w-5 h-5 bg-emerald-500 text-slate-950 font-extrabold text-[10px] rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 animate-pulse">${unreadMessages.length}</span>` : ''}
+                            </div>
+                        </div>
                     </div>
-                    <span class="text-xs text-indigo-400 font-medium">Chat &rarr;</span>
                 `;
+
                 item.onclick = () => {
                     window.location.href = `chatroom.html?to=${member.username}&name=${encodeURIComponent(member.name)}&gender=${member.gender}`;
                 };
+
                 listContainer.appendChild(item);
             });
         }

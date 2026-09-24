@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Lite - Profile Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur-md z-20">
+            <div class="flex items-center gap-3">
+                <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white p-1 cursor-pointer">
+                    &larr; Back
+                </button>
+                <h2 class="font-bold text-base text-white">Profile Settings</h2>
+            </div>
+        </div>
+
+        <!-- Scrollable Form Container -->
+        <div class="flex-1 overflow-y-auto pb-10">
+            
+            <!-- Cover Picture Section -->
+            <div class="relative h-36 bg-slate-800 border-b border-slate-800">
+                <div id="cover-preview" class="w-full h-full bg-cover bg-center bg-slate-800 flex items-center justify-center text-slate-500 text-xs">
+                    Cover Photo Area
+                </div>
+            </div>
+
+            <!-- Avatar & Profile Info Form -->
+            <div class="px-6 relative pb-6">
+                
+                <!-- Avatar Overlapping Cover -->
+                <div class="relative -mt-12 mb-4 flex items-end justify-between">
+                    <div id="avatar-preview" class="w-24 h-24 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-xl flex items-center justify-center text-2xl font-bold text-orange-400">
+                        U
+                    </div>
+                </div>
+
+                <form onsubmit="handleSaveProfile(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Display Name</label>
+                        <input type="text" id="profile-name" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Username (Read-only)</label>
+                        <input type="text" id="profile-username" disabled class="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-sm text-slate-500 cursor-not-allowed">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Profile Picture URL</label>
+                        <input type="url" id="profile-avatar-url" placeholder="https://example.com/avatar.jpg" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Cover Picture URL</label>
+                        <input type="url" id="profile-cover-url" placeholder="https://example.com/cover.jpg" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Bio / About Me</label>
+                        <textarea id="profile-bio" rows="3" placeholder="Write a short bio about yourself..." class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" id="save-btn" class="w-full py-3.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl shadow-lg shadow-orange-600/30 transition-all mt-4 cursor-pointer text-white">
+                        Save Changes
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="supabase.js"></script>
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        } else {
+            populateForm();
+        }
+
+        function populateForm() {
+            document.getElementById('profile-name').value = currentUser.name || '';
+            document.getElementById('profile-username').value = currentUser.username || '';
+            document.getElementById('profile-avatar-url').value = currentUser.avatar_url || '';
+            document.getElementById('profile-cover-url').value = currentUser.cover_url || '';
+            document.getElementById('profile-bio').value = currentUser.bio || '';
+
+            updatePreviews();
+        }
+
+        // Live preview updates when URL inputs change
+        document.getElementById('profile-avatar-url').addEventListener('input', updatePreviews);
+        document.getElementById('profile-cover-url').addEventListener('input', updatePreviews);
+
+        function updatePreviews() {
+            const avatarUrl = document.getElementById('profile-avatar-url').value.trim();
+            const coverUrl = document.getElementById('profile-cover-url').value.trim();
+            const name = document.getElementById('profile-name').value || 'U';
+
+            const avatarContainer = document.getElementById('avatar-preview');
+            if (avatarUrl) {
+                avatarContainer.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
+            } else {
+                avatarContainer.textContent = name.charAt(0).toUpperCase();
+            }
+
+            const coverContainer = document.getElementById('cover-preview');
+            if (coverUrl) {
+                coverContainer.style.backgroundImage = `url('${coverUrl}')`;
+                coverContainer.textContent = '';
+            } else {
+                coverContainer.style.backgroundImage = 'none';
+                coverContainer.textContent = 'Cover Photo Area';
+            }
+        }
+
+        async function handleSaveProfile(e) {
+            e.preventDefault();
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.textContent = 'Saving...';
+            saveBtn.disabled = true;
+
+            const updatedData = {
+                name: document.getElementById('profile-name').value.trim(),
+                avatar_url: document.getElementById('profile-avatar-url').value.trim(),
+                cover_url: document.getElementById('profile-cover-url').value.trim(),
+                bio: document.getElementById('profile-bio').value.trim()
+            };
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .update(updatedData)
+                .eq('username', currentUser.username)
+                .select()
+                .maybeSingle();
+
+            if (error) {
+                alert('Error updating profile: ' + error.message);
+                saveBtn.textContent = 'Save Changes';
+                saveBtn.disabled = false;
+                return;
+            }
+
+            // Update local storage session
+            currentUser = data || { ...currentUser, ...updatedData };
+            localStorage.setItem('chatlite_user', JSON.stringify(currentUser));
+
+            alert('Profile updated successfully!');
+            window.location.href = 'chatlist.html';
+        }
+    </script>
+</body>
+</html>
