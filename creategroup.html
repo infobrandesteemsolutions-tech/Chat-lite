@@ -49,17 +49,14 @@
                     <textarea id="group-desc" rows="2" placeholder="What is this group about?" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white resize-none"></textarea>
                 </div>
 
-                <!-- Add Members Section -->
+                <!-- Add Members from Connections Section -->
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Initial Members (Chat Codes)</label>
-                    <div class="flex items-center gap-2 mb-2">
-                        <input type="text" id="member-code-input" placeholder="e.g. CL-ABC1234" class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm font-mono text-white uppercase">
-                        <button type="button" onclick="addGroupMember()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 font-semibold rounded-xl text-xs text-white transition-all cursor-pointer">Add</button>
-                    </div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Select Connections to Invite</label>
+                    <p class="text-[11px] text-slate-500 mb-2">Selected contacts will receive an invite to accept or decline joining.</p>
                     
-                    <!-- Added Members Chip List -->
-                    <div id="members-chip-container" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-slate-950/50 border border-slate-800/80 rounded-xl">
-                        <span class="text-xs text-slate-500 p-1">No additional members added yet.</span>
+                    <!-- Connections Checklist Container -->
+                    <div id="connections-checklist" class="flex flex-col gap-2 max-h-48 overflow-y-auto p-2.5 bg-slate-950/50 border border-slate-800/80 rounded-xl">
+                        <span class="text-xs text-slate-500 p-2 text-center">Loading your connections...</span>
                     </div>
                 </div>
 
@@ -75,10 +72,12 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
         let groupAvatarBase64 = null;
-        let addedMemberCodes = [];
+        let connectionsList = [];
 
         if (!currentUser) {
             window.location.href = 'index.html';
+        } else {
+            loadUserConnections();
         }
 
         function handleFileSelect(event) {
@@ -114,48 +113,69 @@
             reader.readAsDataURL(file);
         }
 
-        function addGroupMember() {
-            const codeInput = document.getElementById('member-code-input');
-            const code = codeInput.value.trim().toUpperCase();
+        async function loadUserConnections() {
+            // Fetch accepted connections where current user is sender or receiver
+            const { data: connections, error } = await supabaseClient
+                .from('connections')
+                .select('*')
+                .eq('status', 'accepted')
+                .or(`sender_username.eq.${currentUser.username},receiver_username.eq.${currentUser.username}`);
 
-            if (!code) return;
-            if (code === currentUser.chat_code) {
-                alert("You are automatically the creator/admin of this group.");
-                codeInput.value = '';
-                return;
-            }
-            if (addedMemberCodes.includes(code)) {
-                alert("This chat code is already added.");
-                codeInput.value = '';
+            if (error) {
+                document.getElementById('connections-checklist').innerHTML = `<span class="text-xs text-red-400 p-2 text-center">Failed to load connections.</span>`;
                 return;
             }
 
-            addedMemberCodes.push(code);
-            codeInput.value = '';
-            renderMemberChips();
+            if (!connections || connections.length === 0) {
+                document.getElementById('connections-checklist').innerHTML = `<span class="text-xs text-slate-500 p-2 text-center">No connections found. Add contacts first via chat codes.</span>`;
+                return;
+            }
+
+            // Extract usernames of connected friends
+            let friendUsernames = [];
+            connections.forEach(c => {
+                if (c.sender_username === currentUser.username) friendUsernames.push(c.receiver_username);
+                if (c.receiver_username === currentUser.username) friendUsernames.push(c.sender_username);
+            });
+
+            // Fetch profiles for those usernames
+            const { data: profiles, error: profError } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .in('username', friendUsernames);
+
+            if (profError || !profiles) {
+                document.getElementById('connections-checklist').innerHTML = `<span class="text-xs text-slate-500 p-2 text-center">No connection profiles available.</span>`;
+                return;
+            }
+
+            connectionsList = profiles;
+            renderConnectionsChecklist();
         }
 
-        function removeGroupMember(code) {
-            addedMemberCodes = addedMemberCodes.filter(c => c !== code);
-            renderMemberChips();
-        }
-
-        function renderMemberChips() {
-            const container = document.getElementById('members-chip-container');
-            if (addedMemberCodes.length === 0) {
-                container.innerHTML = `<span class="text-xs text-slate-500 p-1">No additional members added yet.</span>`;
-                return;
-            }
-
+        function renderConnectionsChecklist() {
+            const container = document.getElementById('connections-checklist');
             container.innerHTML = '';
-            addedMemberCodes.forEach(code => {
-                const chip = document.createElement('div');
-                chip.className = 'flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-mono text-orange-400';
-                chip.innerHTML = `
-                    <span>${code}</span>
-                    <button type="button" onclick="removeGroupMember('${code}')" class="text-slate-400 hover:text-red-400 font-bold ml-1">&times;</button>
+
+            connectionsList.forEach(friend => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center justify-between p-2 bg-slate-900 hover:bg-slate-800/80 rounded-lg cursor-pointer transition-all border border-slate-800';
+                
+                let avatarHTML = friend.avatar_url 
+                    ? `<img src="${friend.avatar_url}" class="w-8 h-8 rounded-full object-cover">`
+                    : `<div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center font-bold text-orange-400 text-xs">${friend.name.charAt(0).toUpperCase()}</div>`;
+
+                label.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        ${avatarHTML}
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-white truncate">${friend.name}</p>
+                            <p class="text-[10px] text-slate-400 truncate">@${friend.username}</p>
+                        </div>
+                    </div>
+                    <input type="checkbox" name="group_invite" value="${friend.username}" class="w-4 h-4 accent-orange-600 rounded bg-slate-950 border-slate-700 cursor-pointer">
                 `;
-                container.appendChild(chip);
+                container.appendChild(label);
             });
         }
 
@@ -166,6 +186,11 @@
 
             if (!groupName) return;
 
+            // Collect selected checkboxes
+            const selectedCheckboxes = document.querySelectorAll('input[name="group_invite"]:checked');
+            let selectedUsernames = [];
+            selectedCheckboxes.forEach(cb => selectedUsernames.push(cb.value));
+
             const createBtn = document.getElementById('create-btn');
             createBtn.textContent = 'Creating group...';
             createBtn.disabled = true;
@@ -173,8 +198,7 @@
             // Generate unique Group Chat Code format: GRP-XXXXXX
             const groupChatCode = 'GRP-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
-            // 1. Create Group record in a groups table (or structured JSON table schema)
-            // Let's assume you have a 'groups' table with columns: id, name, description, avatar_url, chat_code, created_by
+            // 1. Create Group record
             const { data: groupData, error: groupError } = await supabaseClient
                 .from('groups')
                 .insert([{
@@ -194,32 +218,22 @@
                 return;
             }
 
-            // 2. Add creator as Admin in group_members table
+            // 2. Add creator as Admin, and selected connections as 'pending' members so they can accept/decline
             const membersPayload = [{
                 group_id: groupData.id,
                 username: currentUser.username,
-                role: 'admin'
+                role: 'admin',
+                status: 'accepted' // Creator joins immediately
             }];
 
-            // Resolve added member chat codes to usernames
-            if (addedMemberCodes.length > 0) {
-                const { data: foundProfiles } = await supabaseClient
-                    .from('profiles')
-                    .select('username, chat_code')
-                    .in('chat_code', addedMemberCodes);
-
-                if (foundProfiles) {
-                    foundProfiles.forEach(p => {
-                        if (p.username !== currentUser.username) {
-                            membersPayload.push({
-                                group_id: groupData.id,
-                                username: p.username,
-                                role: 'member'
-                            });
-                        }
-                    });
-                }
-            }
+            selectedUsernames.forEach(username => {
+                membersPayload.push({
+                    group_id: groupData.id,
+                    username: username,
+                    role: 'member',
+                    status: 'pending' // Needs acceptance/action
+                });
+            });
 
             const { error: memError } = await supabaseClient
                 .from('group_members')
@@ -228,7 +242,7 @@
             if (memError) {
                 alert('Group created, but encountered an error adding members: ' + memError.message);
             } else {
-                alert('Group created successfully!');
+                alert('Group created successfully! Invitations sent to selected connections.');
             }
 
             window.location.href = 'chatlist.html';
