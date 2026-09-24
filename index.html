@@ -31,108 +31,58 @@
             animation: welcomeSwirl 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* --- ROBUST LAYOUT & VIEWPORT FALLBACKS ---  */
-        * { box-sizing: border-box; }
-        html, body { 
-            background-color: #020617; 
-            color: #f1f5f9; 
-            margin: 0; 
-            padding: 0; 
-            font-family: ui-sans-serif, system-ui, sans-serif; 
-            width: 100%;
-            height: 100vh;
-            height: 100dvh;
-            overflow: hidden; 
+        /* Original fluid scrolling layout restored */
+        body {
+            background-color: #020617;
+            color: #f1f5f9;
+            margin: 0;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            min-height: 100vh;
         }
-        
-        .app-container {
-            position: relative;
-            width: 100%;
-            max-width: 28rem;
-            height: 100%;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            background-color: #0f172a;
-            overflow: hidden;
-        }
-
-        /* Layout & Display fallbacks */
-        .hidden { display: none !important; }
-        .flex { display: flex !important; }
-        .fixed { position: fixed !important; }
-        .absolute { position: absolute !important; }
-        .relative { position: relative !important; }
-        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; }
-        
-        /* Grid fallbacks for full-width side-by-side buttons */
-        .grid-cols-2 { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.75rem !important; width: 100% !important; }
-        
-        /* Background & Positioning fallbacks */
-        .bg-cover { background-size: cover !important; }
-        .bg-center { background-position: center !important; }
-        
-        /* Color & Theme fallbacks */
-        .bg-slate-950 { background-color: #020617 !important; }
-        .bg-slate-900 { background-color: #0f172a !important; }
-        .text-slate-100 { color: #f1f5f9 !important; }
-        .text-slate-300 { color: #cbd5e1 !important; }
-        .text-slate-400 { color: #94a3b8 !important; }
-        .text-orange-500 { color: #f97316 !important; }
-        .bg-orange-600 { background-color: #ea580c !important; color: #ffffff !important; }
-        .bg-orange-600:hover { background-color: #f97316 !important; }
-        .bg-slate-800 { background-color: #1e293b !important; }
-        .border-slate-800 { border-color: #1e293b !important; }
-        .border-slate-700 { border-color: #334155 !important; }
-        .border-white\/10 { border-color: rgba(255, 255, 255, 0.1) !important; }
-        .bg-white\/5 { background-color: rgba(255, 255, 255, 0.05) !important; }
-        .rounded-xl { border-radius: 0.75rem !important; }
-        .rounded-2xl { border-radius: 1rem !important; }
-        .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important; }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 font-sans">
 
-    <div class="app-container shadow-2xl border-x border-slate-800">
+    <div class="min-h-screen flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800">
         
-        <!-- Background Image Container with proper z-index and gradient overlay -->
+        <!-- Background Image Container with gradient overlay matching the original look -->
         <div class="absolute inset-0 bg-slate-950 bg-cover bg-center" style="background-image: url('image1-bg.jpg'); z-index: 0;">
-            <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.78) 50%, rgba(2, 6, 23, 0.45) 100%);"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(2, 6, 23, 0.4) 0%, rgba(2, 6, 23, 0.85) 60%, rgba(2, 6, 23, 0.98) 100%);"></div>
         </div>
 
-        <!-- Content Area: Perfectly distributed flex spacing to keep buttons pinned securely at the bottom -->
-        <div class="relative z-10 flex flex-col justify-between flex-1 p-6 pt-10 pb-8 h-full" style="z-index: 10; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+        <!-- Content Area -->
+        <div class="relative z-10 flex flex-col justify-between flex-1 p-6 pt-16 pb-10 min-h-screen">
             
             <!-- Top Header & Text Section -->
-            <div class="space-y-4 text-left">
-                <div class="text-left w-full pb-1 overflow-hidden">
-                    <h2 class="text-4xl tracking-wide text-white drop-shadow-md animate-swirl inline-block" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
+            <div class="space-y-6 text-left">
+                <div class="text-left w-full pb-2 overflow-hidden">
+                    <h2 class="text-5xl tracking-wide text-white drop-shadow-md animate-swirl inline-block" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
                         CHAT<span class="text-orange-500">lite</span>
                     </h2>
                 </div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-white leading-tight">
+                <h1 class="text-4xl font-extrabold tracking-tight text-white leading-tight">
                     Take control of your conversations, effortlessly.
                 </h1>
-                <p class="text-slate-300 text-sm leading-relaxed">
+                <p class="text-slate-300 text-base leading-relaxed">
                     Your private, secure family messaging space built just for you and your loved ones.
                 </p>
             </div>
 
             <!-- Bottom Action Group: Indicators + Side-by-Side Buttons -->
-            <div class="space-y-5 pb-2">
+            <div class="space-y-6 pt-8">
                 <!-- Pagination Dots Indicator -->
                 <div class="flex items-center space-x-1.5">
-                    <span class="rounded-full bg-slate-600" style="background-color: #475569; display: inline-block; width: 0.375rem; height: 0.375rem; border-radius: 9999px;"></span>
-                    <span class="rounded-full bg-orange-500" style="background-color: #f97316; display: inline-block; width: 1.5rem; height: 0.375rem; border-radius: 9999px;"></span>
-                    <span class="rounded-full bg-slate-600" style="background-color: #475569; display: inline-block; width: 0.375rem; height: 0.375rem; border-radius: 9999px;"></span>
+                    <span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span>
+                    <span class="h-1.5 w-6 rounded-full bg-orange-500"></span>
+                    <span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span>
                 </div>
 
                 <!-- Side-by-Side Action Buttons -->
-                <div class="grid grid-cols-2 gap-3 w-full" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; width: 100%;">
-                    <button onclick="window.location.href='register.html'" class="w-full py-3.5 px-4 bg-slate-800/80 hover:bg-slate-800 text-white font-semibold rounded-xl border border-slate-700/60 backdrop-blur-md transition-all text-center cursor-pointer shadow-lg">
+                <div class="grid grid-cols-2 gap-3 w-full">
+                    <button onclick="window.location.href='register.html'" class="w-full py-4 px-4 bg-slate-800/80 hover:bg-slate-800 text-white font-semibold rounded-xl border border-slate-700/60 backdrop-blur-md transition-all text-center cursor-pointer shadow-lg">
                         Create Profile
                     </button>
-                    <button onclick="openLoginModal()" class="w-full py-3.5 px-4 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl shadow-lg shadow-orange-600/30 transition-all text-center cursor-pointer">
+                    <button onclick="openLoginModal()" class="w-full py-4 px-4 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl shadow-lg shadow-orange-600/30 transition-all text-center cursor-pointer">
                         Access Chats
                     </button>
                 </div>
@@ -167,19 +117,6 @@
 
     <script src="supabase.js"></script>
     <script>
-        // Register Service Worker with robust offline caching support
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => {
-                        console.log('Service Worker registered successfully:', reg.scope);
-                        // Check for updates on page load/reload
-                        reg.update();
-                    })
-                    .catch(err => console.log('Service Worker registration failed:', err));
-            });
-        }
-
         function openLoginModal() {
             const modal = document.getElementById('login-modal');
             modal.classList.remove('hidden');
@@ -210,21 +147,10 @@
                     return;
                 }
 
-                // Save user session locally and redirect to chat list page
                 localStorage.setItem('chatlite_user', JSON.stringify(data));
                 window.location.href = 'chatlist.html';
             } catch (err) {
-                // Offline fallback: if network fails, check if credentials match a locally saved profile or previous session
-                console.warn('Network error during login, attempting offline fallback...', err);
-                const cachedUser = localStorage.getItem('chatlite_user');
-                if (cachedUser) {
-                    const parsedUser = JSON.parse(cachedUser);
-                    if (parsedUser.username === username) {
-                        window.location.href = 'chatlist.html';
-                        return;
-                    }
-                }
-                alert('You are offline and no matching local session was found. Please connect to the internet to sign in for the first time.');
+                alert('An error occurred during login. Please check your connection.');
             }
         }
     </script>
