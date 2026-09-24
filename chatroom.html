@@ -826,11 +826,29 @@
 
         function subscribeToMessages() {
             if (!navigator.onLine) return;
+
+            // Sort usernames alphabetically to create a uniform, unique room channel name
+            const sortedUsers = [currentUser.username, targetUsername].sort();
+            const channelName = `room_${sortedUsers[0]}_${sortedUsers[1]}`;
+
+            if (messageSubscription) {
+                supabaseClient.removeChannel(messageSubscription);
+            }
+
             messageSubscription = supabaseClient
-                .channel('public:messages')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
-                    fetchMessages();
-                })
+                .channel(channelName)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'messages',
+                        filter: `or(and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username}))`
+                    },
+                    payload => {
+                        fetchMessages();
+                    }
+                )
                 .subscribe();
         }
 
