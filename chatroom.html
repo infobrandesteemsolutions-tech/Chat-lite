@@ -338,7 +338,6 @@
                 wrapper.classList.add('bg-indigo-950/30', 'p-2', 'rounded-xl');
             }
 
-            // --- Press & Tap Handlers for Options Menu vs Multi-Select ---
             let pressTimer = null;
             const startPress = () => {
                 if (msg.is_offline_pending) return; 
@@ -377,7 +376,6 @@
                 }
             };
 
-            // --- Swipe Right to Reply Handlers ---
             let touchStartX = 0;
             let touchCurrentX = 0;
 
@@ -498,7 +496,6 @@
             }
         }
 
-        // --- MULTI-SELECT FUNCTIONS ---
         function enterMultiSelectMode(msg) {
             isMultiSelectMode = true;
             selectedMessageIds.clear();
@@ -546,7 +543,6 @@
             const selectedMsgs = messagesCache.filter(m => selectedMessageIds.has(m.id));
 
             if (actionType === 'forward') {
-                // Forward the first selected message content (or combine if needed)
                 const firstMsg = selectedMsgs[0];
                 if (firstMsg) {
                     localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: firstMsg.content, type: firstMsg.message_type || 'text' }));
@@ -598,7 +594,6 @@
             }
         }
 
-        // --- REPLY MANAGEMENT FUNCTIONS ---
         function setReplyTarget(msg) {
             if (isMultiSelectMode) return;
             replyingToMessage = msg;
@@ -628,7 +623,6 @@
             replyBar.classList.add('hidden');
         }
 
-        // --- OFFLINE QUEUE MANAGEMENT & SYNC ---
         async function flushOfflineQueue() {
             const queue = loadOfflineQueue();
             if (queue.length === 0) return;
@@ -670,11 +664,9 @@
         }
 
         window.addEventListener('online', async () => {
-            console.log('Back online! Flushing offline queue...');
             await fetchMessages();
         });
 
-        // --- MESSAGE OPTIONS (LONG PRESS) & ACTIONS ---
         function openMessageOptions(msg) {
             if (isMultiSelectMode) return;
             const modal = document.getElementById('message-options-modal');
@@ -687,7 +679,6 @@
             const diffHours = (now - msgTime) / (1000 * 60 * 60);
             const within3Hours = diffHours <= 3;
 
-            // 1. Select Multiple Option
             const selectMultipleBtn = document.createElement('button');
             selectMultipleBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             selectMultipleBtn.textContent = '☑️ Select Multiple';
@@ -697,7 +688,6 @@
             };
             actionsContainer.appendChild(selectMultipleBtn);
 
-            // 2. Reply Option
             const replyBtn = document.createElement('button');
             replyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             replyBtn.textContent = '↩️ Reply';
@@ -707,7 +697,6 @@
             };
             actionsContainer.appendChild(replyBtn);
 
-            // 3. Copy Option (Text only)
             if (msg.message_type === 'text' && msg.content) {
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
@@ -719,7 +708,6 @@
                 actionsContainer.appendChild(copyBtn);
             }
 
-            // 4. Forward Option
             const forwardBtn = document.createElement('button');
             forwardBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             forwardBtn.textContent = '↗️ Forward';
@@ -730,7 +718,6 @@
             };
             actionsContainer.appendChild(forwardBtn);
 
-            // 5. Delete for me (Only me) Option
             const deleteForMeBtn = document.createElement('button');
             deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             deleteForMeBtn.textContent = '🗑️ Only me';
@@ -740,7 +727,6 @@
             };
             actionsContainer.appendChild(deleteForMeBtn);
 
-            // 6. Delete for everyone Option
             if (isSender && within3Hours) {
                 const deleteForEveryoneBtn = document.createElement('button');
                 deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
@@ -917,6 +903,10 @@
             document.getElementById('media-preview-bar').classList.add('hidden');
             document.getElementById('media-preview-bar').classList.remove('flex');
             document.getElementById('upload-progress-bar').style.width = '0%';
+            // Reset the file input values so re-selecting the same file works properly
+            document.getElementById('media-file-input').value = '';
+            document.getElementById('camera-photo-input').value = '';
+            document.getElementById('camera-video-input').value = '';
         }
 
         async function startVoiceRecording() {
@@ -970,11 +960,27 @@
         }
 
         function stopRecordingOnly() {
-            if (mediaRecorder && isRecording) {
-                mediaRecorder.stop();
+            if (mediaRecorder && (isRecording || isPaused)) {
+                // Ensure mediaRecorder is active before calling stop
+                if (mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
                 isRecording = false;
+                isPaused = false;
                 clearInterval(recordingTimerInterval);
                 
+                // Stop all audio stream tracks to release microphone light/access
+                if (mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+
+                // Hide the live recording controls interface so the main form buttons become active for sending
+                document.getElementById('recording-ui').classList.add('hidden');
+                document.getElementById('recording-ui').classList.remove('flex');
+                document.getElementById('message-input').classList.remove('hidden');
+                document.getElementById('mic-btn').classList.remove('hidden');
+
+                // Show the media preview staging bar so user can see it's ready to dispatch
                 document.getElementById('media-preview-bar').classList.remove('hidden');
                 document.getElementById('media-preview-bar').classList.add('flex');
                 document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
@@ -985,8 +991,12 @@
 
         function cancelRecording() {
             if (mediaRecorder && (isRecording || isPaused)) {
-                mediaRecorder.ondataavailable = null;
-                mediaRecorder.stop();
+                if (mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                if (mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
             }
             resetRecordingUI();
             clearStagedMedia();
@@ -1005,6 +1015,7 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
 
+            // If the user clicks send while actively recording, stop the recording first instead of ignoring or getting stuck
             if (isRecording) {
                 stopRecordingOnly();
                 return;
@@ -1019,11 +1030,12 @@
             }
 
             if (recordedBlob) {
+                const blobToSend = recordedBlob;
+                recordedBlob = null; // Clear immediately to prevent double submits
                 const reader = new FileReader();
-                reader.readAsDataURL(recordedBlob);
+                reader.readAsDataURL(blobToSend);
                 reader.onloadend = async () => {
                     await sendPayloadToSupabase(reader.result, 'audio', replyMeta);
-                    recordedBlob = null;
                     resetRecordingUI();
                     clearStagedMedia();
                     cancelReply();
@@ -1032,7 +1044,9 @@
             }
 
             if (stagedPayload) {
-                await sendPayloadToSupabase(stagedPayload.content, stagedPayload.type, replyMeta);
+                const payloadToSend = stagedPayload;
+                stagedPayload = null; // Clear immediately
+                await sendPayloadToSupabase(payloadToSend.content, payloadToSend.type, replyMeta);
                 clearStagedMedia();
                 cancelReply();
                 return;
