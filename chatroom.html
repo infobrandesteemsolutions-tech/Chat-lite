@@ -322,31 +322,30 @@
             wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row relative transition-transform duration-200 select-none`;
             if (msg.id) wrapper.setAttribute('data-id', msg.id);
 
-            // Check if this message is currently selected in multi-select mode
             const isSelected = msg.id && selectedMessageIds.has(msg.id);
 
-            // Outer bubble container layout to accommodate select checkbox/highlight
             const rowFlex = document.createElement('div');
             rowFlex.className = `flex items-center gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
 
-            // Checkbox indicator for Multi-Select mode
             const checkboxEl = document.createElement('div');
             checkboxEl.className = `w-5 h-5 rounded-full border border-slate-600 flex items-center justify-center text-xs transition-all flex-shrink-0 ${isMultiSelectMode ? 'flex' : 'hidden'} ${isSelected ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900'}`;
             checkboxEl.innerHTML = isSelected ? '✓' : '';
             rowFlex.appendChild(checkboxEl);
 
-            // Highlight wrapper if selected
             if (isSelected) {
                 wrapper.classList.add('bg-indigo-950/30', 'p-2', 'rounded-xl');
             }
 
-            // --- Long Press & Click Handlers ---
+            // --- Press & Tap Handlers for Options Menu vs Multi-Select ---
             let pressTimer = null;
             const startPress = () => {
                 if (msg.is_offline_pending) return; 
                 pressTimer = setTimeout(() => {
-                    if (!isMultiSelectMode) {
-                        enterMultiSelectMode(msg);
+                    if (isMultiSelectMode) {
+                        if (msg.id) toggleMessageSelection(msg.id);
+                    } else {
+                        // Long press opens individual options (reply, copy, forward, delete)
+                        openMessageOptions(msg);
                     }
                 }, 600);
             };
@@ -361,37 +360,23 @@
             wrapper.addEventListener('mouseup', cancelPress);
             wrapper.addEventListener('mouseleave', cancelPress);
 
-            // Standard click/tap behavior
             wrapper.addEventListener('click', (e) => {
                 if (isMultiSelectMode && msg.id) {
                     toggleMessageSelection(msg.id);
                     e.stopPropagation();
-                } else if (!isMultiSelectMode) {
-                    // Check if long press didn't trigger, open standard individual options on regular short tap if desired, or let long press handle options.
                 }
             });
 
-            // Also allow long press to open standard single options menu if NOT in multi-select mode
-            let singlePressTimer = null;
-            wrapper.addEventListener('touchstart', () => {
-                singlePressTimer = setTimeout(() => {
-                    // Handled by startPress for multi-select. If we want context menu on long press instead, or let multi-select take over.
-                }, 600);
-            });
-
-            // Double click or secondary way to trigger options menu: We can hook individual options modal to a specific action or button if needed, but long-press on single items can also trigger openMessageOptions if multi-select isn't active. Let's make long-press trigger multi-select directly as requested. For single options like reply/copy, we can open options modal via a quick double tap or normal tap context, or let's attach openMessageOptions to a separate gesture or keep it. Wait, the prompt states: "When you press and hold down, you should be able to select multiple messages". Let's make long press initiate multi-select mode and toggle that message!
-
-            // Override long-press behavior specifically for Multi-Select activation:
             wrapper.oncontextmenu = (e) => {
                 e.preventDefault();
                 if (!msg.is_offline_pending && msg.id) {
                     if (!isMultiSelectMode) {
-                        enterMultiSelectMode(msg);
+                        openMessageOptions(msg);
                     }
                 }
             };
 
-            // --- Swipe Right to Reply Handlers (Disabled during multi-select) ---
+            // --- Swipe Right to Reply Handlers ---
             let touchStartX = 0;
             let touchCurrentX = 0;
 
@@ -571,7 +556,6 @@
 
             localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
             
-            const countSnapshot = selectedMessageIds.size;
             exitMultiSelectMode();
             renderMessages(messagesCache);
 
