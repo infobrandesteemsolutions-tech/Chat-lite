@@ -7,35 +7,64 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-950 text-slate-100 h-screen flex flex-col font-sans overflow-hidden">
 
-    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
-        <!-- Header -->
-        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-10">
-            <div class="flex items-center gap-3">
-                <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer">&larr;</button>
-                <div class="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-sm overflow-hidden" id="active-chat-avatar">U</div>
-                <div>
-                    <h3 class="font-bold text-sm" id="active-chat-name">Username</h3>
-                    <span class="text-[10px] text-slate-400" id="active-chat-gender">Gender</span>
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
+        <!-- Header (Fixed & Non-scrolling) -->
+        <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
+            <div class="flex items-center gap-2.5 overflow-hidden">
+                <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">&larr;</button>
+                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden" id="active-chat-avatar">U</div>
+                <div class="overflow-hidden">
+                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Username</h3>
+                    <span class="text-[9px] text-slate-400 truncate block" id="active-chat-gender">Gender</span>
                 </div>
+            </div>
+            <!-- Header Quick Action Buttons -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+                <button onclick="toggleSearchBox()" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Search Keywords">🔍</button>
+                <button onclick="openMediaGallery('file')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Files">📁</button>
+                <button onclick="openMediaGallery('image')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Images">🖼️</button>
+                <button onclick="openMediaGallery('video')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Videos">🎬</button>
             </div>
         </div>
 
-        <!-- Messages Area -->
+        <!-- Hidden Search Bar Slide-down -->
+        <div id="search-container" class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
+            <input type="text" id="search-keyword-input" placeholder="Search keywords in chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
+            <button onclick="toggleSearchBox()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
+        </div>
+
+        <!-- Messages Area (Scrollable independently underneath the fixed header) -->
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
             <!-- Messages load here -->
         </div>
 
-        <!-- Hidden File Inputs for Gallery, Documents, and Camera -->
-        <input type="file" id="media-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelected(event)">
-        <input type="file" id="camera-photo-input" class="hidden" accept="image/*" capture="environment" onchange="handleFileSelected(event)">
-        <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="handleFileSelected(event)">
+        <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
+        <div id="media-preview-bar" class="hidden p-3 bg-slate-950 border-t border-slate-800 flex-col gap-2 z-20 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-indigo-400" id="preview-title">Staged Media Preview</span>
+                <button type="button" onclick="clearStagedMedia()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">Discard</button>
+            </div>
+            <div id="preview-container" class="max-h-32 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-2 text-xs text-slate-300">
+                <!-- Preview content/thumbnail -->
+            </div>
+            <!-- Upload Progress Bar -->
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="upload-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready. Hit Send button to upload & deliver.</span>
+        </div>
+
+        <!-- Hidden File Inputs -->
+        <input type="file" id="media-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onchange="stageFileSelected(event)">
+        <input type="file" id="camera-photo-input" class="hidden" accept="image/*" capture="environment" onchange="stageFileSelected(event)">
+        <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="stageFileSelected(event)">
 
         <!-- Attachment Options Popup Menu -->
         <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
             <button onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📁 File
+                📁 File / Document
             </button>
             <button onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
                 📷 Take Photo
@@ -45,8 +74,19 @@
             </button>
         </div>
 
-        <!-- Bottom Input Bar -->
-        <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative">
+        <!-- Media Gallery Modal Drawer -->
+        <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-sm text-white" id="gallery-title">Chat Media</h3>
+                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">Close</button>
+            </div>
+            <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
+                <!-- Gallery items populated here -->
+            </div>
+        </div>
+
+        <!-- Bottom Input Bar (Fixed) -->
+        <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
             <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer" title="Attach Media">
                 +
             </button>
@@ -92,9 +132,11 @@
         document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
 
         let messageSubscription = null;
+        let messagesCache = [];
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
+        let stagedPayload = null; // Staged item awaiting send button trigger
         let isRecording = false;
         let isPaused = false;
         let recordingTimerInterval = null;
@@ -105,10 +147,17 @@
             menu.classList.toggle('hidden');
         }
 
-        async function fetchMessages() {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
+        function toggleSearchBox() {
+            const searchBar = document.getElementById('search-container');
+            searchBar.classList.toggle('hidden');
+            if (!searchBar.classList.contains('hidden')) {
+                document.getElementById('search-keyword-input').focus();
+            } else {
+                filterMessages('');
+            }
+        }
 
+        async function fetchMessages() {
             const { data: messages, error } = await supabaseClient
                 .from('messages')
                 .select('*')
@@ -121,17 +170,54 @@
             }
 
             if (messages) {
-                messages.forEach(msg => appendMessageToDOM(msg));
-                container.scrollTop = container.scrollHeight;
+                messagesCache = messages;
+                renderMessages(messagesCache);
+                markIncomingMessagesAsRead(messagesCache);
             }
         }
 
-        function appendMessageToDOM(msg) {
+        async function markIncomingMessagesAsRead(messages) {
+            const unreadIds = messages
+                .filter(m => m.receiver_username === currentUser.username && !m.is_read)
+                .map(m => m.id);
+
+            if (unreadIds.length > 0) {
+                await supabaseClient
+                    .from('messages')
+                    .update({ is_read: true })
+                    .in('id', unreadIds);
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = '';
+
+            messages.forEach(msg => appendMessageToDOM(msg, false));
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function filterMessages(keyword) {
+            const term = keyword.toLowerCase();
+            if (!term) {
+                renderMessages(messagesCache);
+                return;
+            }
+            const filtered = messagesCache.filter(m => {
+                if (m.message_type === 'text' && m.content.toLowerCase().includes(term)) return true;
+                if (m.message_type === keyword) return true;
+                return false;
+            });
+            renderMessages(filtered);
+        }
+
+        function appendMessageToDOM(msg, scrollToBottom = true) {
             const container = document.getElementById('chat-messages');
             const isMe = msg.sender_username === currentUser.username;
 
             const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`;
+            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row`;
+            wrapper.setAttribute('data-id', msg.id);
 
             const bubble = document.createElement('div');
             bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
@@ -144,8 +230,7 @@
             } else if (type === 'video') {
                 bubble.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
             } else if (type === 'audio') {
-                // Unique ID for scoped player controls
-                const audioId = 'audio_' + Math.random().toString(36.20).substring(2, 9);
+                const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
                 bubble.innerHTML = `
                     <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
                         <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
@@ -160,28 +245,23 @@
                     </div>
                 `;
 
-                // Setup Audio metadata & time updating listeners after injection
                 setTimeout(() => {
                     const audioEl = document.getElementById(audioId);
                     if (!audioEl) return;
-                    const container = audioEl.closest('[data-audio-container]');
-                    const rangeEl = container.querySelector('.audio-range');
-                    const timeEl = container.querySelector('.audio-current-time');
+                    const c = audioEl.closest('[data-audio-container]');
+                    const rangeEl = c.querySelector('.audio-range');
+                    const timeEl = c.querySelector('.audio-current-time');
 
                     audioEl.addEventListener('loadedmetadata', () => {
                         timeEl.textContent = formatAudioTime(audioEl.duration);
                     });
-
                     audioEl.addEventListener('timeupdate', () => {
                         if (!audioEl.duration) return;
-                        const progress = (audioEl.currentTime / audioEl.duration) * 100;
-                        rangeEl.value = progress;
+                        rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
                         timeEl.textContent = formatAudioTime(audioEl.currentTime);
                     });
-
                     audioEl.addEventListener('ended', () => {
-                        const playBtn = container.querySelector('button');
-                        playBtn.textContent = '▶';
+                        c.querySelector('button').textContent = '▶';
                         audioEl.currentTime = 0;
                     });
                 }, 50);
@@ -192,16 +272,31 @@
                 bubble.textContent = msg.content;
             }
 
-            const time = document.createElement('span');
-            time.className = 'text-[10px] text-slate-500 px-1';
-            time.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const metaRow = document.createElement('div');
+            metaRow.className = 'flex items-center gap-1 px-1 text-[10px] text-slate-400';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            metaRow.appendChild(timeSpan);
+
+            // Read Receipt Ticks (Only for messages sent by current user)
+            if (isMe) {
+                const tickSpan = document.createElement('span');
+                tickSpan.className = 'font-bold text-xs ' + (msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+                tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                metaRow.appendChild(tickSpan);
+            }
 
             wrapper.appendChild(bubble);
-            wrapper.appendChild(time);
+            wrapper.appendChild(metaRow);
             container.appendChild(wrapper);
+
+            if (scrollToBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
         }
 
-        // Audio Player Helper Functions
+        // Audio helper functions
         function toggleAudioPlay(audioId, btn) {
             const audio = document.getElementById(audioId);
             if (audio.paused) {
@@ -216,19 +311,12 @@
         function seekAudio(audioId, value) {
             const audio = document.getElementById(audioId);
             if (!audio.duration) return;
-            const targetTime = (value / 100) * audio.duration;
-            audio.currentTime = targetTime;
+            audio.currentTime = (value / 100) * audio.duration;
         }
 
         function toggleAudioSpeed(audioId, speedBtn) {
             const audio = document.getElementById(audioId);
-            let currentRate = audio.playbackRate;
-            let nextRate = 1;
-            if (currentRate === 1) nextRate = 1.5;
-            else if (currentRate === 1.5) nextRate = 2;
-            else if (currentRate === 2) nextRate = 0.5;
-            else if (currentRate === 0.5) nextRate = 1;
-
+            let nextRate = audio.playbackRate === 1 ? 1.5 : audio.playbackRate === 1.5 ? 2 : 1;
             audio.playbackRate = nextRate;
             speedBtn.textContent = nextRate + 'x';
         }
@@ -236,65 +324,77 @@
         function formatAudioTime(secs) {
             if (isNaN(secs)) return '0:00';
             const mins = Math.floor(secs / 60);
-            const remainingSecs = Math.floor(secs % 60);
-            return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`;
+            const rSecs = Math.floor(secs % 60);
+            return `${mins}:${rSecs < 10 ? '0' : ''}${rSecs}`;
         }
 
-        async function handleFileSelected(event) {
+        // Staging Media & Files without sending automatically
+        function stageFileSelected(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) {
-                const base64Data = e.target.result;
+            
+            // Simulate Upload Progress bar feedback
+            const progressBar = document.getElementById('upload-progress-bar');
+            const statusText = document.getElementById('upload-status-text');
+            document.getElementById('media-preview-bar').classList.remove('hidden');
+            document.getElementById('media-preview-bar').classList.add('flex');
+            
+            progressBar.style.width = '10%';
+            statusText.textContent = 'Reading file stream...';
+
+            reader.onprogress = (data) => {
+                if (data.lengthComputable) {
+                    const percent = Math.round((data.loaded / data.total) * 90);
+                    progressBar.style.width = percent + '%';
+                }
+            };
+
+            reader.onload = function(e) {
+                progressBar.style.width = '100%';
+                statusText.textContent = 'Ready! Hit the Send button to dispatch.';
+
                 let type = 'file';
                 if (file.type.startsWith('image/')) type = 'image';
                 else if (file.type.startsWith('video/')) type = 'video';
                 else if (file.type.startsWith('audio/')) type = 'audio';
 
-                await sendMediaPayload(base64Data, type);
+                stagedPayload = {
+                    content: e.target.result,
+                    type: type
+                };
+
+                const previewContainer = document.getElementById('preview-container');
+                if (type === 'image') {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-28 rounded object-contain">`;
+                } else if (type === 'video') {
+                    previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-28 rounded" controls></video>`;
+                } else {
+                    previewContainer.innerHTML = `<span class="font-semibold">Staged File: ${file.name}</span>`;
+                }
             };
             reader.readAsDataURL(file);
         }
 
-        async function sendMediaPayload(content, type) {
-            const payload = {
-                sender_username: currentUser.username,
-                receiver_username: targetUsername,
-                content: content,
-                message_type: type
-            };
-
-            let { error } = await supabaseClient.from('messages').insert([payload]);
-
-            if (error && error.message.includes('message_type')) {
-                const fallbackPayload = {
-                    sender_username: currentUser.username,
-                    receiver_username: targetUsername,
-                    content: content
-                };
-                const retry = await supabaseClient.from('messages').insert([fallbackPayload]);
-                error = retry.error;
-            }
-
-            if (error) {
-                alert('Failed to send media: ' + error.message);
-            }
+        function clearStagedMedia() {
+            stagedPayload = null;
+            recordedBlob = null;
+            document.getElementById('media-preview-bar').classList.add('hidden');
+            document.getElementById('media-preview-bar').classList.remove('flex');
+            document.getElementById('upload-progress-bar').style.width = '0%';
         }
 
+        // Voice Recording functions
         async function startVoiceRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
 
-                mediaRecorder.ondataavailable = event => {
-                    audioChunks.push(event.data);
-                };
-
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                 mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    recordedBlob = audioBlob;
+                    recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 };
 
                 mediaRecorder.start();
@@ -302,27 +402,21 @@
                 isPaused = false;
                 recordedBlob = null;
 
-                // UI adjustments
                 document.getElementById('message-input').classList.add('hidden');
                 document.getElementById('recording-ui').classList.remove('hidden');
                 document.getElementById('recording-ui').classList.add('flex');
-                
-                const micBtn = document.getElementById('mic-btn');
-                micBtn.classList.add('hidden'); // Hide regular mic button, controls are in the recording UI bar
+                document.getElementById('mic-btn').classList.add('hidden');
 
                 recordingSeconds = 0;
                 document.getElementById('recording-timer').textContent = '0:00';
-                document.getElementById('pause-rec-btn').textContent = '⏸ Pause';
-                
                 recordingTimerInterval = setInterval(() => {
                     if (!isPaused) {
                         recordingSeconds++;
-                        const mins = Math.floor(recordingSeconds / 60);
-                        const secs = recordingSeconds % 60;
-                        document.getElementById('recording-timer').textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                        const m = Math.floor(recordingSeconds / 60);
+                        const s = recordingSeconds % 60;
+                        document.getElementById('recording-timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
                     }
                 }, 1000);
-
             } catch (err) {
                 alert('Microphone access denied or unavailable.');
             }
@@ -330,17 +424,15 @@
 
         function togglePauseRecording() {
             if (!mediaRecorder) return;
-            const pauseBtn = document.getElementById('pause-rec-btn');
+            const btn = document.getElementById('pause-rec-btn');
             if (!isPaused) {
                 mediaRecorder.pause();
                 isPaused = true;
-                pauseBtn.textContent = '▶ Resume';
-                pauseBtn.classList.add('text-indigo-400');
+                btn.textContent = '▶ Resume';
             } else {
                 mediaRecorder.resume();
                 isPaused = false;
-                pauseBtn.textContent = '⏸ Pause';
-                pauseBtn.classList.remove('text-indigo-400');
+                btn.textContent = '⏸ Pause';
             }
         }
 
@@ -349,111 +441,146 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 clearInterval(recordingTimerInterval);
+                
+                // Show Voice note staged notification
+                document.getElementById('media-preview-bar').classList.remove('hidden');
+                document.getElementById('media-preview-bar').classList.add('flex');
+                document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
+                document.getElementById('upload-progress-bar').style.width = '100%';
+                document.getElementById('upload-status-text').textContent = 'Hit the Send button to dispatch voice note.';
             }
         }
 
         function cancelRecording() {
-            if (mediaRecorder) {
-                mediaRecorder.ondataavailable = null; // discard chunks
-                if (isRecording || isPaused) {
-                    mediaRecorder.stop();
-                }
+            if (mediaRecorder && (isRecording || isPaused)) {
+                mediaRecorder.ondataavailable = null;
+                mediaRecorder.stop();
             }
-            recordedBlob = null;
             resetRecordingUI();
+            clearStagedMedia();
         }
 
         function resetRecordingUI() {
             clearInterval(recordingTimerInterval);
             isRecording = false;
             isPaused = false;
-
             document.getElementById('recording-ui').classList.add('hidden');
             document.getElementById('recording-ui').classList.remove('flex');
             document.getElementById('message-input').classList.remove('hidden');
-
-            const micBtn = document.getElementById('mic-btn');
-            micBtn.classList.remove('hidden');
+            document.getElementById('mic-btn').classList.remove('hidden');
         }
 
+        // Form Submit Handler (The ONLY trigger for dispatching messages)
         async function handleFormSubmit(e) {
             e.preventDefault();
-            
-            // If we are currently recording, hitting send should stop the recording and then dispatch it
+
+            // If actively recording, clicking send stops recording and stages it
             if (isRecording) {
                 stopRecordingOnly();
-                // Wait briefly for onstop blob assembly
-                setTimeout(async () => {
-                    if (recordedBlob) {
-                        await uploadAndSendRecordedAudio(recordedBlob);
-                        recordedBlob = null;
-                    }
-                    resetRecordingUI();
-                }, 200);
                 return;
             }
 
-            // If recording was stopped beforehand via the stop button, hitting send uploads the finalized recorded blob
+            // If voice note was recorded and staged
             if (recordedBlob) {
-                await uploadAndSendRecordedAudio(recordedBlob);
-                recordedBlob = null;
-                resetRecordingUI();
+                const reader = new FileReader();
+                reader.readAsDataURL(recordedBlob);
+                reader.onloadend = async () => {
+                    await sendPayloadToSupabase(reader.result, 'audio');
+                    recordedBlob = null;
+                    resetRecordingUI();
+                    clearStagedMedia();
+                };
                 return;
             }
 
-            // Normal Text Message Send Flow
+            // If regular media file was staged
+            if (stagedPayload) {
+                await sendPayloadToSupabase(stagedPayload.content, stagedPayload.type);
+                clearStagedMedia();
+                return;
+            }
+
+            // Normal Text Message Send
             const input = document.getElementById('message-input');
             const content = input.value.trim();
             if (!content) return;
 
+            await sendPayloadToSupabase(content, 'text');
+            input.value = '';
+        }
+
+        async function sendPayloadToSupabase(content, type) {
             const payload = {
                 sender_username: currentUser.username,
                 receiver_username: targetUsername,
                 content: content,
-                message_type: 'text'
+                message_type: type,
+                is_read: false
             };
 
             let { error } = await supabaseClient.from('messages').insert([payload]);
-
             if (error && error.message.includes('message_type')) {
-                const fallbackPayload = {
+                const fallback = {
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
-                    content: content
+                    content: content,
+                    is_read: false
                 };
-                const retry = await supabaseClient.from('messages').insert([fallbackPayload]);
+                const retry = await supabaseClient.from('messages').insert([fallback]);
                 error = retry.error;
             }
 
             if (error) {
                 alert('Failed to send message: ' + error.message);
+            } else {
+                fetchMessages();
+            }
+        }
+
+        // Media Gallery Drawers (Files, Images, Videos)
+        function openMediaGallery(typeFilter) {
+            const modal = document.getElementById('media-gallery-modal');
+            const grid = document.getElementById('gallery-content-grid');
+            const title = document.getElementById('gallery-title');
+            modal.classList.remove('hidden');
+            grid.innerHTML = '';
+            title.textContent = `${typeFilter.toUpperCase()} Gallery`;
+
+            const matching = messagesCache.filter(m => {
+                if (typeFilter === 'image' && m.message_type === 'image') return true;
+                if (typeFilter === 'video' && m.message_type === 'video') return true;
+                if (typeFilter === 'file' && (m.message_type === 'file' || m.message_type === 'audio')) return true;
+                return false;
+            });
+
+            if (matching.length === 0) {
+                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
                 return;
             }
 
-            input.value = '';
+            matching.forEach(m => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
+                if (m.message_type === 'image') {
+                    card.innerHTML = `<img src="${m.content}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${m.content}')">`;
+                } else if (m.message_type === 'video') {
+                    card.innerHTML = `<video src="${m.content}" class="h-24 w-full rounded object-cover" controls></video>`;
+                } else {
+                    card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${m.message_type}</a>`;
+                }
+                grid.appendChild(card);
+            });
         }
 
-        async function uploadAndSendRecordedAudio(blob) {
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
-            reader.onloadend = async () => {
-                await sendMediaPayload(reader.result, 'audio');
-            };
+        function closeMediaGallery() {
+            document.getElementById('media-gallery-modal').classList.add('hidden');
         }
 
         function subscribeToMessages() {
             messageSubscription = supabaseClient
                 .channel('public:messages')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    const msg = payload.new;
-                    if (
-                        (msg.sender_username === currentUser.username && msg.receiver_username === targetUsername) ||
-                        (msg.sender_username === targetUsername && msg.receiver_username === currentUser.username)
-                    ) {
-                        appendMessageToDOM(msg);
-                        const container = document.getElementById('chat-messages');
-                        container.scrollTop = container.scrollHeight;
-                    }
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+                    fetchMessages();
                 })
                 .subscribe();
         }
