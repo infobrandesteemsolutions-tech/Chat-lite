@@ -10,22 +10,52 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
 
     <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
-        <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-900">
-            <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer">&larr;</button>
-            <div class="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-sm" id="active-chat-avatar">U</div>
-            <div>
-                <h3 class="font-bold text-sm" id="active-chat-name">Username</h3>
-                <span class="text-[10px] text-slate-400" id="active-chat-gender">Gender</span>
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-10">
+            <div class="flex items-center gap-3">
+                <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer">&larr;</button>
+                <div class="w-9 h-9 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-sm overflow-hidden" id="active-chat-avatar">U</div>
+                <div>
+                    <h3 class="font-bold text-sm" id="active-chat-name">Username</h3>
+                    <span class="text-[10px] text-slate-400" id="active-chat-gender">Gender</span>
+                </div>
             </div>
         </div>
 
+        <!-- Messages Area -->
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
             <!-- Messages load here -->
         </div>
 
-        <form onsubmit="sendMessage(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
-            <input type="text" id="message-input" placeholder="Type a message..." required class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
-            <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer">Send</button>
+        <!-- Hidden File Inputs for Gallery, Documents, and Camera -->
+        <input type="file" id="media-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onchange="handleFileSelected(event)">
+        <input type="file" id="camera-photo-input" class="hidden" accept="image/*" capture="environment" onchange="handleFileSelected(event)">
+        <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="handleFileSelected(event)">
+
+        <!-- Attachment Options Popup Menu -->
+        <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
+            <button onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+                📁 Document / File / Gallery
+            </button>
+            <button onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+                📷 Take Photo
+            </button>
+            <button onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+                📹 Record Video Note
+            </button>
+        </div>
+
+        <!-- Bottom Input Bar -->
+        <form onsubmit="sendMessage(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative">
+            <button type="button" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer" title="Attach Media">
+                +
+            </button>
+            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white">
+            
+            <button type="button" id="mic-btn" onclick="toggleVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="Record Voice Note">
+                🎤
+            </button>
+            <button type="submit" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white">Send</button>
         </form>
     </div>
 
@@ -46,6 +76,14 @@
         document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
 
         let messageSubscription = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+
+        function toggleAttachmentMenu() {
+            const menu = document.getElementById('attachment-menu');
+            menu.classList.toggle('hidden');
+        }
 
         async function fetchMessages() {
             const container = document.getElementById('chat-messages');
@@ -76,10 +114,22 @@
             wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1`;
 
             const bubble = document.createElement('div');
-            bubble.className = `max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
+            bubble.className = `max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
                 isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
             }`;
-            bubble.textContent = msg.content;
+
+            // Render based on message type
+            if (msg.message_type === 'image') {
+                bubble.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="window.open('${msg.content}')">`;
+            } else if (msg.message_type === 'video') {
+                bubble.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
+            } else if (msg.message_type === 'audio') {
+                bubble.innerHTML = `<audio src="${msg.content}" controls class="w-48 h-10"></audio>`;
+            } else if (msg.message_type === 'file') {
+                bubble.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold">📁 Download Attachment</a>`;
+            } else {
+                bubble.textContent = msg.content;
+            }
 
             const time = document.createElement('span');
             time.className = 'text-[10px] text-slate-500 px-1';
@@ -88,6 +138,38 @@
             wrapper.appendChild(bubble);
             wrapper.appendChild(time);
             container.appendChild(wrapper);
+        }
+
+        async function handleFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Data = e.target.result;
+                let type = 'file';
+                if (file.type.startsWith('image/')) type = 'image';
+                else if (file.type.startsWith('video/')) type = 'video';
+                else if (file.type.startsWith('audio/')) type = 'audio';
+
+                await sendMediaPayload(base64Data, type);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function sendMediaPayload(content, type) {
+            const { error } = await supabaseClient
+                .from('messages')
+                .insert([{
+                    sender_username: currentUser.username,
+                    receiver_username: targetUsername,
+                    content: content,
+                    message_type: type
+                }]);
+
+            if (error) {
+                alert('Failed to send media: ' + error.message);
+            }
         }
 
         async function sendMessage(e) {
@@ -101,7 +183,8 @@
                 .insert([{
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
-                    content: content
+                    content: content,
+                    message_type: 'text'
                 }]);
 
             if (error) {
@@ -110,6 +193,40 @@
             }
 
             input.value = '';
+        }
+
+        async function toggleVoiceRecording() {
+            const micBtn = document.getElementById('mic-btn');
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = async () => {
+                            await sendMediaPayload(reader.result, 'audio');
+                        };
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+                    micBtn.classList.add('text-red-500', 'animate-pulse');
+                } catch (err) {
+                    alert('Microphone access denied or unavailable.');
+                }
+            } else {
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('text-red-500', 'animate-pulse');
+            }
         }
 
         function subscribeToMessages() {
