@@ -40,6 +40,25 @@
             <!-- Messages load here -->
         </div>
 
+        <!-- Undo Notification Banner (10 Seconds Timer) -->
+        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
+            <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
+            <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
+        </div>
+
+        <!-- Message Options Popup Modal (Long Press Menu) -->
+        <div id="message-options-modal" class="hidden absolute inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
+                <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
+                    <span>Message Options</span>
+                    <button onclick="closeMessageOptions()" class="text-slate-400 hover:text-white text-base cursor-pointer">&times;</button>
+                </div>
+                <div id="message-options-actions" class="flex flex-col gap-1.5">
+                    <!-- Populated dynamically based on permissions & 3-hour limit for everyone -->
+                </div>
+            </div>
+        </div>
+
         <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
         <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
             <div class="flex items-center justify-between">
@@ -145,6 +164,10 @@
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
 
+        // Undo & Deletion management variables
+        let pendingDeleteTimer = null;
+        let undoTargetMessage = null;
+
         // Load cached messages instantly on boot (Offline First)
         if (messagesCache.length > 0) {
             renderMessages(messagesCache);
@@ -193,7 +216,7 @@
         }
 
         async function fetchMessages() {
-            if (!navigator.onLine) return; // Skip network fetch if offline
+            if (!navigator.onLine) return;
 
             const { data: messages, error } = await supabaseClient
                 .from('messages')
@@ -215,8 +238,13 @@
 
         async function markIncomingMessagesAsRead(messages) {
             if (!navigator.onLine) return;
+            let hiddenForMe = [];
+            try {
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+            } catch(e) {}
+
             const unreadIds = messages
-                .filter(m => m.receiver_username === currentUser.username && !m.is_read)
+                .filter(m => m.receiver_username === currentUser.username && !m.is_read && !hiddenForMe.includes(m.id))
                 .map(m => m.id);
 
             if (unreadIds.length > 0) {
@@ -231,9 +259,15 @@
             const container = document.getElementById('chat-messages');
             container.innerHTML = '';
 
-            messages.forEach(msg => appendMessageToDOM(msg, false));
+            let hiddenForMe = [];
+            try {
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+            } catch(e) {}
+
+            const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
+
+            filtered.forEach(msg => appendMessageToDOM(msg, false));
             
-            // Append any locally queued pending items not yet confirmed on server
             const queue = getOfflineQueue();
             queue.forEach(qMsg => appendMessageToDOM(qMsg, false));
 
@@ -247,6 +281,7 @@
                 return;
             }
             const filtered = messagesCache.filter(m => {
+                if (m.is_deleted_for_everyone) return false;
                 if (m.message_type === 'text' && m.content.toLowerCase().includes(term)) return true;
                 if (m.message_type === keyword) return true;
                 return false;
@@ -261,6 +296,21 @@
             const wrapper = document.createElement('div');
             wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row`;
             if (msg.id) wrapper.setAttribute('data-id', msg.id);
+
+            let pressTimer = null;
+            const startPress = () => {
+                pressTimer = setTimeout(() => openMessageOptions(msg), 600);
+            };
+            const cancelPress = () => {
+                if (pressTimer) clearTimeout(pressTimer);
+            };
+
+            wrapper.addEventListener('touchstart', startPress);
+            wrapper.addEventListener('touchend', cancelPress);
+            wrapper.addEventListener('touchmove', cancelPress);
+            wrapper.addEventListener('mousedown', startPress);
+            wrapper.addEventListener('mouseup', cancelPress);
+            wrapper.addEventListener('mouseleave', cancelPress);
 
             const bubble = document.createElement('div');
             bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
@@ -340,6 +390,124 @@
 
             if (scrollToBottom) {
                 container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // --- MESSAGE DELETE & OPTIONS LOGIC (UPDATED) ---
+        function openMessageOptions(msg) {
+            const modal = document.getElementById('message-options-modal');
+            const actionsContainer = document.getElementById('message-options-actions');
+            actionsContainer.innerHTML = '';
+
+            const isSender = msg.sender_username === currentUser.username;
+            
+            // 3-hour check applies ONLY to delete for everyone
+            const msgTime = new Date(msg.created_at).getTime();
+            const now = new Date().getTime();
+            const diffHours = (now - msgTime) / (1000 * 60 * 60);
+            const within3Hours = diffHours <= 3;
+
+            // 1. Delete for me (NO time bound, always allowed)
+            const deleteForMeBtn = document.createElement('button');
+            deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            deleteForMeBtn.textContent = '🗑️ Delete for me';
+            deleteForMeBtn.onclick = () => {
+                closeMessageOptions();
+                executeDeleteMessage(msg, 'me');
+            };
+            actionsContainer.appendChild(deleteForMeBtn);
+
+            // 2. Delete for everyone (Restricted to sender AND 3-hour limit)
+            if (isSender && within3Hours) {
+                const deleteForEveryoneBtn = document.createElement('button');
+                deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+                deleteForEveryoneBtn.textContent = '🗑️ Delete for everyone';
+                deleteForEveryoneBtn.onclick = () => {
+                    closeMessageOptions();
+                    executeDeleteMessage(msg, 'everyone');
+                };
+                actionsContainer.appendChild(deleteForEveryoneBtn);
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMessageOptions() {
+            const modal = document.getElementById('message-options-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function executeDeleteMessage(msg, scope) {
+            undoTargetMessage = { msg, scope };
+
+            if (scope === 'me') {
+                let hiddenForMe = [];
+                try {
+                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                } catch(e) {}
+                hiddenForMe.push(msg.id);
+                localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+            } else {
+                msg.is_deleted_for_everyone = true;
+            }
+            renderMessages(messagesCache);
+
+            showUndoBanner(10, async () => {
+                if (scope === 'everyone') {
+                    await supabaseClient
+                        .from('messages')
+                        .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
+                        .eq('id', msg.id);
+                }
+                fetchMessages();
+            });
+        }
+
+        function showUndoBanner(seconds, onComplete) {
+            const banner = document.getElementById('undo-banner');
+            const countdownEl = document.getElementById('undo-countdown');
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+
+            let timeLeft = seconds;
+            countdownEl.textContent = timeLeft;
+
+            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+
+            pendingDeleteTimer = setInterval(() => {
+                timeLeft--;
+                countdownEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(pendingDeleteTimer);
+                    banner.classList.remove('flex');
+                    banner.classList.add('hidden');
+                    if (onComplete) onComplete();
+                }
+            }, 1000);
+        }
+
+        function triggerUndoAction() {
+            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+            const banner = document.getElementById('undo-banner');
+            banner.classList.remove('flex');
+            banner.classList.add('hidden');
+
+            if (undoTargetMessage) {
+                const { msg, scope } = undoTargetMessage;
+                if (scope === 'me') {
+                    let hiddenForMe = [];
+                    try {
+                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                    } catch(e) {}
+                    hiddenForMe = hiddenForMe.filter(id => id !== msg.id);
+                    localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+                } else {
+                    msg.is_deleted_for_everyone = false;
+                }
+                renderMessages(messagesCache);
+                undoTargetMessage = null;
             }
         }
 
@@ -556,12 +724,10 @@
                 is_pending: true
             };
 
-            // 1. Instantly drop message into local cache & render immediately (Optimistic UI)
             messagesCache.push(localMessage);
             saveLocalCache(messagesCache);
             renderMessages(messagesCache);
 
-            // 2. Try dispatching to Supabase if online
             if (!navigator.onLine) {
                 queueOfflineMessage(localMessage);
                 return;
@@ -602,7 +768,6 @@
             saveOfflineQueue(queue);
         }
 
-        // Background sync listener when internet connection is restored
         window.addEventListener('online', async () => {
             const queue = getOfflineQueue();
             if (queue.length === 0) {
@@ -634,6 +799,7 @@
             title.textContent = `${typeFilter.toUpperCase()} Gallery`;
 
             const matching = messagesCache.filter(m => {
+                if (m.is_deleted_for_everyone) return false;
                 if (typeFilter === 'image' && m.message_type === 'image') return true;
                 if (typeFilter === 'video' && m.message_type === 'video') return true;
                 if (typeFilter === 'file' && (m.message_type === 'file' || m.message_type === 'audio')) return true;
@@ -664,7 +830,7 @@
         }
 
         function subscribeToMessages() {
-            if (!navigator.onLine) return; // Guard subscription offline
+            if (!navigator.onLine) return;
             messageSubscription = supabaseClient
                 .channel('public:messages')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {

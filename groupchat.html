@@ -46,6 +46,25 @@
             <div class="text-center text-xs text-slate-500 py-4">Loading group messages...</div>
         </div>
 
+        <!-- Undo Notification Banner (10 Seconds Timer) -->
+        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-orange-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
+            <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
+            <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
+        </div>
+
+        <!-- Message Options Popup Modal (Long Press Menu) -->
+        <div id="message-options-modal" class="hidden absolute inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
+                <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
+                    <span>Message Options</span>
+                    <button onclick="closeMessageOptions()" class="text-slate-400 hover:text-white text-base cursor-pointer">&times;</button>
+                </div>
+                <div id="message-options-actions" class="flex flex-col gap-1.5">
+                    <!-- Populated dynamically based on permissions & 3-hour limit for everyone -->
+                </div>
+            </div>
+        </div>
+
         <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
         <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
             <div class="flex items-center justify-between">
@@ -187,6 +206,10 @@
         let recordingSeconds = 0;
         let messagesCache = [];
         let messageSubscription = null;
+
+        // Undo & Deletion management variables
+        let pendingDeleteTimer = null;
+        let undoTargetMessage = null;
 
         if (!currentUser || !groupId) {
             window.location.href = 'chatlist.html';
@@ -641,7 +664,12 @@
             if (error) return;
 
             if (messages) {
-                messagesCache = messages;
+                let hiddenForMe = [];
+                try {
+                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
+                } catch(e) {}
+
+                messagesCache = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
                 renderMessages(messagesCache);
             }
         }
@@ -673,6 +701,21 @@
                 const isMe = msg.sender_username === currentUser.username;
                 const bubble = document.createElement('div');
                 bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2`;
+
+                let pressTimer = null;
+                const startPress = () => {
+                    pressTimer = setTimeout(() => openMessageOptions(msg), 600);
+                };
+                const cancelPress = () => {
+                    if (pressTimer) clearTimeout(pressTimer);
+                };
+
+                bubble.addEventListener('touchstart', startPress);
+                bubble.addEventListener('touchend', cancelPress);
+                bubble.addEventListener('touchmove', cancelPress);
+                bubble.addEventListener('mousedown', startPress);
+                bubble.addEventListener('mouseup', cancelPress);
+                bubble.addEventListener('mouseleave', cancelPress);
 
                 const timeString = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -740,6 +783,125 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
+        // --- MESSAGE DELETE & OPTIONS LOGIC (UPDATED) ---
+        function openMessageOptions(msg) {
+            const modal = document.getElementById('message-options-modal');
+            const actionsContainer = document.getElementById('message-options-actions');
+            actionsContainer.innerHTML = '';
+
+            const isSender = msg.sender_username === currentUser.username;
+            const isAdminOrAssistant = myRole === 'admin' || myRole === 'assistant_admin';
+            
+            // 3-hour check applies ONLY to delete for everyone
+            const msgTime = new Date(msg.created_at).getTime();
+            const now = new Date().getTime();
+            const diffHours = (now - msgTime) / (1000 * 60 * 60);
+            const within3Hours = diffHours <= 3;
+
+            // 1. Delete for me (NO time bound, always allowed)
+            const deleteForMeBtn = document.createElement('button');
+            deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            deleteForMeBtn.textContent = '🗑️ Delete for me';
+            deleteForMeBtn.onclick = () => {
+                closeMessageOptions();
+                executeDeleteMessage(msg, 'me');
+            };
+            actionsContainer.appendChild(deleteForMeBtn);
+
+            // 2. Delete for everyone (Restricted to 3-hour limit AND sender or admin/assistant)
+            if (within3Hours && (isSender || isAdminOrAssistant)) {
+                const deleteForEveryoneBtn = document.createElement('button');
+                deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+                deleteForEveryoneBtn.textContent = '🗑️ Delete for everyone';
+                deleteForEveryoneBtn.onclick = () => {
+                    closeMessageOptions();
+                    executeDeleteMessage(msg, 'everyone');
+                };
+                actionsContainer.appendChild(deleteForEveryoneBtn);
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMessageOptions() {
+            const modal = document.getElementById('message-options-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function executeDeleteMessage(msg, scope) {
+            undoTargetMessage = { msg, scope };
+            
+            if (scope === 'me') {
+                let hiddenForMe = [];
+                try {
+                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
+                } catch(e) {}
+                hiddenForMe.push(msg.id);
+                localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`, JSON.stringify(hiddenForMe));
+            } else {
+                msg.is_deleted_for_everyone = true;
+            }
+            renderMessages(messagesCache);
+
+            showUndoBanner(10, async () => {
+                if (scope === 'everyone') {
+                    await supabaseClient
+                        .from('group_messages')
+                        .update({ is_deleted_for_everyone: true, message: '[Message deleted]', media_url: null })
+                        .eq('id', msg.id);
+                }
+                fetchGroupMessages();
+            });
+        }
+
+        function showUndoBanner(seconds, onComplete) {
+            const banner = document.getElementById('undo-banner');
+            const countdownEl = document.getElementById('undo-countdown');
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+
+            let timeLeft = seconds;
+            countdownEl.textContent = timeLeft;
+
+            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+
+            pendingDeleteTimer = setInterval(() => {
+                timeLeft--;
+                countdownEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(pendingDeleteTimer);
+                    banner.classList.remove('flex');
+                    banner.classList.add('hidden');
+                    if (onComplete) onComplete();
+                }
+            }, 1000);
+        }
+
+        function triggerUndoAction() {
+            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+            const banner = document.getElementById('undo-banner');
+            banner.classList.remove('flex');
+            banner.classList.add('hidden');
+
+            if (undoTargetMessage) {
+                const { msg, scope } = undoTargetMessage;
+                if (scope === 'me') {
+                    let hiddenForMe = [];
+                    try {
+                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
+                    } catch(e) {}
+                    hiddenForMe = hiddenForMe.filter(id => id !== msg.id);
+                    localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`, JSON.stringify(hiddenForMe));
+                } else {
+                    msg.is_deleted_for_everyone = false;
+                }
+                renderMessages(messagesCache);
+                undoTargetMessage = null;
+            }
+        }
+
         // --- AUDIO CONTROLS HELPER FUNCTIONS ---
         function toggleAudioPlay(audioId, btn) {
             const audio = document.getElementById(audioId);
@@ -782,6 +944,7 @@
             title.textContent = `Group ${typeFilter.toUpperCase()} Gallery`;
 
             const matching = messagesCache.filter(m => {
+                if (m.is_deleted_for_everyone) return false;
                 const url = m.media_url || m.message;
                 if (typeFilter === 'image' && m.media_type === 'image') return true;
                 if (typeFilter === 'video' && m.media_type === 'video') return true;
