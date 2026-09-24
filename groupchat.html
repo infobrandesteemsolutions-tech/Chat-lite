@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Lite - Group Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
+        
+        <!-- Header (Tappable to Open Group Backend Settings) -->
+        <div onclick="openGroupBackend()" class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur-md cursor-pointer group z-10">
+            <div class="flex items-center gap-3 min-w-0">
+                <button onclick="event.stopPropagation(); window.location.href='chatlist.html'" class="text-slate-400 hover:text-white p-1 cursor-pointer">
+                    &larr;
+                </button>
+                <div id="group-header-avatar" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-orange-400 text-sm overflow-hidden flex-shrink-0">
+                    GRP
+                </div>
+                <div class="min-w-0">
+                    <h2 id="group-header-name" class="font-bold text-sm text-white group-hover:text-orange-400 transition-colors truncate">Loading Group...</h2>
+                    <span id="group-header-meta" class="text-[11px] text-slate-400 truncate block">Tap for group settings</span>
+                </div>
+            </div>
+            <div class="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700 flex-shrink-0">Settings</div>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/40">
+            <div class="text-center text-xs text-slate-500 py-4">Loading group messages...</div>
+        </div>
+
+        <!-- Message Input Bar -->
+        <div class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2">
+            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white" onkeydown="if(event.key==='Enter') sendGroupMessage()">
+            <button onclick="sendGroupMessage()" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl text-xs text-white transition-all cursor-pointer">Send</button>
+        </div>
+    </div>
+
+    <!-- GROUP BACKEND / SETTINGS MODAL -->
+    <div id="group-backend-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
+                <div>
+                    <h3 id="modal-group-name" class="font-bold text-base text-white">Group Settings</h3>
+                    <p id="modal-group-desc" class="text-xs text-slate-400 truncate max-w-[280px]"></p>
+                </div>
+                <button onclick="closeGroupBackend()" class="text-slate-400 hover:text-white text-xl cursor-pointer">&times;</button>
+            </div>
+
+            <!-- Modal Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-5">
+                
+                <!-- Group Code Info -->
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Group Chat Code</span>
+                        <span id="modal-group-code" class="text-xs font-mono font-bold text-orange-400 mt-0.5 block">--</span>
+                    </div>
+                    <button onclick="copyGroupCode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-all cursor-pointer">Copy</button>
+                </div>
+
+                <!-- Add Member Section (Restricted by Role) -->
+                <div id="add-member-section" class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2 hidden">
+                    <label class="block text-xs font-medium text-slate-400">Add Member via Chat Code</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="backend-member-code" placeholder="e.g. CL-ABC1234" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:border-orange-500 text-xs font-mono text-white uppercase">
+                        <button onclick="addGroupMemberFromBackend()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 font-semibold rounded-lg text-xs text-white transition-all cursor-pointer">Add</button>
+                    </div>
+                </div>
+
+                <!-- Members List Container -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Members List (<span id="member-count">0</span>)</h4>
+                    <div id="backend-members-list" class="space-y-2">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const groupId = urlParams.get('id');
+        let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        let currentGroup = null;
+        let myRole = 'member'; // 'admin', 'assistant_admin', or 'member'
+        let groupMembersCache = [];
+
+        if (!currentUser || !groupId) {
+            window.location.href = 'chatlist.html';
+        } else {
+            initGroupRoom();
+            setInterval(fetchGroupMessages, 4000);
+        }
+
+        async function initGroupRoom() {
+            // Fetch Group Details
+            const { data: grp, error: grpErr } = await supabaseClient
+                .from('groups')
+                .select('*')
+                .eq('id', groupId)
+                .single();
+
+            if (grpErr || !grp) {
+                alert('Group not found.');
+                window.location.href = 'chatlist.html';
+                return;
+            }
+            currentGroup = grp;
+
+            // Update Header Info
+            document.getElementById('group-header-name').textContent = grp.name;
+            document.getElementById('modal-group-name').textContent = grp.name;
+            document.getElementById('modal-group-desc').textContent = grp.description || 'No description provided.';
+            document.getElementById('modal-group-code').textContent = grp.chat_code;
+
+            const avatarContainer = document.getElementById('group-header-avatar');
+            if (grp.avatar_url) {
+                avatarContainer.innerHTML = `<img src="${grp.avatar_url}" class="w-full h-full object-cover">`;
+            } else {
+                avatarContainer.textContent = grp.name.charAt(0).toUpperCase();
+            }
+
+            await checkUserRoleAndLoadMembers();
+            fetchGroupMessages();
+        }
+
+        async function checkUserRoleAndLoadMembers() {
+            const { data: members, error } = await supabaseClient
+                .from('group_members')
+                .select('*, profiles(name, username, avatar_url, chat_code)')
+                .eq('group_id', groupId);
+
+            if (error || !members) return;
+            groupMembersCache = members;
+
+            const userMembership = members.find(m => m.username === currentUser.username);
+            if (!userMembership) {
+                alert('You are no longer a member of this group.');
+                window.location.href = 'chatlist.html';
+                return;
+            }
+
+            myRole = userMembership.role;
+
+            // Show Add Member box if Admin or Assistant Admin
+            if (myRole === 'admin' || myRole === 'assistant_admin') {
+                document.getElementById('add-member-section').classList.remove('hidden');
+            } else {
+                document.getElementById('add-member-section').classList.add('hidden');
+            }
+
+            renderBackendMembersList(members);
+        }
+
+        function renderBackendMembersList(members) {
+            const container = document.getElementById('backend-members-list');
+            document.getElementById('member-count').textContent = members.length;
+            container.innerHTML = '';
+
+            members.forEach(m => {
+                const profile = m.profiles || {};
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2.5 bg-slate-950 border border-slate-800 rounded-xl';
+
+                let avatarHTML = profile.avatar_url
+                    ? `<img src="${profile.avatar_url}" class="w-9 h-9 rounded-full object-cover">`
+                    : `<div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-orange-400 text-xs">${(profile.name || 'U').charAt(0).toUpperCase()}</div>`;
+
+                // Role badge color styling
+                let roleBadgeColor = 'text-slate-400 bg-slate-900 border-slate-800';
+                if (m.role === 'admin') roleBadgeColor = 'text-orange-400 bg-orange-950/30 border-orange-500/30';
+                else if (m.role === 'assistant_admin') roleBadgeColor = 'text-blue-400 bg-blue-950/30 border-blue-500/30';
+
+                // Action controls based on permissions
+                let controlsHTML = `<span class="text-xs px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${m.role.replace('_', ' ')}</span>`;
+
+                if (myRole === 'admin' && m.username !== currentUser.username) {
+                    // Admins can change roles and remove members
+                    controlsHTML = `
+                        <div class="flex items-center gap-1.5">
+                            <select onchange="updateMemberRole('${m.username}', this.value)" class="text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 focus:outline-none">
+                                <option value="admin" ${m.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                <option value="assistant_admin" ${m.role === 'assistant_admin' ? 'selected' : ''}>Assistant Admin</option>
+                                <option value="member" ${m.role === 'member' ? 'selected' : ''}>Member</option>
+                            </select>
+                            <button onclick="removeGroupMember('${m.username}')" class="text-[11px] bg-red-950/30 text-red-400 hover:bg-red-900/50 px-2 py-1 rounded border border-red-900/40 transition-all cursor-pointer">Remove</button>
+                        </div>
+                    `;
+                } else if (myRole === 'assistant_admin' && m.role !== 'admin' && m.username !== currentUser.username) {
+                    // Assistant Admins can remove normal members or other assistant admins, but can't assign roles
+                    controlsHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${m.role.replace('_', ' ')}</span>
+                            <button onclick="removeGroupMember('${m.username}')" class="text-[11px] bg-red-950/30 text-red-400 hover:bg-red-900/50 px-2 py-1 rounded border border-red-900/40 transition-all cursor-pointer">Remove</button>
+                        </div>
+                    `;
+                }
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5 flex-1 min-w-0">
+                        ${avatarHTML}
+                        <div class="min-w-0">
+                            <h5 class="text-xs font-semibold text-white truncate">${profile.name || m.username}</h5>
+                            <p class="text-[10px] text-slate-400 truncate">@${profile.username}</p>
+                        </div>
+                    </div>
+                    <div>${controlsHTML}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function openGroupBackend() {
+            document.getElementById('group-backend-modal').classList.remove('hidden');
+            document.getElementById('group-backend-modal').classList.add('flex');
+            checkUserRoleAndLoadMembers();
+        }
+
+        function closeGroupBackend() {
+            document.getElementById('group-backend-modal').classList.remove('flex');
+            document.getElementById('group-backend-modal').classList.add('hidden');
+        }
+
+        function copyGroupCode() {
+            if (!currentGroup || !currentGroup.chat_code) return;
+            navigator.clipboard.writeText(currentGroup.chat_code);
+            alert('Group Chat Code copied: ' + currentGroup.chat_code);
+        }
+
+        async function addGroupMemberFromBackend() {
+            const codeInput = document.getElementById('backend-member-code');
+            const targetCode = codeInput.value.trim().toUpperCase();
+            if (!targetCode) return;
+
+            // Find user profile by chat code
+            const { data: userProfile, error: profileErr } = await supabaseClient
+                .from('profiles')
+                .select('username, name')
+                .eq('chat_code', targetCode)
+                .maybeSingle();
+
+            if (profileErr || !userProfile) {
+                alert('Invalid Chat Code. User not found.');
+                return;
+            }
+
+            // Check if already in group
+            const existing = groupMembersCache.find(m => m.username === userProfile.username);
+            if (existing) {
+                alert('User is already a member of this group.');
+                return;
+            }
+
+            const { error: insertErr } = await supabaseClient
+                .from('group_members')
+                .insert([{
+                    group_id: groupId,
+                    username: userProfile.username,
+                    role: 'member'
+                }]);
+
+            if (insertErr) {
+                alert('Error adding member: ' + insertErr.message);
+                return;
+            }
+
+            codeInput.value = '';
+            alert(`${userProfile.name} added successfully!`);
+            checkUserRoleAndLoadMembers();
+        }
+
+        async function removeGroupMember(usernameToRemove) {
+            if (!confirm("Are you sure you want to remove this member from the group?")) return;
+
+            const { error } = await supabaseClient
+                .from('group_members')
+                .delete()
+                .eq('group_id', groupId)
+                .eq('username', usernameToRemove);
+
+            if (error) {
+                alert('Error removing member: ' + error.message);
+                return;
+            }
+
+            checkUserRoleAndLoadMembers();
+        }
+
+        async function updateMemberRole(usernameToUpdate, newRole) {
+            const { error } = await supabaseClient
+                .from('group_members')
+                .update({ role: newRole })
+                .eq('group_id', groupId)
+                .eq('username', usernameToUpdate);
+
+            if (error) {
+                alert('Error updating role: ' + error.message);
+                checkUserRoleAndLoadMembers();
+                return;
+            }
+
+            alert('Role updated successfully.');
+            checkUserRoleAndLoadMembers();
+        }
+
+        async function sendGroupMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const { error } = await supabaseClient
+                .from('group_messages')
+                .insert([{
+                    group_id: groupId,
+                    sender_username: currentUser.username,
+                    sender_name: currentUser.name,
+                    message: text
+                }]);
+
+            if (error) {
+                alert('Error sending message: ' + error.message);
+                return;
+            }
+
+            input.value = '';
+            fetchGroupMessages();
+        }
+
+        async function fetchGroupMessages() {
+            const { data: messages, error } = await supabaseClient
+                .from('group_messages')
+                .select('*')
+                .eq('group_id', groupId)
+                .order('created_at', { ascending: true });
+
+            if (error) return;
+
+            const chatContainer = document.getElementById('chat-messages');
+            chatContainer.innerHTML = '';
+
+            if (!messages || messages.length === 0) {
+                chatContainer.innerHTML = `<div class="text-center text-xs text-slate-500 py-8">No messages yet. Start the conversation!</div>`;
+                return;
+            }
+
+            messages.forEach(msg => {
+                const isMe = msg.sender_username === currentUser.username;
+                const bubble = document.createElement('div');
+                bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2`;
+
+                const timeString = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                bubble.innerHTML = `
+                    <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none'}">
+                        ${!isMe ? `<span class="block text-[10px] font-bold text-orange-400 mb-0.5">${msg.sender_name}</span>` : ''}
+                        <span>${escapeHtml(msg.message)}</span>
+                    </div>
+                    <span class="text-[9px] text-slate-500 mt-0.5 px-1">${timeString}</span>
+                `;
+                chatContainer.appendChild(bubble);
+            });
+
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+    </script>
+</body>
+</html>
