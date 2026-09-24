@@ -309,8 +309,8 @@
             }
             const filtered = messagesCache.filter(m => {
                 if (m.is_deleted_for_everyone) return false;
-                if (m.message_type === 'text' && m.content.toLowerCase().includes(term)) return true;
-                if (m.message_type === keyword) return true;
+                if ((m.message_type || 'text') === 'text' && m.content.toLowerCase().includes(term)) return true;
+                if ((m.message_type || 'text') === keyword) return true;
                 return false;
             });
             renderMessages(filtered);
@@ -418,6 +418,7 @@
 
             const contentBody = document.createElement('div');
             const type = msg.message_type || 'text';
+            
             if (type === 'image') {
                 contentBody.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="if(!isMultiSelectMode) window.open('${msg.content}')">`;
             } else if (type === 'video') {
@@ -462,8 +463,9 @@
             } else if (type === 'file') {
                 contentBody.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
             } else {
-                contentBody.textContent = msg.content;
+                contentBody.textContent = msg.content || '';
             }
+            
             bubble.appendChild(contentBody);
             rowFlex.appendChild(bubble);
 
@@ -605,10 +607,11 @@
             senderNameEl.textContent = `Replying to ${senderLabel}`;
             
             let previewText = msg.content;
-            if (msg.message_type === 'image') previewText = '[Photo Attachment]';
-            else if (msg.message_type === 'video') previewText = '[Video Attachment]';
-            else if (msg.message_type === 'audio') previewText = '[Voice Note]';
-            else if (msg.message_type === 'file') previewText = '[File Attachment]';
+            const msgType = msg.message_type || 'text';
+            if (msgType === 'image') previewText = '[Photo Attachment]';
+            else if (msgType === 'video') previewText = '[Video Attachment]';
+            else if (msgType === 'audio') previewText = '[Voice Note]';
+            else if (msgType === 'file') previewText = '[File Attachment]';
 
             contentEl.textContent = previewText;
             replyBar.classList.remove('hidden');
@@ -633,9 +636,10 @@
                     sender_username: item.sender_username,
                     receiver_username: item.receiver_username,
                     content: item.content,
-                    message_type: item.message_type,
+                    message_type: item.message_type || 'text',
                     reply_to: item.reply_to || null,
-                    is_read: false
+                    is_read: false,
+                    created_at: item.created_at || new Date().toISOString()
                 };
 
                 const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
@@ -666,6 +670,7 @@
             const now = new Date().getTime();
             const diffHours = (now - msgTime) / (1000 * 60 * 60);
             const within3Hours = diffHours <= 3;
+            const msgType = msg.message_type || 'text';
 
             const selectMultipleBtn = document.createElement('button');
             selectMultipleBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
@@ -685,7 +690,7 @@
             };
             actionsContainer.appendChild(replyBtn);
 
-            if (msg.message_type === 'text' && msg.content) {
+            if (msgType === 'text' && msg.content) {
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
                 copyBtn.textContent = '📋 Copy';
@@ -701,7 +706,7 @@
             forwardBtn.textContent = '↗️ Forward';
             forwardBtn.onclick = () => {
                 closeMessageOptions();
-                localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: msg.content, type: msg.message_type || 'text' }));
+                localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: msg.content, type: msgType }));
                 window.location.href = 'chatlist.html?forward=true';
             };
             actionsContainer.appendChild(forwardBtn);
@@ -1005,9 +1010,10 @@
 
             let replyMeta = null;
             if (replyingToMessage) {
+                const repType = replyingToMessage.message_type || 'text';
                 replyMeta = {
                     sender: replyingToMessage.sender_username === currentUser.username ? 'You' : targetName,
-                    content: replyingToMessage.message_type === 'text' ? replyingToMessage.content : `[${replyingToMessage.message_type}]`
+                    content: repType === 'text' ? replyingToMessage.content : `[${repType}]`
                 };
             }
 
@@ -1048,7 +1054,7 @@
                 sender_username: currentUser.username,
                 receiver_username: targetUsername,
                 content: content,
-                message_type: type,
+                message_type: type || 'text',
                 reply_to: replyMeta,
                 is_read: false,
                 created_at: new Date().toISOString()
@@ -1088,9 +1094,10 @@
 
             const matching = messagesCache.filter(m => {
                 if (m.is_deleted_for_everyone) return false;
-                if (typeFilter === 'image' && m.message_type === 'image') return true;
-                if (typeFilter === 'video' && m.message_type === 'video') return true;
-                if (typeFilter === 'file' && (m.message_type === 'file' || m.message_type === 'audio')) return true;
+                const mType = m.message_type || 'text';
+                if (typeFilter === 'image' && mType === 'image') return true;
+                if (typeFilter === 'video' && mType === 'video') return true;
+                if (typeFilter === 'file' && (mType === 'file' || mType === 'audio')) return true;
                 return false;
             });
 
@@ -1102,12 +1109,13 @@
             matching.forEach(m => {
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
-                if (m.message_type === 'image') {
+                const mType = m.message_type || 'text';
+                if (mType === 'image') {
                     card.innerHTML = `<img src="${m.content}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${m.content}')">`;
-                } else if (m.message_type === 'video') {
+                } else if (mType === 'video') {
                     card.innerHTML = `<video src="${m.content}" class="h-24 w-full rounded object-cover" controls></video>`;
                 } else {
-                    card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${m.message_type}</a>`;
+                    card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${mType}</a>`;
                 }
                 grid.appendChild(card);
             });
