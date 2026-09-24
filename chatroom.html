@@ -41,16 +41,16 @@
         </div>
 
         <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
-        <div id="media-preview-bar" class="hidden p-3 bg-slate-950 border-t border-slate-800 flex-col gap-2 z-20 flex-shrink-0">
+        <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-indigo-400" id="preview-title">Staged Media Preview</span>
-                <button type="button" onclick="clearStagedMedia()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">Discard</button>
+                <span class="text-xs font-semibold text-indigo-400">Staged Media Preview</span>
+                <button type="button" onclick="clearStagedMedia()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">Discard</button>
             </div>
-            <div id="preview-container" class="max-h-32 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-2 text-xs text-slate-300">
+            <div id="preview-container" class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
                 <!-- Preview content/thumbnail -->
             </div>
             <!-- Upload Progress Bar -->
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                 <div id="upload-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
             </div>
             <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready. Hit Send button to upload & deliver.</span>
@@ -87,31 +87,31 @@
 
         <!-- Bottom Input Bar (Fixed) -->
         <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
-            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer" title="Attach Media">
+            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">
                 +
             </button>
             
             <!-- Standard Text Input -->
-            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white">
+            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
             
             <!-- Live Recording Indicator & Controls UI (Hidden by default) -->
-            <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl">
+            <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
                 <div class="flex items-center gap-2">
-                    <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                    <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
                     <span id="recording-timer" class="text-xs font-semibold text-red-400">0:00</span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                    <button type="button" id="pause-rec-btn" onclick="togglePauseRecording()" class="text-xs text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">⏸ Pause</button>
-                    <button type="button" onclick="stopRecordingOnly()" class="text-xs text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">⏹ Stop</button>
-                    <button type="button" onclick="cancelRecording()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Discard</button>
+                <div class="flex items-center gap-1">
+                    <button type="button" id="pause-rec-btn" onclick="togglePauseRecording()" class="text-[11px] text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">⏸ Pause</button>
+                    <button type="button" onclick="stopRecordingOnly()" class="text-[11px] text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">⏹ Stop</button>
+                    <button type="button" onclick="cancelRecording()" class="text-[11px] text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Discard</button>
                 </div>
             </div>
 
-            <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer" title="Record Voice Note">
+            <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0" title="Record Voice Note">
                 🎤
             </button>
             
-            <button type="submit" id="send-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white">Send</button>
+            <button type="submit" id="send-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">Send</button>
         </form>
     </div>
 
@@ -136,7 +136,7 @@
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
-        let stagedPayload = null; // Staged item awaiting send button trigger
+        let stagedPayload = null; 
         let isRecording = false;
         let isPaused = false;
         let recordingTimerInterval = null;
@@ -279,7 +279,6 @@
             timeSpan.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             metaRow.appendChild(timeSpan);
 
-            // Read Receipt Ticks (Only for messages sent by current user)
             if (isMe) {
                 const tickSpan = document.createElement('span');
                 tickSpan.className = 'font-bold text-xs ' + (msg.is_read ? 'text-indigo-300' : 'text-slate-500');
@@ -296,7 +295,6 @@
             }
         }
 
-        // Audio helper functions
         function toggleAudioPlay(audioId, btn) {
             const audio = document.getElementById(audioId);
             if (audio.paused) {
@@ -328,14 +326,11 @@
             return `${mins}:${rSecs < 10 ? '0' : ''}${rSecs}`;
         }
 
-        // Staging Media & Files without sending automatically
         function stageFileSelected(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            
-            // Simulate Upload Progress bar feedback
             const progressBar = document.getElementById('upload-progress-bar');
             const statusText = document.getElementById('upload-status-text');
             document.getElementById('media-preview-bar').classList.remove('hidden');
@@ -367,9 +362,9 @@
 
                 const previewContainer = document.getElementById('preview-container');
                 if (type === 'image') {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-28 rounded object-contain">`;
+                    previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-20 rounded object-contain">`;
                 } else if (type === 'video') {
-                    previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-28 rounded" controls></video>`;
+                    previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-20 rounded" controls></video>`;
                 } else {
                     previewContainer.innerHTML = `<span class="font-semibold">Staged File: ${file.name}</span>`;
                 }
@@ -385,7 +380,6 @@
             document.getElementById('upload-progress-bar').style.width = '0%';
         }
 
-        // Voice Recording functions
         async function startVoiceRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -442,10 +436,9 @@
                 isRecording = false;
                 clearInterval(recordingTimerInterval);
                 
-                // Show Voice note staged notification
                 document.getElementById('media-preview-bar').classList.remove('hidden');
                 document.getElementById('media-preview-bar').classList.add('flex');
-                document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
+                document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
                 document.getElementById('upload-progress-bar').style.width = '100%';
                 document.getElementById('upload-status-text').textContent = 'Hit the Send button to dispatch voice note.';
             }
@@ -470,17 +463,14 @@
             document.getElementById('mic-btn').classList.remove('hidden');
         }
 
-        // Form Submit Handler (The ONLY trigger for dispatching messages)
         async function handleFormSubmit(e) {
             e.preventDefault();
 
-            // If actively recording, clicking send stops recording and stages it
             if (isRecording) {
                 stopRecordingOnly();
                 return;
             }
 
-            // If voice note was recorded and staged
             if (recordedBlob) {
                 const reader = new FileReader();
                 reader.readAsDataURL(recordedBlob);
@@ -493,14 +483,12 @@
                 return;
             }
 
-            // If regular media file was staged
             if (stagedPayload) {
                 await sendPayloadToSupabase(stagedPayload.content, stagedPayload.type);
                 clearStagedMedia();
                 return;
             }
 
-            // Normal Text Message Send
             const input = document.getElementById('message-input');
             const content = input.value.trim();
             if (!content) return;
@@ -537,7 +525,6 @@
             }
         }
 
-        // Media Gallery Drawers (Files, Images, Videos)
         function openMediaGallery(typeFilter) {
             const modal = document.getElementById('media-gallery-modal');
             const grid = document.getElementById('gallery-content-grid');
