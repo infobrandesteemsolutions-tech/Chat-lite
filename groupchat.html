@@ -137,15 +137,31 @@
         async function checkUserRoleAndLoadMembers() {
             const { data: members, error } = await supabaseClient
                 .from('group_members')
-                .select('*, profiles(name, username, avatar_url, chat_code)')
+                .select('*')
                 .eq('group_id', groupId);
 
             if (error || !members) return;
-            groupMembersCache = members;
 
-            const userMembership = members.find(m => m.username === currentUser.username);
-            if (!userMembership) {
-                alert('You are no longer a member of this group.');
+            // Fetch profile data for all members manually to ensure reliable joining across table schemas
+            const usernames = members.map(m => m.username);
+            const { data: profiles } = await supabaseClient
+                .from('profiles')
+                .select('username, name, avatar_url, chat_code')
+                .in('username', usernames);
+
+            const profileMap = {};
+            if (profiles) {
+                profiles.forEach(p => { profileMap[p.username] = p; });
+            }
+
+            groupMembersCache = members.map(m => ({
+                ...m,
+                profiles: profileMap[m.username] || {}
+            }));
+
+            const userMembership = groupMembersCache.find(m => m.username === currentUser.username);
+            if (!userMembership || userMembership.status !== 'accepted') {
+                alert('You are no longer an active member of this group.');
                 window.location.href = 'chatlist.html';
                 return;
             }
@@ -159,7 +175,7 @@
                 document.getElementById('add-member-section').classList.add('hidden');
             }
 
-            renderBackendMembersList(members);
+            renderBackendMembersList(groupMembersCache);
         }
 
         function renderBackendMembersList(members) {
@@ -174,18 +190,15 @@
 
                 let avatarHTML = profile.avatar_url
                     ? `<img src="${profile.avatar_url}" class="w-9 h-9 rounded-full object-cover">`
-                    : `<div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-orange-400 text-xs">${(profile.name || 'U').charAt(0).toUpperCase()}</div>`;
+                    : `<div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-orange-400 text-xs">${(profile.name || m.username || 'U').charAt(0).toUpperCase()}</div>`;
 
-                // Role badge color styling
                 let roleBadgeColor = 'text-slate-400 bg-slate-900 border-slate-800';
                 if (m.role === 'admin') roleBadgeColor = 'text-orange-400 bg-orange-950/30 border-orange-500/30';
                 else if (m.role === 'assistant_admin') roleBadgeColor = 'text-blue-400 bg-blue-950/30 border-blue-500/30';
 
-                // Action controls based on permissions
-                let controlsHTML = `<span class="text-xs px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${m.role.replace('_', ' ')}</span>`;
+                let controlsHTML = `<span class="text-xs px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${(m.role || 'member').replace('_', ' ')}</span>`;
 
                 if (myRole === 'admin' && m.username !== currentUser.username) {
-                    // Admins can change roles and remove members
                     controlsHTML = `
                         <div class="flex items-center gap-1.5">
                             <select onchange="updateMemberRole('${m.username}', this.value)" class="text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 focus:outline-none">
@@ -197,7 +210,6 @@
                         </div>
                     `;
                 } else if (myRole === 'assistant_admin' && m.role !== 'admin' && m.username !== currentUser.username) {
-                    // Assistant Admins can remove normal members or other assistant admins, but can't assign roles
                     controlsHTML = `
                         <div class="flex items-center gap-2">
                             <span class="text-[11px] px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${m.role.replace('_', ' ')}</span>
@@ -211,7 +223,7 @@
                         ${avatarHTML}
                         <div class="min-w-0">
                             <h5 class="text-xs font-semibold text-white truncate">${profile.name || m.username}</h5>
-                            <p class="text-[10px] text-slate-400 truncate">@${profile.username}</p>
+                            <p class="text-[10px] text-slate-400 truncate">@${profile.username || m.username} &bull; <span class="capitalize text-emerald-400">${m.status}</span></p>
                         </div>
                     </div>
                     <div>${controlsHTML}</div>
@@ -242,7 +254,6 @@
             const targetCode = codeInput.value.trim().toUpperCase();
             if (!targetCode) return;
 
-            // Find user profile by chat code
             const { data: userProfile, error: profileErr } = await supabaseClient
                 .from('profiles')
                 .select('username, name')
@@ -254,10 +265,9 @@
                 return;
             }
 
-            // Check if already in group
             const existing = groupMembersCache.find(m => m.username === userProfile.username);
             if (existing) {
-                alert('User is already a member of this group.');
+                alert('User is already in this group or has a pending invite.');
                 return;
             }
 
@@ -266,7 +276,8 @@
                 .insert([{
                     group_id: groupId,
                     username: userProfile.username,
-                    role: 'member'
+                    role: 'member',
+                    status: 'pending'
                 }]);
 
             if (insertErr) {
@@ -275,7 +286,7 @@
             }
 
             codeInput.value = '';
-            alert(`${userProfile.name} added successfully!`);
+            alert(`Group invitation sent to ${userProfile.name}!`);
             checkUserRoleAndLoadMembers();
         }
 
