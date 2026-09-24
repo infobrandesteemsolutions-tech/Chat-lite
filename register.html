@@ -49,10 +49,6 @@
                         <label class="block text-xs font-medium text-slate-300 mb-1">Password</label>
                         <input type="password" id="reg-password" name="new_password_random" autocomplete="new-password" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white/10 text-sm text-white backdrop-blur-md transition-all shadow-inner">
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Access Code</label>
-                        <input type="password" id="reg-code" name="new_code_random" autocomplete="new-password" placeholder="Enter access code" required class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-orange-500 focus:bg-white/10 text-sm text-white backdrop-blur-md transition-all shadow-inner">
-                    </div>
                     <button type="submit" class="w-full py-3.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl shadow-lg shadow-orange-600/30 transition-all mt-4 cursor-pointer text-white">
                         Register Profile
                     </button>
@@ -64,19 +60,24 @@
 
     <script src="supabase.js"></script>
     <script>
+        // Helper to generate a random unique chat code ID
+        function generateChatCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = 'CL-';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
         async function handleRegister(e) {
             e.preventDefault();
             const name = document.getElementById('reg-name').value.trim();
             const gender = document.getElementById('reg-gender').value;
             const username = document.getElementById('reg-username').value.trim().toLowerCase();
             const password = document.getElementById('reg-password').value;
-            const code = document.getElementById('reg-code').value.trim();
 
-            if (code !== 'Krinox1803') {
-                alert('Invalid Access Code! Please enter the correct code.');
-                return;
-            }
-
+            // Check if username already exists
             const { data: existing } = await supabaseClient
                 .from('profiles')
                 .select('username')
@@ -88,16 +89,38 @@
                 return;
             }
 
+            // Generate a unique chat code for the user
+            let chatCode = generateChatCode();
+            
+            // Ensure chat code uniqueness check loop (optional safety)
+            let isUnique = false;
+            let attempts = 0;
+            while (!isUnique && attempts < 5) {
+                const { data: codeCheck } = await supabaseClient
+                    .from('profiles')
+                    .select('chat_code')
+                    .eq('chat_code', chatCode)
+                    .maybeSingle();
+                
+                if (!codeCheck) {
+                    isUnique = true;
+                } else {
+                    chatCode = generateChatCode();
+                    attempts++;
+                }
+            }
+
+            // Insert new profile with the generated chat code
             const { error } = await supabaseClient
                 .from('profiles')
-                .insert([{ name, gender, username, password }]);
+                .insert([{ name, gender, username, password, chat_code: chatCode }]);
 
             if (error) {
                 alert('Error creating profile: ' + error.message);
                 return;
             }
 
-            alert('Profile created successfully! Please sign in from the welcome page.');
+            alert(`Profile created successfully!\n\nYour Unique Chat Code is: ${chatCode}\nSave this or use it to sign in.`);
             window.location.href = 'index.html';
         }
     </script>
