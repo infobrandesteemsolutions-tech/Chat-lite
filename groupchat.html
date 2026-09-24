@@ -705,7 +705,7 @@
             } else {
                 messagesCache = messagesCache.filter(m => m !== localMessage);
                 saveLocalGroupCache(messagesCache);
-                fetchGroupMessages();
+                await fetchGroupMessages();
             }
         }
 

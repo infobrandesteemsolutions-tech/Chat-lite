@@ -757,7 +757,7 @@
             } else {
                 messagesCache = messagesCache.filter(m => m !== localMessage);
                 saveLocalCache(messagesCache);
-                fetchMessages();
+                await fetchMessages();
             }
         }
 
