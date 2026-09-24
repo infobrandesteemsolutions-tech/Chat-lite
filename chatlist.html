@@ -123,21 +123,15 @@
                     }
                 }
 
-                // Status indicator formatting (WhatsApp style ticks)
+                // Status indicator formatting (WhatsApp style ticks for outgoing messages)
                 let statusIndicator = '';
-                if (lastMessage) {
-                    if (lastMessage.sender === currentUser.username) {
-                        // Outgoing message checkmarks
-                        if (lastMessage.is_read) {
-                            // Read: glowing blue double check (✓✓)
-                            statusIndicator = `<span class="text-sky-400 font-bold drop-shadow-[0_0_6px_rgba(56,189,248,0.7)] text-xs tracking-tighter" title="Read">✓✓</span>`;
-                        } else {
-                            // Delivered/Unread by other end: single tick (✓)
-                            statusIndicator = `<span class="text-slate-400 font-semibold text-xs" title="Delivered / Unread">✓</span>`;
-                        }
+                if (lastMessage && lastMessage.sender === currentUser.username) {
+                    if (lastMessage.is_read) {
+                        // Read: glowing blue double check (✓✓)
+                        statusIndicator = `<span class="text-sky-400 font-bold drop-shadow-[0_0_6px_rgba(56,189,248,0.7)] text-xs tracking-tighter" title="Read">✓✓</span>`;
                     } else {
-                        // Incoming message indicator handled by unread highlight
-                        statusIndicator = '';
+                        // Delivered/Unread by other end: single tick (✓)
+                        statusIndicator = `<span class="text-slate-400 font-semibold text-xs" title="Delivered / Unread">✓</span>`;
                     }
                 }
 
