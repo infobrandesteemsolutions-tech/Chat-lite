@@ -204,7 +204,11 @@
         let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
-        let messagesCache = [];
+
+        const GROUP_STORAGE_KEY = `chatlite_group_cache_${currentUser?.username}_${groupId}`;
+        const GROUP_QUEUE_KEY = `chatlite_group_offline_queue_${currentUser?.username}_${groupId}`;
+
+        let messagesCache = loadLocalGroupCache();
         let messageSubscription = null;
 
         // Undo & Deletion management variables
@@ -214,7 +218,37 @@
         if (!currentUser || !groupId) {
             window.location.href = 'chatlist.html';
         } else {
+            if (messagesCache.length > 0) {
+                renderMessages(messagesCache);
+            }
             initGroupRoom();
+        }
+
+        function loadLocalGroupCache() {
+            try {
+                const data = localStorage.getItem(GROUP_STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLocalGroupCache(messages) {
+            messagesCache = messages;
+            localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(messages));
+        }
+
+        function getGroupOfflineQueue() {
+            try {
+                const data = localStorage.getItem(GROUP_QUEUE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveGroupOfflineQueue(queue) {
+            localStorage.setItem(GROUP_QUEUE_KEY, JSON.stringify(queue));
         }
 
         function toggleAttachmentMenu() {
@@ -232,7 +266,6 @@
             }
         }
 
-        // Close attachment menu when clicking outside
         window.addEventListener('click', (e) => {
             if (!e.target.closest('#attachment-menu') && !e.target.closest('#attach-btn')) {
                 document.getElementById('attachment-menu').classList.add('hidden');
@@ -634,27 +667,76 @@
         }
 
         async function sendGroupPayloadToSupabase(content, type) {
-            const { error } = await supabaseClient
-                .from('group_messages')
-                .insert([{
-                    group_id: groupId,
-                    sender_username: currentUser.username,
-                    sender_name: currentUser.name,
-                    message: content,
-                    media_url: type !== 'text' ? content : null,
-                    media_type: type !== 'text' ? type : null
-                }]);
+            const localMessage = {
+                group_id: groupId,
+                sender_username: currentUser.username,
+                sender_name: currentUser.name,
+                message: content,
+                media_url: type !== 'text' ? content : null,
+                media_type: type !== 'text' ? type : null,
+                created_at: new Date().toISOString(),
+                is_pending: true
+            };
 
-            if (error) {
-                alert('Error sending message: ' + error.message);
+            messagesCache.push(localMessage);
+            saveLocalGroupCache(messagesCache);
+            renderMessages(messagesCache);
+
+            if (!navigator.onLine) {
+                queueGroupOfflineMessage(localMessage);
                 return;
             }
 
-            fetchGroupMessages();
+            const payload = {
+                group_id: groupId,
+                sender_username: currentUser.username,
+                sender_name: currentUser.name,
+                message: content,
+                media_url: type !== 'text' ? content : null,
+                media_type: type !== 'text' ? type : null
+            };
+
+            const { error } = await supabaseClient
+                .from('group_messages')
+                .insert([payload]);
+
+            if (error) {
+                queueGroupOfflineMessage(localMessage);
+            } else {
+                messagesCache = messagesCache.filter(m => m !== localMessage);
+                saveLocalGroupCache(messagesCache);
+                fetchGroupMessages();
+            }
         }
+
+        function queueGroupOfflineMessage(msg) {
+            const queue = getGroupOfflineQueue();
+            queue.push(msg);
+            saveGroupOfflineQueue(queue);
+        }
+
+        window.addEventListener('online', async () => {
+            const queue = getGroupOfflineQueue();
+            if (queue.length > 0) {
+                for (const msg of queue) {
+                    await supabaseClient.from('group_messages').insert([{
+                        group_id: msg.group_id,
+                        sender_username: msg.sender_username,
+                        sender_name: msg.sender_name,
+                        message: msg.message,
+                        media_url: msg.media_url,
+                        media_type: msg.media_type
+                    }]);
+                }
+                saveGroupOfflineQueue([]);
+            }
+            fetchGroupMessages();
+        });
 
         // --- FETCH & RENDER MESSAGES ---
         async function fetchGroupMessages() {
+            if (!navigator.onLine) return;
+
             const { data: messages, error } = await supabaseClient
                 .from('group_messages')
                 .select('*')
@@ -664,12 +746,7 @@
             if (error) return;
 
             if (messages) {
-                let hiddenForMe = [];
-                try {
-                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
-                } catch(e) {}
-
-                messagesCache = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
+                saveLocalGroupCache(messages);
                 renderMessages(messagesCache);
             }
         }
@@ -681,6 +758,7 @@
                 return;
             }
             const filtered = messagesCache.filter(m => {
+                if (m.is_deleted_for_everyone) return false;
                 if (m.message && m.message.toLowerCase().includes(term)) return true;
                 if (m.media_type === keyword) return true;
                 return false;
@@ -692,98 +770,137 @@
             const chatContainer = document.getElementById('chat-messages');
             chatContainer.innerHTML = '';
 
-            if (!messages || messages.length === 0) {
+            let hiddenForMe = [];
+            try {
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
+            } catch(e) {}
+
+            const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
+
+            if (filtered.length === 0 && getGroupOfflineQueue().length === 0) {
                 chatContainer.innerHTML = `<div class="text-center text-xs text-slate-500 py-8">No messages yet. Start the conversation!</div>`;
                 return;
             }
 
-            messages.forEach(msg => {
-                const isMe = msg.sender_username === currentUser.username;
-                const bubble = document.createElement('div');
-                bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2`;
+            filtered.forEach(msg => appendMessageToDOM(msg, false));
 
-                let pressTimer = null;
-                const startPress = () => {
-                    pressTimer = setTimeout(() => openMessageOptions(msg), 600);
-                };
-                const cancelPress = () => {
-                    if (pressTimer) clearTimeout(pressTimer);
-                };
-
-                bubble.addEventListener('touchstart', startPress);
-                bubble.addEventListener('touchend', cancelPress);
-                bubble.addEventListener('touchmove', cancelPress);
-                bubble.addEventListener('mousedown', startPress);
-                bubble.addEventListener('mouseup', cancelPress);
-                bubble.addEventListener('mouseleave', cancelPress);
-
-                const timeString = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                let contentHtml = '';
-                const type = msg.media_type || 'text';
-
-                if (type === 'image') {
-                    contentHtml = `<img src="${msg.media_url || msg.message}" class="rounded-xl max-h-48 object-cover cursor-pointer mb-1" onclick="window.open('${msg.media_url || msg.message}', '_blank')">`;
-                } else if (type === 'video') {
-                    contentHtml = `<video src="${msg.media_url || msg.message}" controls class="rounded-xl max-h-48 object-cover mb-1"></video>`;
-                } else if (type === 'audio') {
-                    const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
-                    const audioSrc = msg.media_url || msg.message;
-                    contentHtml = `
-                        <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
-                            <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
-                            <audio id="${audioId}" src="${audioSrc}" preload="metadata"></audio>
-                            <div class="flex flex-col flex-1 gap-1">
-                                <div class="flex justify-between items-center text-[10px] opacity-80">
-                                    <span class="audio-current-time">0:00</span>
-                                    <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
-                                </div>
-                                <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
-                            </div>
-                        </div>
-                    `;
-
-                    setTimeout(() => {
-                        const audioEl = document.getElementById(audioId);
-                        if (!audioEl) return;
-                        const c = audioEl.closest('[data-audio-container]');
-                        const rangeEl = c.querySelector('.audio-range');
-                        const timeEl = c.querySelector('.audio-current-time');
-
-                        audioEl.addEventListener('loadedmetadata', () => {
-                            timeEl.textContent = formatAudioTime(audioEl.duration);
-                        });
-                        audioEl.addEventListener('timeupdate', () => {
-                            if (!audioEl.duration) return;
-                            rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
-                            timeEl.textContent = formatAudioTime(audioEl.currentTime);
-                        });
-                        audioEl.addEventListener('ended', () => {
-                            c.querySelector('button').textContent = '▶';
-                            audioEl.currentTime = 0;
-                        });
-                    }, 50);
-
-                } else if (type === 'file') {
-                    contentHtml = `<a href="${msg.media_url || msg.message}" download class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
-                } else {
-                    contentHtml = `<span>${escapeHtml(msg.message)}</span>`;
-                }
-
-                bubble.innerHTML = `
-                    <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'}">
-                        ${!isMe ? `<span class="block text-[10px] font-bold text-orange-400 mb-0.5">${msg.sender_name}</span>` : ''}
-                        ${contentHtml}
-                    </div>
-                    <span class="text-[9px] text-slate-500 mt-0.5 px-1">${timeString}</span>
-                `;
-                chatContainer.appendChild(bubble);
-            });
+            const queue = getGroupOfflineQueue();
+            queue.forEach(qMsg => appendMessageToDOM(qMsg, false));
 
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // --- MESSAGE DELETE & OPTIONS LOGIC (UPDATED) ---
+        function appendMessageToDOM(msg, scrollToBottom = true) {
+            const chatContainer = document.getElementById('chat-messages');
+            const isMe = msg.sender_username === currentUser.username;
+            const bubble = document.createElement('div');
+            bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2`;
+            if (msg.id) bubble.setAttribute('data-id', msg.id);
+
+            let pressTimer = null;
+            const startPress = () => {
+                pressTimer = setTimeout(() => openMessageOptions(msg), 600);
+            };
+            const cancelPress = () => {
+                if (pressTimer) clearTimeout(pressTimer);
+            };
+
+            bubble.addEventListener('touchstart', startPress);
+            bubble.addEventListener('touchend', cancelPress);
+            bubble.addEventListener('touchmove', cancelPress);
+            bubble.addEventListener('mousedown', startPress);
+            bubble.addEventListener('mouseup', cancelPress);
+            bubble.addEventListener('mouseleave', cancelPress);
+
+            const timeString = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let contentHtml = '';
+            const type = msg.media_type || 'text';
+
+            if (type === 'image') {
+                contentHtml = `<img src="${msg.media_url || msg.message}" class="rounded-xl max-h-48 object-cover cursor-pointer mb-1" onclick="window.open('${msg.media_url || msg.message}', '_blank')">`;
+            } else if (type === 'video') {
+                contentHtml = `<video src="${msg.media_url || msg.message}" controls class="rounded-xl max-h-48 object-cover mb-1"></video>`;
+            } else if (type === 'audio') {
+                const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
+                const audioSrc = msg.media_url || msg.message;
+                contentHtml = `
+                    <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
+                        <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
+                        <audio id="${audioId}" src="${audioSrc}" preload="metadata"></audio>
+                        <div class="flex flex-col flex-1 gap-1">
+                            <div class="flex justify-between items-center text-[10px] opacity-80">
+                                <span class="audio-current-time">0:00</span>
+                                <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
+                            </div>
+                            <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    const audioEl = document.getElementById(audioId);
+                    if (!audioEl) return;
+                    const c = audioEl.closest('[data-audio-container]');
+                    const rangeEl = c.querySelector('.audio-range');
+                    const timeEl = c.querySelector('.audio-current-time');
+
+                    audioEl.addEventListener('loadedmetadata', () => {
+                        timeEl.textContent = formatAudioTime(audioEl.duration);
+                    });
+                    audioEl.addEventListener('timeupdate', () => {
+                        if (!audioEl.duration) return;
+                        rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
+                        timeEl.textContent = formatAudioTime(audioEl.currentTime);
+                    });
+                    audioEl.addEventListener('ended', () => {
+                        c.querySelector('button').textContent = '▶';
+                        audioEl.currentTime = 0;
+                    });
+                }, 50);
+
+            } else if (type === 'file') {
+                contentHtml = `<a href="${msg.media_url || msg.message}" download class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
+            } else {
+                contentHtml = `<span>${escapeHtml(msg.message)}</span>`;
+            }
+
+            const metaRow = document.createElement('div');
+            metaRow.className = 'flex items-center gap-1 px-1 text-[9px] text-slate-500 mt-0.5';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = timeString;
+            metaRow.appendChild(timeSpan);
+
+            if (isMe) {
+                const tickSpan = document.createElement('span');
+                tickSpan.className = 'font-bold text-xs ';
+                if (msg.is_pending) {
+                    tickSpan.textContent = '🕒';
+                    tickSpan.title = 'Waiting for network...';
+                    tickSpan.classList.add('text-slate-500');
+                } else {
+                    tickSpan.textContent = '✓✓';
+                    tickSpan.classList.add('text-orange-400');
+                }
+                metaRow.appendChild(tickSpan);
+            }
+
+            bubble.innerHTML = `
+                <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'}">
+                    ${!isMe ? `<span class="block text-[10px] font-bold text-orange-400 mb-0.5">${msg.sender_name}</span>` : ''}
+                    ${contentHtml}
+                </div>
+            `;
+            bubble.appendChild(metaRow);
+            chatContainer.appendChild(bubble);
+
+            if (scrollToBottom) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        // --- MESSAGE DELETE & OPTIONS LOGIC ---
         function openMessageOptions(msg) {
             const modal = document.getElementById('message-options-modal');
             const actionsContainer = document.getElementById('message-options-actions');
@@ -792,13 +909,11 @@
             const isSender = msg.sender_username === currentUser.username;
             const isAdminOrAssistant = myRole === 'admin' || myRole === 'assistant_admin';
             
-            // 3-hour check applies ONLY to delete for everyone
             const msgTime = new Date(msg.created_at).getTime();
             const now = new Date().getTime();
             const diffHours = (now - msgTime) / (1000 * 60 * 60);
             const within3Hours = diffHours <= 3;
 
-            // 1. Delete for me (NO time bound, always allowed)
             const deleteForMeBtn = document.createElement('button');
             deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             deleteForMeBtn.textContent = '🗑️ Delete for me';
@@ -808,7 +923,6 @@
             };
             actionsContainer.appendChild(deleteForMeBtn);
 
-            // 2. Delete for everyone (Restricted to 3-hour limit AND sender or admin/assistant)
             if (within3Hours && (isSender || isAdminOrAssistant)) {
                 const deleteForEveryoneBtn = document.createElement('button');
                 deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
@@ -846,7 +960,7 @@
             renderMessages(messagesCache);
 
             showUndoBanner(10, async () => {
-                if (scope === 'everyone') {
+                if (scope === 'everyone' && msg.id) {
                     await supabaseClient
                         .from('group_messages')
                         .update({ is_deleted_for_everyone: true, message: '[Message deleted]', media_url: null })
@@ -977,6 +1091,7 @@
         }
 
         function subscribeToGroupMessages() {
+            if (!navigator.onLine) return;
             messageSubscription = supabaseClient
                 .channel('public:group_messages')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, payload => {
@@ -989,6 +1104,10 @@
             if (!text) return '';
             const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
             return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+
+        if (navigator.onLine && getGroupOfflineQueue().length > 0) {
+            window.dispatchEvent(new Event('online'));
         }
     </script>
 </body>

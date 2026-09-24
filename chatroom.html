@@ -374,12 +374,14 @@
 
             if (isMe) {
                 const tickSpan = document.createElement('span');
-                tickSpan.className = 'font-bold text-xs ' + (msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+                tickSpan.className = 'font-bold text-xs ';
                 if (msg.is_pending) {
                     tickSpan.textContent = '🕒'; 
                     tickSpan.title = 'Waiting for network...';
+                    tickSpan.classList.add('text-slate-500');
                 } else {
                     tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                    tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
                 }
                 metaRow.appendChild(tickSpan);
             }
@@ -393,7 +395,7 @@
             }
         }
 
-        // --- MESSAGE DELETE & OPTIONS LOGIC (UPDATED) ---
+        // --- MESSAGE DELETE & OPTIONS LOGIC ---
         function openMessageOptions(msg) {
             const modal = document.getElementById('message-options-modal');
             const actionsContainer = document.getElementById('message-options-actions');
@@ -401,13 +403,11 @@
 
             const isSender = msg.sender_username === currentUser.username;
             
-            // 3-hour check applies ONLY to delete for everyone
             const msgTime = new Date(msg.created_at).getTime();
             const now = new Date().getTime();
             const diffHours = (now - msgTime) / (1000 * 60 * 60);
             const within3Hours = diffHours <= 3;
 
-            // 1. Delete for me (NO time bound, always allowed)
             const deleteForMeBtn = document.createElement('button');
             deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             deleteForMeBtn.textContent = '🗑️ Delete for me';
@@ -417,7 +417,6 @@
             };
             actionsContainer.appendChild(deleteForMeBtn);
 
-            // 2. Delete for everyone (Restricted to sender AND 3-hour limit)
             if (isSender && within3Hours) {
                 const deleteForEveryoneBtn = document.createElement('button');
                 deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
@@ -455,7 +454,7 @@
             renderMessages(messagesCache);
 
             showUndoBanner(10, async () => {
-                if (scope === 'everyone') {
+                if (scope === 'everyone' && msg.id) {
                     await supabaseClient
                         .from('messages')
                         .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
@@ -742,7 +741,7 @@
             };
 
             let { error } = await supabaseClient.from('messages').insert([payload]);
-            if (error && error.message.includes('message_type')) {
+            if (error && error.message && error.message.includes('message_type')) {
                 const fallback = {
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
@@ -770,23 +769,19 @@
 
         window.addEventListener('online', async () => {
             const queue = getOfflineQueue();
-            if (queue.length === 0) {
-                fetchMessages();
-                return;
+            if (queue.length > 0) {
+                for (const msg of queue) {
+                    const payload = {
+                        sender_username: msg.sender_username,
+                        receiver_username: msg.receiver_username,
+                        content: msg.content,
+                        message_type: msg.message_type || 'text',
+                        is_read: false
+                    };
+                    await supabaseClient.from('messages').insert([payload]);
+                }
+                saveOfflineQueue([]);
             }
-
-            for (const msg of queue) {
-                const payload = {
-                    sender_username: msg.sender_username,
-                    receiver_username: msg.receiver_username,
-                    content: msg.content,
-                    message_type: msg.message_type || 'text',
-                    is_read: false
-                };
-                await supabaseClient.from('messages').insert([payload]);
-            }
-
-            saveOfflineQueue([]); 
             fetchMessages();
         });
 
