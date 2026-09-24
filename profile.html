@@ -51,6 +51,18 @@
                     <input type="file" id="avatar-file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'avatar')">
                 </div>
 
+                <!-- Chat Code Management Section -->
+                <div class="mb-5 p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Your Chat Code</span>
+                        <span id="profile-chat-code" class="text-sm font-mono font-bold text-orange-400 mt-0.5 block">Loading...</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="copyProfileChatCode()" id="copy-code-btn" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-xl transition-all cursor-pointer hidden">Copy</button>
+                        <button type="button" onclick="openCodeModal()" id="gen-code-btn" class="text-xs bg-orange-600/20 border border-orange-500/30 hover:bg-orange-600/30 text-orange-400 px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer">Generate Code</button>
+                    </div>
+                </div>
+
                 <form onsubmit="handleSaveProfile(event)" class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Display Name</label>
@@ -78,6 +90,20 @@
 
     </div>
 
+    <!-- CODE GENERATION CONFIRMATION MODAL -->
+    <div id="code-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-white">Generate New Chat Code?</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Generating a brand new chat code will replace your existing code. Anyone who tries to connect with your old code will no longer be able to find you. Are you sure?
+            </p>
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" onclick="closeCodeModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition-all cursor-pointer">Cancel</button>
+                <button type="button" onclick="generateAndSaveChatCode()" class="flex-1 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-orange-600/20 transition-all cursor-pointer">Yes, Generate</button>
+            </div>
+        </div>
+    </div>
+
     <script src="supabase.js"></script>
     <script>
         let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
@@ -97,7 +123,64 @@
             newAvatarBase64 = currentUser.avatar_url || null;
             newCoverBase64 = currentUser.cover_url || null;
 
+            updateChatCodeUI();
             updatePreviews();
+        }
+
+        function updateChatCodeUI() {
+            const codeDisplay = document.getElementById('profile-chat-code');
+            const copyBtn = document.getElementById('copy-code-btn');
+            const genBtn = document.getElementById('gen-code-btn');
+
+            if (currentUser.chat_code) {
+                codeDisplay.textContent = currentUser.chat_code;
+                copyBtn.classList.remove('hidden');
+                genBtn.textContent = 'Regenerate Code';
+            } else {
+                codeDisplay.textContent = 'Not Generated (N/A)';
+                copyBtn.classList.add('hidden');
+                genBtn.textContent = 'Generate Code Now';
+            }
+        }
+
+        function copyProfileChatCode() {
+            if (!currentUser.chat_code) return;
+            navigator.clipboard.writeText(currentUser.chat_code);
+            alert('Chat Code copied to clipboard: ' + currentUser.chat_code);
+        }
+
+        function openCodeModal() {
+            document.getElementById('code-modal').classList.remove('hidden');
+            document.getElementById('code-modal').classList.add('flex');
+        }
+
+        function closeCodeModal() {
+            document.getElementById('code-modal').classList.remove('flex');
+            document.getElementById('code-modal').classList.add('hidden');
+        }
+
+        async function generateAndSaveChatCode() {
+            closeCodeModal();
+            
+            // Generate unique format: CL- followed by 6 random uppercase alphanumeric characters
+            const randomCode = 'CL-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .update({ chat_code: randomCode })
+                .eq('username', currentUser.username)
+                .select()
+                .maybeSingle();
+
+            if (error) {
+                alert('Error generating chat code: ' + error.message);
+                return;
+            }
+
+            currentUser = data || { ...currentUser, chat_code: randomCode };
+            localStorage.setItem('chatlite_user', JSON.stringify(currentUser));
+            updateChatCodeUI();
+            alert('New Chat Code generated successfully: ' + randomCode);
         }
 
         function updatePreviews() {
@@ -120,24 +203,47 @@
             }
         }
 
-        // Handle direct device file selection and convert to Base64
         function handleFileSelect(event, type) {
             const file = event.target.files[0];
             if (!file) return;
 
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Please select an image smaller than 2MB.');
-                return;
-            }
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                if (type === 'avatar') {
-                    newAvatarBase64 = e.target.result;
-                } else if (type === 'cover') {
-                    newCoverBase64 = e.target.result;
-                }
-                updatePreviews();
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = type === 'avatar' ? 300 : 800;
+                    const MAX_HEIGHT = type === 'avatar' ? 300 : 400;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+                    if (type === 'avatar') {
+                        newAvatarBase64 = compressedDataUrl;
+                    } else if (type === 'cover') {
+                        newCoverBase64 = compressedDataUrl;
+                    }
+                    updatePreviews();
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
@@ -169,7 +275,6 @@
                 return;
             }
 
-            // Update local storage session
             currentUser = data || { ...currentUser, ...updatedData };
             localStorage.setItem('chatlite_user', JSON.stringify(currentUser));
 
