@@ -24,21 +24,31 @@
         <!-- Scrollable Form Container -->
         <div class="flex-1 overflow-y-auto pb-10">
             
-            <!-- Cover Picture Section -->
-            <div class="relative h-36 bg-slate-800 border-b border-slate-800">
-                <div id="cover-preview" class="w-full h-full bg-cover bg-center bg-slate-800 flex items-center justify-center text-slate-500 text-xs">
-                    Cover Photo Area
+            <!-- Cover Picture Section with Upload Trigger -->
+            <div class="relative h-36 bg-slate-800 border-b border-slate-800 group cursor-pointer" onclick="document.getElementById('cover-file-input').click()">
+                <div id="cover-preview" class="w-full h-full bg-cover bg-center bg-slate-800 flex items-center justify-center text-slate-400 text-xs font-medium">
+                    Tap to change cover photo
                 </div>
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold">
+                    Change Cover Photo
+                </div>
+                <input type="file" id="cover-file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'cover')">
             </div>
 
             <!-- Avatar & Profile Info Form -->
             <div class="px-6 relative pb-6">
                 
-                <!-- Avatar Overlapping Cover -->
+                <!-- Avatar Overlapping Cover with Upload Trigger -->
                 <div class="relative -mt-12 mb-4 flex items-end justify-between">
-                    <div id="avatar-preview" class="w-24 h-24 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-xl flex items-center justify-center text-2xl font-bold text-orange-400">
-                        U
+                    <div class="relative group cursor-pointer" onclick="document.getElementById('avatar-file-input').click()">
+                        <div id="avatar-preview" class="w-24 h-24 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden shadow-xl flex items-center justify-center text-2xl font-bold text-orange-400">
+                            U
+                        </div>
+                        <div class="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] text-center font-semibold p-1">
+                            Change Photo
+                        </div>
                     </div>
+                    <input type="file" id="avatar-file-input" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'avatar')">
                 </div>
 
                 <form onsubmit="handleSaveProfile(event)" class="space-y-4">
@@ -50,16 +60,6 @@
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Username (Read-only)</label>
                         <input type="text" id="profile-username" disabled class="w-full px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-sm text-slate-500 cursor-not-allowed">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Profile Picture URL</label>
-                        <input type="url" id="profile-avatar-url" placeholder="https://example.com/avatar.jpg" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Cover Picture URL</label>
-                        <input type="url" id="profile-cover-url" placeholder="https://example.com/cover.jpg" class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
                     </div>
 
                     <div>
@@ -81,6 +81,9 @@
     <script src="supabase.js"></script>
     <script>
         let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        let newAvatarBase64 = null;
+        let newCoverBase64 = null;
+
         if (!currentUser) {
             window.location.href = 'index.html';
         } else {
@@ -90,50 +93,66 @@
         function populateForm() {
             document.getElementById('profile-name').value = currentUser.name || '';
             document.getElementById('profile-username').value = currentUser.username || '';
-            document.getElementById('profile-avatar-url').value = currentUser.avatar_url || '';
-            document.getElementById('profile-cover-url').value = currentUser.cover_url || '';
             document.getElementById('profile-bio').value = currentUser.bio || '';
+            newAvatarBase64 = currentUser.avatar_url || null;
+            newCoverBase64 = currentUser.cover_url || null;
 
             updatePreviews();
         }
 
-        // Live preview updates when URL inputs change
-        document.getElementById('profile-avatar-url').addEventListener('input', updatePreviews);
-        document.getElementById('profile-cover-url').addEventListener('input', updatePreviews);
-
         function updatePreviews() {
-            const avatarUrl = document.getElementById('profile-avatar-url').value.trim();
-            const coverUrl = document.getElementById('profile-cover-url').value.trim();
             const name = document.getElementById('profile-name').value || 'U';
 
             const avatarContainer = document.getElementById('avatar-preview');
-            if (avatarUrl) {
-                avatarContainer.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover">`;
+            if (newAvatarBase64) {
+                avatarContainer.innerHTML = `<img src="${newAvatarBase64}" class="w-full h-full object-cover">`;
             } else {
                 avatarContainer.textContent = name.charAt(0).toUpperCase();
             }
 
             const coverContainer = document.getElementById('cover-preview');
-            if (coverUrl) {
-                coverContainer.style.backgroundImage = `url('${coverUrl}')`;
+            if (newCoverBase64) {
+                coverContainer.style.backgroundImage = `url('${newCoverBase64}')`;
                 coverContainer.textContent = '';
             } else {
                 coverContainer.style.backgroundImage = 'none';
-                coverContainer.textContent = 'Cover Photo Area';
+                coverContainer.textContent = 'Tap to change cover photo';
             }
+        }
+
+        // Handle direct device file selection and convert to Base64
+        function handleFileSelect(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Please select an image smaller than 2MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (type === 'avatar') {
+                    newAvatarBase64 = e.target.result;
+                } else if (type === 'cover') {
+                    newCoverBase64 = e.target.result;
+                }
+                updatePreviews();
+            };
+            reader.readAsDataURL(file);
         }
 
         async function handleSaveProfile(e) {
             e.preventDefault();
             const saveBtn = document.getElementById('save-btn');
-            saveBtn.textContent = 'Saving...';
+            saveBtn.textContent = 'Saving changes...';
             saveBtn.disabled = true;
 
             const updatedData = {
                 name: document.getElementById('profile-name').value.trim(),
-                avatar_url: document.getElementById('profile-avatar-url').value.trim(),
-                cover_url: document.getElementById('profile-cover-url').value.trim(),
-                bio: document.getElementById('profile-bio').value.trim()
+                bio: document.getElementById('profile-bio').value.trim(),
+                avatar_url: newAvatarBase64,
+                cover_url: newCoverBase64
             };
 
             const { data, error } = await supabaseClient
