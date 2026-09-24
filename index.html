@@ -31,7 +31,6 @@
             animation: welcomeSwirl 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
-        /* Original fluid scrolling layout restored */
         body {
             background-color: #020617;
             color: #f1f5f9;
@@ -45,31 +44,31 @@
 
     <div class="min-h-screen flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800">
         
-        <!-- Background Image Container with gradient overlay matching the original look -->
+        <!-- Background Image Container with gradient overlay -->
         <div class="absolute inset-0 bg-slate-950 bg-cover bg-center" style="background-image: url('image1-bg.jpg'); z-index: 0;">
-            <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(2, 6, 23, 0.4) 0%, rgba(2, 6, 23, 0.85) 60%, rgba(2, 6, 23, 0.98) 100%);"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(2, 6, 23, 0.25) 0%, rgba(2, 6, 23, 0.75) 50%, rgba(2, 6, 23, 0.96) 100%);"></div>
         </div>
 
-        <!-- Content Area -->
-        <div class="relative z-10 flex flex-col justify-between flex-1 p-6 pt-16 pb-10 min-h-screen">
+        <!-- Content Area: Adjusted top padding to push text down closer to the bottom controls -->
+        <div class="relative z-10 flex flex-col justify-between flex-1 p-6 pt-40 pb-10 min-h-screen">
             
-            <!-- Top Header & Text Section -->
-            <div class="space-y-6 text-left">
-                <div class="text-left w-full pb-2 overflow-hidden">
+            <!-- Top Header & Text Section (Pushed down & well aligned) -->
+            <div class="space-y-5 text-left">
+                <div class="text-left w-full pb-1 overflow-hidden">
                     <h2 class="text-5xl tracking-wide text-white drop-shadow-md animate-swirl inline-block" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
                         CHAT<span class="text-orange-500">lite</span>
                     </h2>
                 </div>
-                <h1 class="text-4xl font-extrabold tracking-tight text-white leading-tight">
+                <h1 class="text-3xl font-extrabold tracking-tight text-white leading-tight">
                     Take control of your conversations, effortlessly.
                 </h1>
-                <p class="text-slate-300 text-base leading-relaxed">
+                <p class="text-slate-300 text-sm leading-relaxed">
                     Your private, secure family messaging space built just for you and your loved ones.
                 </p>
             </div>
 
             <!-- Bottom Action Group: Indicators + Side-by-Side Buttons -->
-            <div class="space-y-6 pt-8">
+            <div class="space-y-6 pt-6">
                 <!-- Pagination Dots Indicator -->
                 <div class="flex items-center space-x-1.5">
                     <span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span>
