@@ -119,14 +119,15 @@
             }`;
 
             // Render based on message type
-            if (msg.message_type === 'image') {
+            const type = msg.message_type || 'text';
+            if (type === 'image') {
                 bubble.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="window.open('${msg.content}')">`;
-            } else if (msg.message_type === 'video') {
+            } else if (type === 'video') {
                 bubble.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
-            } else if (msg.message_type === 'audio') {
+            } else if (type === 'audio') {
                 bubble.innerHTML = `<audio src="${msg.content}" controls class="w-48 h-10"></audio>`;
-            } else if (msg.message_type === 'file') {
-                bubble.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold">📁 Download Attachment</a>`;
+            } else if (type === 'file') {
+                bubble.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold">📁 File</a>`;
             } else {
                 bubble.textContent = msg.content;
             }
@@ -158,14 +159,25 @@
         }
 
         async function sendMediaPayload(content, type) {
-            const { error } = await supabaseClient
-                .from('messages')
-                .insert([{
+            const payload = {
+                sender_username: currentUser.username,
+                receiver_username: targetUsername,
+                content: content,
+                message_type: type
+            };
+
+            let { error } = await supabaseClient.from('messages').insert([payload]);
+
+            // Fallback if message_type column doesn't exist in Supabase yet
+            if (error && error.message.includes('message_type')) {
+                const fallbackPayload = {
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
-                    content: content,
-                    message_type: type
-                }]);
+                    content: content
+                };
+                const retry = await supabaseClient.from('messages').insert([fallbackPayload]);
+                error = retry.error;
+            }
 
             if (error) {
                 alert('Failed to send media: ' + error.message);
@@ -178,14 +190,24 @@
             const content = input.value.trim();
             if (!content) return;
 
-            const { error } = await supabaseClient
-                .from('messages')
-                .insert([{
+            const payload = {
+                sender_username: currentUser.username,
+                receiver_username: targetUsername,
+                content: content,
+                message_type: 'text'
+            };
+
+            let { error } = await supabaseClient.from('messages').insert([payload]);
+
+            if (error && error.message.includes('message_type')) {
+                const fallbackPayload = {
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
-                    content: content,
-                    message_type: 'text'
-                }]);
+                    content: content
+                };
+                const retry = await supabaseClient.from('messages').insert([fallbackPayload]);
+                error = retry.error;
+            }
 
             if (error) {
                 alert('Failed to send message: ' + error.message);
@@ -197,6 +219,8 @@
 
         async function toggleVoiceRecording() {
             const micBtn = document.getElementById('mic-btn');
+            const messageInput = document.getElementById('message-input');
+
             if (!isRecording) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -219,6 +243,8 @@
                     mediaRecorder.start();
                     isRecording = true;
                     micBtn.classList.add('text-red-500', 'animate-pulse');
+                    messageInput.value = '🔴 Recording voice note... Tap mic to stop.';
+                    messageInput.disabled = true;
                 } catch (err) {
                     alert('Microphone access denied or unavailable.');
                 }
@@ -226,6 +252,8 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 micBtn.classList.remove('text-red-500', 'animate-pulse');
+                messageInput.value = '';
+                messageInput.disabled = false;
             }
         }
 
