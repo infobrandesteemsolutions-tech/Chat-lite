@@ -3,26 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Lite - Group Room</title>
+    <title>Chat Lite - Conversation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 h-[100dvh] flex flex-col font-sans overflow-hidden m-0">
 
     <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
-        
-        <!-- Header (Fixed & Non-scrolling, Tappable to Open Group Backend Settings) -->
+        <!-- Header (Fixed & Non-scrolling) -->
         <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
-            <div onclick="openGroupBackend()" class="flex items-center gap-2.5 overflow-hidden cursor-pointer group flex-1 min-w-0">
-                <button onclick="event.stopPropagation(); window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">
-                    &larr;
-                </button>
-                <div id="group-header-avatar" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-orange-400 text-xs flex-shrink-0 overflow-hidden">
-                    GRP
-                </div>
-                <div class="overflow-hidden min-w-0">
-                    <h2 id="group-header-name" class="font-bold text-xs text-white group-hover:text-orange-400 transition-colors truncate">Loading Group...</h2>
-                    <span id="group-header-meta" class="text-[9px] text-slate-400 truncate block">Tap for group settings</span>
+            <div class="flex items-center gap-2.5 overflow-hidden">
+                <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">&larr;</button>
+                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden" id="active-chat-avatar">U</div>
+                <div class="overflow-hidden">
+                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Username</h3>
+                    <span class="text-[9px] text-slate-400 truncate block" id="active-chat-gender">Gender</span>
                 </div>
             </div>
             <!-- Header Quick Action Buttons -->
@@ -31,25 +26,24 @@
                 <button onclick="openMediaGallery('file')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Files">📁</button>
                 <button onclick="openMediaGallery('image')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Images">🖼️</button>
                 <button onclick="openMediaGallery('video')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Videos">🎬</button>
-                <div class="text-[10px] font-mono bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700 ml-1">Settings</div>
             </div>
         </div>
 
         <!-- Hidden Search Bar Slide-down -->
         <div id="search-container" class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
-            <input type="text" id="search-keyword-input" placeholder="Search keywords in group chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-orange-500">
+            <input type="text" id="search-keyword-input" placeholder="Search keywords in chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
             <button onclick="toggleSearchBox()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
         </div>
 
-        <!-- Messages Area (Scrollable independently underneath header) -->
+        <!-- Messages Area (Scrollable independently underneath the fixed header) -->
         <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
-            <div class="text-center text-xs text-slate-500 py-4">Loading group messages...</div>
+            <!-- Messages load here -->
         </div>
 
         <!-- Undo Notification Banner (10 Seconds Timer) -->
-        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-orange-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
+        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
             <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
-            <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
+            <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
         </div>
 
         <!-- Message Options Popup Modal (Long Press Menu) -->
@@ -60,32 +54,23 @@
                     <button onclick="closeMessageOptions()" class="text-slate-400 hover:text-white text-base cursor-pointer">&times;</button>
                 </div>
                 <div id="message-options-actions" class="flex flex-col gap-1.5">
-                    <!-- Populated dynamically -->
+                    <!-- Populated dynamically based on permissions & 3-hour limit for everyone -->
                 </div>
             </div>
-        </div>
-
-        <!-- Reply Staging Preview Bar -->
-        <div id="reply-preview-bar" class="hidden px-3 py-2 bg-slate-950 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
-            <div class="flex flex-col border-l-2 border-orange-500 pl-2.5 overflow-hidden">
-                <span id="reply-preview-sender" class="text-[10px] font-bold text-orange-400 truncate"></span>
-                <span id="reply-preview-text" class="text-xs text-slate-300 truncate"></span>
-            </div>
-            <button type="button" onclick="cancelReply()" class="text-slate-400 hover:text-white text-sm cursor-pointer p-1">&times;</button>
         </div>
 
         <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
         <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-orange-400">Staged Media Preview</span>
-                <button type="button" onclick="clearStagedMedia()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded cursor-pointer">Discard</button>
+                <span class="text-xs font-semibold text-indigo-400">Staged Media Preview</span>
+                <button type="button" onclick="clearStagedMedia()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">Discard</button>
             </div>
             <div id="preview-container" class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
                 <!-- Preview content/thumbnail -->
             </div>
             <!-- Upload Progress Bar -->
             <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div id="upload-progress-bar" class="bg-orange-600 h-full w-0 transition-all duration-300"></div>
+                <div id="upload-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
             </div>
             <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready. Hit Send button to upload & deliver.</span>
         </div>
@@ -96,12 +81,12 @@
         <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="stageFileSelected(event)">
 
         <!-- Attachment Options Popup Menu -->
-        <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-52 backdrop-blur-md">
+        <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
             <button type="button" onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
                 📁 File / Document
             </button>
             <button type="button" onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📷 Take Photo Snap
+                📷 Take Photo
             </button>
             <button type="button" onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
                 📹 Record Video Note
@@ -111,8 +96,8 @@
         <!-- Media Gallery Modal Drawer -->
         <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                <h3 class="font-bold text-sm text-white" id="gallery-title">Group Media</h3>
-                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
+                <h3 class="font-bold text-sm text-white" id="gallery-title">Chat Media</h3>
+                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">Close</button>
             </div>
             <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
                 <!-- Gallery items populated here -->
@@ -121,12 +106,12 @@
 
         <!-- Bottom Input Bar (Fixed & Always Visible) -->
         <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
-            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-orange-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">
+            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">
                 +
             </button>
             
             <!-- Standard Text Input -->
-            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white min-w-0">
+            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
             
             <!-- Live Recording Indicator & Controls UI (Hidden by default) -->
             <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
@@ -145,120 +130,73 @@
                 🎤
             </button>
             
-            <button type="submit" id="send-btn" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">Send</button>
+            <button type="submit" id="send-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">Send</button>
         </form>
-    </div>
-
-    <!-- GROUP BACKEND / SETTINGS MODAL -->
-    <div id="group-backend-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            
-            <!-- Modal Header -->
-            <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900">
-                <div>
-                    <h3 id="modal-group-name" class="font-bold text-base text-white">Group Settings</h3>
-                    <p id="modal-group-desc" class="text-xs text-slate-400 truncate max-w-[280px]"></p>
-                </div>
-                <button onclick="closeGroupBackend()" class="text-slate-400 hover:text-white text-xl cursor-pointer">&times;</button>
-            </div>
-
-            <!-- Modal Scrollable Content -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-5">
-                
-                <!-- Group Code Info -->
-                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] text-slate-400 uppercase tracking-wider block font-semibold">Group Chat Code</span>
-                        <span id="modal-group-code" class="text-xs font-mono font-bold text-orange-400 mt-0.5 block">--</span>
-                    </div>
-                    <button onclick="copyGroupCode()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg transition-all cursor-pointer">Copy</button>
-                </div>
-
-                <!-- Add Member Section (Restricted by Role) -->
-                <div id="add-member-section" class="p-3.5 bg-slate-950 border border-slate-800 rounded-xl space-y-2 hidden">
-                    <label class="block text-xs font-medium text-slate-400">Add Member via Chat Code</label>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="backend-member-code" placeholder="e.g. CL-ABC1234" class="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg focus:outline-none focus:border-orange-500 text-xs font-mono text-white uppercase">
-                        <button onclick="addGroupMemberFromBackend()" class="px-3 py-2 bg-orange-600 hover:bg-orange-500 font-semibold rounded-lg text-xs text-white transition-all cursor-pointer">Add</button>
-                    </div>
-                </div>
-
-                <!-- Members List Container -->
-                <div>
-                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Members List (<span id="member-count">0</span>)</h4>
-                    <div id="backend-members-list" class="space-y-2">
-                        <!-- Populated dynamically -->
-                    </div>
-                </div>
-
-            </div>
-        </div>
     </div>
 
     <script src="supabase.js"></script>
     <script>
+        const currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
         const urlParams = new URLSearchParams(window.location.search);
-        const groupId = urlParams.get('id');
-        let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
-        let currentGroup = null;
-        let myRole = 'member'; // 'admin', 'assistant_admin', or 'member'
-        let groupMembersCache = [];
+        const targetUsername = urlParams.get('to');
+        const targetName = urlParams.get('name');
+        const targetGender = urlParams.get('gender');
 
-        // Multimedia & Recording variables
+        if (!currentUser || !targetUsername) {
+            window.location.href = 'chatlist.html';
+        }
+
+        document.getElementById('active-chat-name').textContent = targetName;
+        document.getElementById('active-chat-gender').textContent = `@${targetUsername} • ${targetGender}`;
+        document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
+
+        const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
+        const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
+
+        let messageSubscription = null;
+        let messagesCache = loadLocalCache();
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
-        let stagedPayload = null;
+        let stagedPayload = null; 
         let isRecording = false;
         let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
-        let activeReplyMessage = null;
-
-        const GROUP_STORAGE_KEY = `chatlite_group_cache_${currentUser?.username}_${groupId}`;
-        const GROUP_QUEUE_KEY = `chatlite_group_offline_queue_${currentUser?.username}_${groupId}`;
-
-        let messagesCache = loadLocalGroupCache();
-        let messageSubscription = null;
 
         // Undo & Deletion management variables
         let pendingDeleteTimer = null;
         let undoTargetMessage = null;
 
-        if (!currentUser || !groupId) {
-            window.location.href = 'chatlist.html';
-        } else {
-            if (messagesCache.length > 0) {
-                renderMessages(messagesCache);
-            }
-            initGroupRoom();
+        if (messagesCache.length > 0) {
+            renderMessages(messagesCache);
         }
 
-        function loadLocalGroupCache() {
+        function loadLocalCache() {
             try {
-                const data = localStorage.getItem(GROUP_STORAGE_KEY);
+                const data = localStorage.getItem(STORAGE_KEY);
                 return data ? JSON.parse(data) : [];
             } catch (e) {
                 return [];
             }
         }
 
-        function saveLocalGroupCache(messages) {
+        function saveLocalCache(messages) {
             messagesCache = messages;
-            localStorage.setItem(GROUP_STORAGE_KEY, JSON.stringify(messages));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
         }
 
-        function getGroupOfflineQueue() {
+        function loadOfflineQueue() {
             try {
-                const data = localStorage.getItem(GROUP_QUEUE_KEY);
+                const data = localStorage.getItem(QUEUE_KEY);
                 return data ? JSON.parse(data) : [];
             } catch (e) {
                 return [];
             }
         }
 
-        function saveGroupOfflineQueue(queue) {
-            localStorage.setItem(GROUP_QUEUE_KEY, JSON.stringify(queue));
+        function saveOfflineQueue(queue) {
+            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
         }
 
         function toggleAttachmentMenu() {
@@ -276,232 +214,384 @@
             }
         }
 
-        window.addEventListener('click', (e) => {
-            if (!e.target.closest('#attachment-menu') && !e.target.closest('#attach-btn')) {
-                document.getElementById('attachment-menu').classList.add('hidden');
+        async function fetchMessages() {
+            // Flush any offline queue items first if online
+            if (navigator.onLine) {
+                await flushOfflineQueue();
             }
-        });
 
-        async function initGroupRoom() {
-            const { data: grp, error: grpErr } = await supabaseClient
-                .from('groups')
+            const { data: messages, error } = await supabaseClient
+                .from('messages')
                 .select('*')
-                .eq('id', groupId)
-                .single();
+                .or(`and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username})`)
+                .order('created_at', { ascending: true });
 
-            if (grpErr || !grp) {
-                alert('Group not found.');
-                window.location.href = 'chatlist.html';
-                return;
-            }
-            currentGroup = grp;
-
-            document.getElementById('group-header-name').textContent = grp.name;
-            document.getElementById('modal-group-name').textContent = grp.name;
-            document.getElementById('modal-group-desc').textContent = grp.description || 'No description provided.';
-            document.getElementById('modal-group-code').textContent = grp.chat_code;
-
-            const avatarContainer = document.getElementById('group-header-avatar');
-            if (grp.avatar_url) {
-                avatarContainer.innerHTML = `<img src="${grp.avatar_url}" class="w-full h-full object-cover">`;
-            } else {
-                avatarContainer.textContent = grp.name.charAt(0).toUpperCase();
-            }
-
-            await checkUserRoleAndLoadMembers();
-            await fetchGroupMessages();
-            subscribeToGroupMessages();
-        }
-
-        async function checkUserRoleAndLoadMembers() {
-            const { data: members, error } = await supabaseClient
-                .from('group_members')
-                .select('*')
-                .eq('group_id', groupId);
-
-            if (error || !members) return;
-
-            const usernames = members.map(m => m.username);
-            const { data: profiles } = await supabaseClient
-                .from('profiles')
-                .select('username, name, avatar_url, chat_code')
-                .in('username', usernames);
-
-            const profileMap = {};
-            if (profiles) {
-                profiles.forEach(p => { profileMap[p.username] = p; });
-            }
-
-            groupMembersCache = members.map(m => ({
-                ...m,
-                profiles: profileMap[m.username] || {}
-            }));
-
-            const userMembership = groupMembersCache.find(m => m.username === currentUser.username);
-            if (!userMembership || userMembership.status !== 'accepted') {
-                alert('You are no longer an active member of this group.');
-                window.location.href = 'chatlist.html';
+            if (error) {
+                console.error('Error fetching messages:', error);
                 return;
             }
 
-            myRole = userMembership.role;
-
-            if (myRole === 'admin' || myRole === 'assistant_admin') {
-                document.getElementById('add-member-section').classList.remove('hidden');
-            } else {
-                document.getElementById('add-member-section').classList.add('hidden');
+            if (messages) {
+                saveLocalCache(messages);
+                renderMessages(messagesCache);
+                markIncomingMessagesAsRead(messages);
             }
-
-            renderBackendMembersList(groupMembersCache);
         }
 
-        function renderBackendMembersList(members) {
-            const container = document.getElementById('backend-members-list');
-            document.getElementById('member-count').textContent = members.length;
+        async function markIncomingMessagesAsRead(messages) {
+            let hiddenForMe = [];
+            try {
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+            } catch(e) {}
+
+            const unreadIds = messages
+                .filter(m => m.receiver_username === currentUser.username && !m.is_read && !hiddenForMe.includes(m.id))
+                .map(m => m.id);
+
+            if (unreadIds.length > 0) {
+                await supabaseClient
+                    .from('messages')
+                    .update({ is_read: true })
+                    .in('id', unreadIds);
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('chat-messages');
             container.innerHTML = '';
 
-            members.forEach(m => {
-                const profile = m.profiles || {};
-                const item = document.createElement('div');
-                item.className = 'flex items-center justify-between p-2.5 bg-slate-950 border border-slate-800 rounded-xl';
+            let hiddenForMe = [];
+            try {
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+            } catch(e) {}
 
-                let avatarHTML = profile.avatar_url
-                    ? `<img src="${profile.avatar_url}" class="w-9 h-9 rounded-full object-cover">`
-                    : `<div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center font-bold text-orange-400 text-xs">${(profile.name || m.username || 'U').charAt(0).toUpperCase()}</div>`;
+            const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
 
-                let roleBadgeColor = 'text-slate-400 bg-slate-900 border-slate-800';
-                if (m.role === 'admin') roleBadgeColor = 'text-orange-400 bg-orange-950/30 border-orange-500/30';
-                else if (m.role === 'assistant_admin') roleBadgeColor = 'text-blue-400 bg-blue-950/30 border-blue-500/30';
+            // Also merge pending offline messages into the rendered list visually
+            const offlineQueue = loadOfflineQueue();
+            const combinedList = [...filtered, ...offlineQueue];
+            
+            // Sort combined list by timestamp to maintain correct chronological order
+            combinedList.sort((a, b) => new Date(a.created_at || Date.now()) - new Date(b.created_at || Date.now()));
 
-                let controlsHTML = `<span class="text-xs px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${(m.role || 'member').replace('_', ' ')}</span>`;
+            combinedList.forEach(msg => appendMessageToDOM(msg, false));
 
-                if (myRole === 'admin' && m.username !== currentUser.username) {
-                    controlsHTML = `
-                        <div class="flex items-center gap-1.5">
-                            <select onchange="updateMemberRole('${m.username}', this.value)" class="text-[11px] bg-slate-900 border border-slate-700 text-slate-200 rounded px-1.5 py-1 focus:outline-none">
-                                <option value="admin" ${m.role === 'admin' ? 'selected' : ''}>Admin</option>
-                                <option value="assistant_admin" ${m.role === 'assistant_admin' ? 'selected' : ''}>Assistant Admin</option>
-                                <option value="member" ${m.role === 'member' ? 'selected' : ''}>Member</option>
-                            </select>
-                            <button onclick="removeGroupMember('${m.username}')" class="text-[11px] bg-red-950/30 text-red-400 hover:bg-red-900/50 px-2 py-1 rounded border border-red-900/40 transition-all cursor-pointer">Remove</button>
-                        </div>
-                    `;
-                } else if (myRole === 'assistant_admin' && m.role !== 'admin' && m.username !== currentUser.username) {
-                    controlsHTML = `
-                        <div class="flex items-center gap-2">
-                            <span class="text-[11px] px-2 py-1 rounded border font-semibold uppercase tracking-wider ${roleBadgeColor}">${m.role.replace('_', ' ')}</span>
-                            <button onclick="removeGroupMember('${m.username}')" class="text-[11px] bg-red-950/30 text-red-400 hover:bg-red-900/50 px-2 py-1 rounded border border-red-900/40 transition-all cursor-pointer">Remove</button>
-                        </div>
-                    `;
-                }
+            container.scrollTop = container.scrollHeight;
+        }
 
-                item.innerHTML = `
-                    <div class="flex items-center gap-2.5 flex-1 min-w-0">
-                        ${avatarHTML}
-                        <div class="min-w-0">
-                            <h5 class="text-xs font-semibold text-white truncate">${profile.name || m.username}</h5>
-                            <p class="text-[10px] text-slate-400 truncate">@${profile.username || m.username} &bull; <span class="capitalize text-emerald-400">${m.status}</span></p>
+        function filterMessages(keyword) {
+            const term = keyword.toLowerCase();
+            if (!term) {
+                renderMessages(messagesCache);
+                return;
+            }
+            const filtered = messagesCache.filter(m => {
+                if (m.is_deleted_for_everyone) return false;
+                if (m.message_type === 'text' && m.content.toLowerCase().includes(term)) return true;
+                if (m.message_type === keyword) return true;
+                return false;
+            });
+            renderMessages(filtered);
+        }
+
+        function appendMessageToDOM(msg, scrollToBottom = true) {
+            const container = document.getElementById('chat-messages');
+            const isMe = msg.sender_username === currentUser.username;
+
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row`;
+            if (msg.id) wrapper.setAttribute('data-id', msg.id);
+
+            let pressTimer = null;
+            const startPress = () => {
+                if (msg.is_offline_pending) return; // Don't open options for offline pending messages
+                pressTimer = setTimeout(() => openMessageOptions(msg), 600);
+            };
+            const cancelPress = () => {
+                if (pressTimer) clearTimeout(pressTimer);
+            };
+
+            wrapper.addEventListener('touchstart', startPress);
+            wrapper.addEventListener('touchend', cancelPress);
+            wrapper.addEventListener('touchmove', cancelPress);
+            wrapper.addEventListener('mousedown', startPress);
+            wrapper.addEventListener('mouseup', cancelPress);
+            wrapper.addEventListener('mouseleave', cancelPress);
+
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
+                isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
+            }`;
+
+            const type = msg.message_type || 'text';
+            if (type === 'image') {
+                bubble.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="window.open('${msg.content}')">`;
+            } else if (type === 'video') {
+                bubble.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
+            } else if (type === 'audio') {
+                const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
+                bubble.innerHTML = `
+                    <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
+                        <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
+                        <audio id="${audioId}" src="${msg.content}" preload="metadata"></audio>
+                        <div class="flex flex-col flex-1 gap-1">
+                            <div class="flex justify-between items-center text-[10px] opacity-80">
+                                <span class="audio-current-time">0:00</span>
+                                <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
+                            </div>
+                            <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
                         </div>
                     </div>
-                    <div>${controlsHTML}</div>
                 `;
-                container.appendChild(item);
+
+                setTimeout(() => {
+                    const audioEl = document.getElementById(audioId);
+                    if (!audioEl) return;
+                    const c = audioEl.closest('[data-audio-container]');
+                    const rangeEl = c.querySelector('.audio-range');
+                    const timeEl = c.querySelector('.audio-current-time');
+
+                    audioEl.addEventListener('loadedmetadata', () => {
+                        timeEl.textContent = formatAudioTime(audioEl.duration);
+                    });
+                    audioEl.addEventListener('timeupdate', () => {
+                        if (!audioEl.duration) return;
+                        rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
+                        timeEl.textContent = formatAudioTime(audioEl.currentTime);
+                    });
+                    audioEl.addEventListener('ended', () => {
+                        c.querySelector('button').textContent = '▶';
+                        audioEl.currentTime = 0;
+                    });
+                }, 50);
+
+            } else if (type === 'file') {
+                bubble.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
+            } else {
+                bubble.textContent = msg.content;
+            }
+
+            const metaRow = document.createElement('div');
+            metaRow.className = 'flex items-center gap-1 px-1 text-[10px] text-slate-400';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            metaRow.appendChild(timeSpan);
+
+            if (isMe) {
+                const tickSpan = document.createElement('span');
+                tickSpan.className = 'font-bold text-xs ';
+                if (msg.is_offline_pending) {
+                    tickSpan.textContent = '🕒';
+                    tickSpan.title = 'Pending (Waiting for network)';
+                } else {
+                    tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                    tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+                }
+                metaRow.appendChild(tickSpan);
+            }
+
+            wrapper.appendChild(bubble);
+            wrapper.appendChild(metaRow);
+            container.appendChild(wrapper);
+
+            if (scrollToBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // --- OFFLINE QUEUE MANAGEMENT & SYNC ---
+        async function flushOfflineQueue() {
+            const queue = loadOfflineQueue();
+            if (queue.length === 0) return;
+
+            const remainingQueue = [];
+            for (const item of queue) {
+                const payload = {
+                    sender_username: item.sender_username,
+                    receiver_username: item.receiver_username,
+                    content: item.content,
+                    message_type: item.message_type,
+                    is_read: false
+                };
+
+                let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+
+                if (error && error.message && error.message.includes('message_type')) {
+                    const fallback = {
+                        sender_username: item.sender_username,
+                        receiver_username: item.receiver_username,
+                        content: item.content,
+                        is_read: false
+                    };
+                    const retry = await supabaseClient.from('messages').insert([fallback]).select();
+                    data = retry.data;
+                    error = retry.error;
+                }
+
+                if (error) {
+                    // Still offline or failed, keep in queue
+                    remainingQueue.push(item);
+                } else if (data && data.length > 0) {
+                    messagesCache.push(data[0]);
+                }
+            }
+
+            saveOfflineQueue(remainingQueue);
+            saveLocalCache(messagesCache);
+        }
+
+        window.addEventListener('online', async () => {
+            console.log('Back online! Flushing offline queue...');
+            await fetchMessages();
+        });
+
+        // --- MESSAGE DELETE & OPTIONS LOGIC ---
+        function openMessageOptions(msg) {
+            const modal = document.getElementById('message-options-modal');
+            const actionsContainer = document.getElementById('message-options-actions');
+            actionsContainer.innerHTML = '';
+
+            const isSender = msg.sender_username === currentUser.username;
+            
+            const msgTime = new Date(msg.created_at).getTime();
+            const now = new Date().getTime();
+            const diffHours = (now - msgTime) / (1000 * 60 * 60);
+            const within3Hours = diffHours <= 3;
+
+            const deleteForMeBtn = document.createElement('button');
+            deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            deleteForMeBtn.textContent = '🗑️ Delete for me';
+            deleteForMeBtn.onclick = () => {
+                closeMessageOptions();
+                executeDeleteMessage(msg, 'me');
+            };
+            actionsContainer.appendChild(deleteForMeBtn);
+
+            if (isSender && within3Hours) {
+                const deleteForEveryoneBtn = document.createElement('button');
+                deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+                deleteForEveryoneBtn.textContent = '🗑️ Delete for everyone';
+                deleteForEveryoneBtn.onclick = () => {
+                    closeMessageOptions();
+                    executeDeleteMessage(msg, 'everyone');
+                };
+                actionsContainer.appendChild(deleteForEveryoneBtn);
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMessageOptions() {
+            const modal = document.getElementById('message-options-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function executeDeleteMessage(msg, scope) {
+            undoTargetMessage = { msg, scope };
+
+            if (scope === 'me') {
+                let hiddenForMe = [];
+                try {
+                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                } catch(e) {}
+                hiddenForMe.push(msg.id);
+                localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+            } else {
+                msg.is_deleted_for_everyone = true;
+            }
+            renderMessages(messagesCache);
+
+            showUndoBanner(10, async () => {
+                if (scope === 'everyone' && msg.id) {
+                    await supabaseClient
+                        .from('messages')
+                        .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
+                        .eq('id', msg.id);
+                }
+                fetchMessages();
             });
         }
 
-        function openGroupBackend() {
-            document.getElementById('group-backend-modal').classList.remove('hidden');
-            document.getElementById('group-backend-modal').classList.add('flex');
-            checkUserRoleAndLoadMembers();
+        function showUndoBanner(seconds, onComplete) {
+            const banner = document.getElementById('undo-banner');
+            const countdownEl = document.getElementById('undo-countdown');
+            banner.classList.remove('hidden');
+            banner.classList.add('flex');
+
+            let timeLeft = seconds;
+            countdownEl.textContent = timeLeft;
+
+            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+
+            pendingDeleteTimer = setInterval(() => {
+                timeLeft--;
+                countdownEl.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(pendingDeleteTimer);
+                    banner.classList.remove('flex');
+                    banner.classList.add('hidden');
+                    if (onComplete) onComplete();
+                }
+            }, 1000);
         }
 
-        function closeGroupBackend() {
-            document.getElementById('group-backend-modal').classList.remove('flex');
-            document.getElementById('group-backend-modal').classList.add('hidden');
-        }
+        function triggerUndoAction() {
+            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+            const banner = document.getElementById('undo-banner');
+            banner.classList.remove('flex');
+            banner.classList.add('hidden');
 
-        function copyGroupCode() {
-            if (!currentGroup || !currentGroup.chat_code) return;
-            navigator.clipboard.writeText(currentGroup.chat_code);
-            alert('Group Chat Code copied: ' + currentGroup.chat_code);
-        }
-
-        async function addGroupMemberFromBackend() {
-            const codeInput = document.getElementById('backend-member-code');
-            const targetCode = codeInput.value.trim().toUpperCase();
-            if (!targetCode) return;
-
-            const { data: userProfile, error: profileErr } = await supabaseClient
-                .from('profiles')
-                .select('username, name')
-                .eq('chat_code', targetCode)
-                .maybeSingle();
-
-            if (profileErr || !userProfile) {
-                alert('Invalid Chat Code. User not found.');
-                return;
+            if (undoTargetMessage) {
+                const { msg, scope } = undoTargetMessage;
+                if (scope === 'me') {
+                    let hiddenForMe = [];
+                    try {
+                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                    } catch(e) {}
+                    hiddenForMe = hiddenForMe.filter(id => id !== msg.id);
+                    localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+                } else {
+                    msg.is_deleted_for_everyone = false;
+                }
+                renderMessages(messagesCache);
+                undoTargetMessage = null;
             }
-
-            const existing = groupMembersCache.find(m => m.username === userProfile.username);
-            if (existing) {
-                alert('User is already in this group or has a pending invite.');
-                return;
-            }
-
-            const { error: insertErr } = await supabaseClient
-                .from('group_members')
-                .insert([{
-                    group_id: groupId,
-                    username: userProfile.username,
-                    role: 'member',
-                    status: 'pending'
-                }]);
-
-            if (insertErr) {
-                alert('Error adding member: ' + insertErr.message);
-                return;
-            }
-
-            codeInput.value = '';
-            alert(`Group invitation sent to ${userProfile.name}!`);
-            checkUserRoleAndLoadMembers();
         }
 
-        async function removeGroupMember(usernameToRemove) {
-            if (!confirm("Are you sure you want to remove this member from the group?")) return;
-
-            const { error } = await supabaseClient
-                .from('group_members')
-                .delete()
-                .eq('group_id', groupId)
-                .eq('username', usernameToRemove);
-
-            if (error) {
-                alert('Error removing member: ' + error.message);
-                return;
+        function toggleAudioPlay(audioId, btn) {
+            const audio = document.getElementById(audioId);
+            if (audio.paused) {
+                audio.play();
+                btn.textContent = '⏸';
+            } else {
+                audio.pause();
+                btn.textContent = '▶';
             }
-
-            checkUserRoleAndLoadMembers();
         }
 
-        async function updateMemberRole(usernameToUpdate, newRole) {
-            const { error } = await supabaseClient
-                .from('group_members')
-                .update({ role: newRole })
-                .eq('group_id', groupId)
-                .eq('username', usernameToUpdate);
-
-            if (error) {
-                alert('Error updating role: ' + error.message);
-                checkUserRoleAndLoadMembers();
-                return;
-            }
-
-            alert('Role updated successfully.');
-            checkUserRoleAndLoadMembers();
+        function seekAudio(audioId, value) {
+            const audio = document.getElementById(audioId);
+            if (!audio.duration) return;
+            audio.currentTime = (value / 100) * audio.duration;
         }
 
-        // --- STAGING FILES & MEDIA ---
+        function toggleAudioSpeed(audioId, speedBtn) {
+            const audio = document.getElementById(audioId);
+            let nextRate = audio.playbackRate === 1 ? 1.5 : audio.playbackRate === 1.5 ? 2 : 1;
+            audio.playbackRate = nextRate;
+            speedBtn.textContent = nextRate + 'x';
+        }
+
+        function formatAudioTime(secs) {
+            if (isNaN(secs)) return '0:00';
+            const mins = Math.floor(secs / 60);
+            const rSecs = Math.floor(secs % 60);
+            return `${mins}:${rSecs < 10 ? '0' : ''}${rSecs}`;
+        }
+
         function stageFileSelected(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -533,8 +623,7 @@
 
                 stagedPayload = {
                     content: e.target.result,
-                    type: type,
-                    fileName: file.name
+                    type: type
                 };
 
                 const previewContainer = document.getElementById('preview-container');
@@ -557,29 +646,6 @@
             document.getElementById('upload-progress-bar').style.width = '0%';
         }
 
-        // --- REPLY FEATURE ---
-        function setReplyToMessage(msg) {
-            activeReplyMessage = msg;
-            const previewBar = document.getElementById('reply-preview-bar');
-            const senderEl = document.getElementById('reply-preview-sender');
-            const textEl = document.getElementById('reply-preview-text');
-
-            senderEl.textContent = msg.sender_username === currentUser.username ? 'You' : (msg.sender_name || msg.sender_username);
-            textEl.textContent = msg.message || `[${msg.media_type || 'Media'}]`;
-            
-            previewBar.classList.remove('hidden');
-            previewBar.classList.add('flex');
-            document.getElementById('message-input').focus();
-        }
-
-        function cancelReply() {
-            activeReplyMessage = null;
-            const previewBar = document.getElementById('reply-preview-bar');
-            previewBar.classList.remove('flex');
-            previewBar.classList.add('hidden');
-        }
-
-        // --- VOICE NOTE RECORDING ---
         async function startVoiceRecording() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -638,7 +704,7 @@
                 
                 document.getElementById('media-preview-bar').classList.remove('hidden');
                 document.getElementById('media-preview-bar').classList.add('flex');
-                document.getElementById('preview-container').innerHTML = `<span class="text-orange-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
+                document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
                 document.getElementById('upload-progress-bar').style.width = '100%';
                 document.getElementById('upload-status-text').textContent = 'Hit the Send button to dispatch voice note.';
             }
@@ -663,7 +729,6 @@
             document.getElementById('mic-btn').classList.remove('hidden');
         }
 
-        // --- FORM SUBMISSION & SENDING MESSAGES ---
         async function handleFormSubmit(e) {
             e.preventDefault();
 
@@ -676,7 +741,7 @@
                 const reader = new FileReader();
                 reader.readAsDataURL(recordedBlob);
                 reader.onloadend = async () => {
-                    await sendGroupPayloadToSupabase(reader.result, 'audio');
+                    await sendPayloadToSupabase(reader.result, 'audio');
                     recordedBlob = null;
                     resetRecordingUI();
                     clearStagedMedia();
@@ -685,7 +750,7 @@
             }
 
             if (stagedPayload) {
-                await sendGroupPayloadToSupabase(stagedPayload.content, stagedPayload.type);
+                await sendPayloadToSupabase(stagedPayload.content, stagedPayload.type);
                 clearStagedMedia();
                 return;
             }
@@ -695,490 +760,88 @@
             if (!content) return;
 
             input.value = '';
-            await sendGroupPayloadToSupabase(content, 'text');
+            await sendPayloadToSupabase(content, 'text');
         }
 
-        async function sendGroupPayloadToSupabase(content, type) {
-            const replyData = activeReplyMessage ? {
-                reply_to_sender: activeReplyMessage.sender_name || activeReplyMessage.sender_username,
-                reply_to_message: activeReplyMessage.message || `[${activeReplyMessage.media_type || 'Media'}]`
-            } : {};
-
-            const localMessage = {
-                group_id: groupId,
+        async function sendPayloadToSupabase(content, type) {
+            const payload = {
                 sender_username: currentUser.username,
-                sender_name: currentUser.name,
-                message: content,
-                media_url: type !== 'text' ? content : null,
-                media_type: type !== 'text' ? type : null,
-                ...replyData,
-                created_at: new Date().toISOString(),
-                is_pending: true
+                receiver_username: targetUsername,
+                content: content,
+                message_type: type,
+                is_read: false,
+                created_at: new Date().toISOString()
             };
 
-            messagesCache.push(localMessage);
-            saveLocalGroupCache(messagesCache);
-            renderMessages(messagesCache);
-            cancelReply();
-
+            // If offline, queue it locally immediately instead of throwing error popup
             if (!navigator.onLine) {
-                queueGroupOfflineMessage(localMessage);
+                const offlineQueue = loadOfflineQueue();
+                const pendingItem = { ...payload, is_offline_pending: true };
+                offlineQueue.push(pendingItem);
+                saveOfflineQueue(offlineQueue);
+                renderMessages(messagesCache);
                 return;
             }
 
-            const payload = {
-                group_id: groupId,
-                sender_username: currentUser.username,
-                sender_name: currentUser.name,
-                message: content,
-                media_url: type !== 'text' ? content : null,
-                media_type: type !== 'text' ? type : null,
-                ...replyData
-            };
+            let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
 
-            const { error } = await supabaseClient
-                .from('group_messages')
-                .insert([payload]);
+            if (error && error.message && error.message.includes('message_type')) {
+                const fallback = {
+                    sender_username: currentUser.username,
+                    receiver_username: targetUsername,
+                    content: content,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                };
+                const retry = await supabaseClient.from('messages').insert([fallback]).select();
+                data = retry.data;
+                error = retry.error;
+            }
 
             if (error) {
-                queueGroupOfflineMessage(localMessage);
-            } else {
-                messagesCache = messagesCache.filter(m => m !== localMessage);
-                saveLocalGroupCache(messagesCache);
-                await fetchGroupMessages();
-            }
-        }
-
-        function queueGroupOfflineMessage(msg) {
-            const queue = getGroupOfflineQueue();
-            queue.push(msg);
-            saveGroupOfflineQueue(queue);
-        }
-
-        window.addEventListener('online', async () => {
-            const queue = getGroupOfflineQueue();
-            if (queue.length > 0) {
-                for (const msg of queue) {
-                    await supabaseClient.from('group_messages').insert([{
-                        group_id: msg.group_id,
-                        sender_username: msg.sender_username,
-                        sender_name: msg.sender_name,
-                        message: msg.message,
-                        media_url: msg.media_url,
-                        media_type: msg.media_type,
-                        reply_to_sender: msg.reply_to_sender,
-                        reply_to_message: msg.reply_to_message
-                    }]);
-                }
-                saveGroupOfflineQueue([]);
-            }
-            fetchGroupMessages();
-        });
-
-        // --- FETCH & RENDER MESSAGES ---
-        async function fetchGroupMessages() {
-            if (!navigator.onLine) return;
-
-            const { data: messages, error } = await supabaseClient
-                .from('group_messages')
-                .select('*')
-                .eq('group_id', groupId)
-                .order('created_at', { ascending: true });
-
-            if (error) return;
-
-            if (messages) {
-                saveLocalGroupCache(messages);
+                console.error('Error sending message:', error);
+                // Fallback to queue if request fails due to sudden network drop
+                const offlineQueue = loadOfflineQueue();
+                offlineQueue.push({ ...payload, is_offline_pending: true });
+                saveOfflineQueue(offlineQueue);
+                renderMessages(messagesCache);
+            } else if (data && data.length > 0) {
+                messagesCache.push(data[0]);
+                saveLocalCache(messagesCache);
                 renderMessages(messagesCache);
             }
         }
 
-        function filterMessages(keyword) {
-            const term = keyword.toLowerCase();
-            if (!term) {
-                renderMessages(messagesCache);
-                return;
-            }
-            const filtered = messagesCache.filter(m => {
-                if (m.is_deleted_for_everyone) return false;
-                if (m.message && m.message.toLowerCase().includes(term)) return true;
-                if (m.media_type === keyword) return true;
-                return false;
-            });
-            renderMessages(filtered);
-        }
-
-        function renderMessages(messages) {
-            const chatContainer = document.getElementById('chat-messages');
-            chatContainer.innerHTML = '';
-
-            let hiddenForMe = [];
-            try {
-                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
-            } catch(e) {}
-
-            const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
-
-            if (filtered.length === 0 && getGroupOfflineQueue().length === 0) {
-                chatContainer.innerHTML = `<div class="text-center text-xs text-slate-500 py-8">No messages yet. Start the conversation!</div>`;
-                return;
-            }
-
-            filtered.forEach(msg => appendMessageToDOM(msg, false));
-
-            const queue = getGroupOfflineQueue();
-            queue.forEach(qMsg => appendMessageToDOM(qMsg, false));
-
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function appendMessageToDOM(msg, scrollToBottom = true) {
-            const chatContainer = document.getElementById('chat-messages');
-            const isMe = msg.sender_username === currentUser.username;
-            const bubble = document.createElement('div');
-            bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2 relative select-none`;
-            if (msg.id) bubble.setAttribute('data-id', msg.id);
-
-            // --- Long press detection ---
-            let pressTimer = null;
-            const startPress = () => {
-                pressTimer = setTimeout(() => openMessageOptions(msg), 600);
-            };
-            const cancelPress = () => {
-                if (pressTimer) clearTimeout(pressTimer);
-            };
-
-            bubble.addEventListener('touchstart', startPress);
-            bubble.addEventListener('touchend', cancelPress);
-            bubble.addEventListener('touchmove', cancelPress);
-            bubble.addEventListener('mousedown', startPress);
-            bubble.addEventListener('mouseup', cancelPress);
-            bubble.addEventListener('mouseleave', cancelPress);
-
-            // --- Swipe to reply implementation ---
-            let touchStartX = 0;
-            bubble.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-            });
-            bubble.addEventListener('touchend', (e) => {
-                const touchEndX = e.changedTouches[0].clientX;
-                if (touchEndX - touchStartX > 70) {
-                    setReplyToMessage(msg);
-                }
-            });
-
-            const timeString = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            let replyQuoteHtml = '';
-            if (msg.reply_to_message) {
-                replyQuoteHtml = `
-                    <div class="mb-1.5 p-1.5 bg-black/20 border-l-2 border-orange-400 rounded text-[11px] overflow-hidden">
-                        <span class="block font-bold text-orange-300 truncate">${msg.reply_to_sender || 'Someone'}</span>
-                        <span class="block text-slate-200 truncate">${msg.reply_to_message}</span>
-                    </div>
-                `;
-            }
-
-            let contentHtml = '';
-            const type = msg.media_type || 'text';
-
-            if (type === 'image') {
-                contentHtml = `<img src="${msg.media_url || msg.message}" class="rounded-xl max-h-48 object-cover cursor-pointer mb-1" onclick="window.open('${msg.media_url || msg.message}', '_blank')">`;
-            } else if (type === 'video') {
-                contentHtml = `<video src="${msg.media_url || msg.message}" controls class="rounded-xl max-h-48 object-cover mb-1"></video>`;
-            } else if (type === 'audio') {
-                const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
-                const audioSrc = msg.media_url || msg.message;
-                contentHtml = `
-                    <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
-                        <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
-                        <audio id="${audioId}" src="${audioSrc}" preload="metadata"></audio>
-                        <div class="flex flex-col flex-1 gap-1">
-                            <div class="flex justify-between items-center text-[10px] opacity-80">
-                                <span class="audio-current-time">0:00</span>
-                                <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
-                            </div>
-                            <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
-                        </div>
-                    </div>
-                `;
-
-                setTimeout(() => {
-                    const audioEl = document.getElementById(audioId);
-                    if (!audioEl) return;
-                    const c = audioEl.closest('[data-audio-container]');
-                    const rangeEl = c.querySelector('.audio-range');
-                    const timeEl = c.querySelector('.audio-current-time');
-
-                    audioEl.addEventListener('loadedmetadata', () => {
-                        timeEl.textContent = formatAudioTime(audioEl.duration);
-                    });
-                    audioEl.addEventListener('timeupdate', () => {
-                        if (!audioEl.duration) return;
-                        rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
-                        timeEl.textContent = formatAudioTime(audioEl.currentTime);
-                    });
-                    audioEl.addEventListener('ended', () => {
-                        c.querySelector('button').textContent = '▶';
-                        audioEl.currentTime = 0;
-                    });
-                }, 50);
-
-            } else if (type === 'file') {
-                contentHtml = `<a href="${msg.media_url || msg.message}" download class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
-            } else {
-                contentHtml = `<span>${escapeHtml(msg.message)}</span>`;
-            }
-
-            const metaRow = document.createElement('div');
-            metaRow.className = 'flex items-center gap-1 px-1 text-[9px] text-slate-500 mt-0.5';
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.textContent = timeString;
-            metaRow.appendChild(timeSpan);
-
-            if (isMe) {
-                const tickSpan = document.createElement('span');
-                tickSpan.className = 'font-bold text-xs ';
-                if (msg.is_pending) {
-                    tickSpan.textContent = '🕒';
-                    tickSpan.title = 'Waiting for network...';
-                    tickSpan.classList.add('text-slate-500');
-                } else {
-                    tickSpan.textContent = '✓✓';
-                    tickSpan.classList.add('text-orange-400');
-                }
-                metaRow.appendChild(tickSpan);
-            }
-
-            bubble.innerHTML = `
-                <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'}">
-                    ${!isMe ? `<span class="block text-[10px] font-bold text-orange-400 mb-0.5">${msg.sender_name}</span>` : ''}
-                    ${replyQuoteHtml}
-                    ${contentHtml}
-                </div>
-            `;
-            bubble.appendChild(metaRow);
-            chatContainer.appendChild(bubble);
-
-            if (scrollToBottom) {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-
-        // --- MESSAGE DELETE & OPTIONS LOGIC ---
-        function openMessageOptions(msg) {
-            const modal = document.getElementById('message-options-modal');
-            const actionsContainer = document.getElementById('message-options-actions');
-            actionsContainer.innerHTML = '';
-
-            const isSender = msg.sender_username === currentUser.username;
-            const isAdminOrAssistant = myRole === 'admin' || myRole === 'assistant_admin';
-            
-            const msgTime = new Date(msg.created_at).getTime();
-            const now = new Date().getTime();
-            const diffHours = (now - msgTime) / (1000 * 60 * 60);
-            const within3Hours = diffHours <= 3;
-
-            // Reply option
-            const replyBtn = document.createElement('button');
-            replyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            replyBtn.textContent = '↩️ Reply';
-            replyBtn.onclick = () => {
-                closeMessageOptions();
-                setReplyToMessage(msg);
-            };
-            actionsContainer.appendChild(replyBtn);
-
-            // Copy option
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            copyBtn.textContent = '📋 Copy';
-            copyBtn.onclick = () => {
-                closeMessageOptions();
-                navigator.clipboard.writeText(msg.message || msg.media_url || '');
-                alert('Message copied to clipboard.');
-            };
-            actionsContainer.appendChild(copyBtn);
-
-            // Forward option
-            const forwardBtn = document.createElement('button');
-            forwardBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            forwardBtn.textContent = '↗️ Forward';
-            forwardBtn.onclick = () => {
-                closeMessageOptions();
-                alert('Forward functionality selected for: ' + (msg.message || 'Media'));
-            };
-            actionsContainer.appendChild(forwardBtn);
-
-            // Delete for me
-            const deleteForMeBtn = document.createElement('button');
-            deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            deleteForMeBtn.textContent = '🗑️ Delete for me';
-            deleteForMeBtn.onclick = () => {
-                closeMessageOptions();
-                executeDeleteMessage(msg, 'me');
-            };
-            actionsContainer.appendChild(deleteForMeBtn);
-
-            if (within3Hours && (isSender || isAdminOrAssistant)) {
-                const deleteForEveryoneBtn = document.createElement('button');
-                deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-                deleteForEveryoneBtn.textContent = '🗑️ Delete for everyone';
-                deleteForEveryoneBtn.onclick = () => {
-                    closeMessageOptions();
-                    executeDeleteMessage(msg, 'everyone');
-                };
-                actionsContainer.appendChild(deleteForEveryoneBtn);
-            }
-
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeMessageOptions() {
-            const modal = document.getElementById('message-options-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        function executeDeleteMessage(msg, scope) {
-            undoTargetMessage = { msg, scope };
-            
-            if (scope === 'me') {
-                let hiddenForMe = [];
-                try {
-                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
-                } catch(e) {}
-                hiddenForMe.push(msg.id);
-                localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`, JSON.stringify(hiddenForMe));
-            } else {
-                msg.is_deleted_for_everyone = true;
-            }
-            renderMessages(messagesCache);
-
-            showUndoBanner(10, async () => {
-                if (scope === 'everyone' && msg.id) {
-                    await supabaseClient
-                        .from('group_messages')
-                        .update({ is_deleted_for_everyone: true, message: '[Message deleted]', media_url: null })
-                        .eq('id', msg.id);
-                }
-                fetchGroupMessages();
-            });
-        }
-
-        function showUndoBanner(seconds, onComplete) {
-            const banner = document.getElementById('undo-banner');
-            const countdownEl = document.getElementById('undo-countdown');
-            banner.classList.remove('hidden');
-            banner.classList.add('flex');
-
-            let timeLeft = seconds;
-            countdownEl.textContent = timeLeft;
-
-            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
-
-            pendingDeleteTimer = setInterval(() => {
-                timeLeft--;
-                countdownEl.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(pendingDeleteTimer);
-                    banner.classList.remove('flex');
-                    banner.classList.add('hidden');
-                    if (onComplete) onComplete();
-                }
-            }, 1000);
-        }
-
-        function triggerUndoAction() {
-            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
-            const banner = document.getElementById('undo-banner');
-            banner.classList.remove('flex');
-            banner.classList.add('hidden');
-
-            if (undoTargetMessage) {
-                const { msg, scope } = undoTargetMessage;
-                if (scope === 'me') {
-                    let hiddenForMe = [];
-                    try {
-                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`) || '[]');
-                    } catch(e) {}
-                    hiddenForMe = hiddenForMe.filter(id => id !== msg.id);
-                    localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${groupId}`, JSON.stringify(hiddenForMe));
-                } else {
-                    msg.is_deleted_for_everyone = false;
-                }
-                renderMessages(messagesCache);
-                undoTargetMessage = null;
-            }
-        }
-
-        // --- AUDIO CONTROLS HELPER FUNCTIONS ---
-        function toggleAudioPlay(audioId, btn) {
-            const audio = document.getElementById(audioId);
-            if (audio.paused) {
-                audio.play();
-                btn.textContent = '⏸';
-            } else {
-                audio.pause();
-                btn.textContent = '▶';
-            }
-        }
-
-        function seekAudio(audioId, value) {
-            const audio = document.getElementById(audioId);
-            if (!audio.duration) return;
-            audio.currentTime = (value / 100) * audio.duration;
-        }
-
-        function toggleAudioSpeed(audioId, speedBtn) {
-            const audio = document.getElementById(audioId);
-            let nextRate = audio.playbackRate === 1 ? 1.5 : audio.playbackRate === 1.5 ? 2 : 1;
-            audio.playbackRate = nextRate;
-            speedBtn.textContent = nextRate + 'x';
-        }
-
-        function formatAudioTime(secs) {
-            if (isNaN(secs)) return '0:00';
-            const mins = Math.floor(secs / 60);
-            const rSecs = Math.floor(secs % 60);
-            return `${mins}:${rSecs < 10 ? '0' : ''}${rSecs}`;
-        }
-
-        // --- MEDIA GALLERY MODAL ---
         function openMediaGallery(typeFilter) {
             const modal = document.getElementById('media-gallery-modal');
             const grid = document.getElementById('gallery-content-grid');
             const title = document.getElementById('gallery-title');
             modal.classList.remove('hidden');
             grid.innerHTML = '';
-            title.textContent = `Group ${typeFilter.toUpperCase()} Gallery`;
+            title.textContent = `${typeFilter.toUpperCase()} Gallery`;
 
             const matching = messagesCache.filter(m => {
                 if (m.is_deleted_for_everyone) return false;
-                const url = m.media_url || m.message;
-                if (typeFilter === 'image' && m.media_type === 'image') return true;
-                if (typeFilter === 'video' && m.media_type === 'video') return true;
-                if (typeFilter === 'file' && (m.media_type === 'file' || m.media_type === 'audio')) return true;
+                if (typeFilter === 'image' && m.message_type === 'image') return true;
+                if (typeFilter === 'video' && m.message_type === 'video') return true;
+                if (typeFilter === 'file' && (m.message_type === 'file' || m.message_type === 'audio')) return true;
                 return false;
             });
 
             if (matching.length === 0) {
-                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this group.</span>`;
+                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
                 return;
             }
 
             matching.forEach(m => {
-                const url = m.media_url || m.message;
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
-                if (m.media_type === 'image') {
-                    card.innerHTML = `<img src="${url}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${url}')">`;
-                } else if (m.media_type === 'video') {
-                    card.innerHTML = `<video src="${url}" class="h-24 w-full rounded object-cover" controls></video>`;
+                if (m.message_type === 'image') {
+                    card.innerHTML = `<img src="${m.content}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${m.content}')">`;
+                } else if (m.message_type === 'video') {
+                    card.innerHTML = `<video src="${m.content}" class="h-24 w-full rounded object-cover" controls></video>`;
                 } else {
-                    card.innerHTML = `<a href="${url}" download class="text-xs text-orange-400 underline font-semibold py-4">Download ${m.media_type || 'File'}</a>`;
+                    card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${m.message_type}</a>`;
                 }
                 grid.appendChild(card);
             });
@@ -1188,25 +851,35 @@
             document.getElementById('media-gallery-modal').classList.add('hidden');
         }
 
-        function subscribeToGroupMessages() {
-            if (!navigator.onLine) return;
+        function subscribeToMessages() {
+            if (messageSubscription) {
+                supabaseClient.removeChannel(messageSubscription);
+            }
+
             messageSubscription = supabaseClient
-                .channel('public:group_messages')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, payload => {
-                    fetchGroupMessages();
-                })
+                .channel('public:messages')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'messages'
+                    },
+                    payload => {
+                        const newMsg = payload.new;
+                        if (
+                            (newMsg.sender_username === targetUsername && newMsg.receiver_username === currentUser.username) ||
+                            (newMsg.sender_username === currentUser.username && newMsg.receiver_username === targetUsername)
+                        ) {
+                            fetchMessages();
+                        }
+                    }
+                )
                 .subscribe();
         }
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-        }
-
-        if (navigator.onLine && getGroupOfflineQueue().length > 0) {
-            window.dispatchEvent(new Event('online'));
-        }
+        fetchMessages();
+        subscribeToMessages();
     </script>
 </body>
 </html>
