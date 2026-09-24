@@ -40,6 +40,15 @@
             <!-- Messages load here -->
         </div>
 
+        <!-- Multi-Select Action Footer Bar (Hidden by default) -->
+        <div id="multi-select-bar" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 flex items-center justify-between">
+            <span id="selected-count-text" class="text-xs font-semibold text-indigo-300">0 selected</span>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="deleteSelectedMessages()" class="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold rounded-lg cursor-pointer">Delete for me</button>
+                <button type="button" onclick="exitMultiSelectMode()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg cursor-pointer">Cancel</button>
+            </div>
+        </div>
+
         <!-- Undo Notification Banner (10 Seconds Timer) -->
         <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
             <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
@@ -174,6 +183,10 @@
         let recordingSeconds = 0;
         let replyingToMessage = null;
 
+        // Multi-select state variables
+        let isMultiSelectMode = false;
+        let selectedMessageIds = new Set();
+
         // Undo & Deletion management variables
         let pendingDeleteTimer = null;
         let undoTargetMessage = null;
@@ -225,7 +238,6 @@
         }
 
         async function fetchMessages() {
-            // Flush any offline queue items first if online
             if (navigator.onLine) {
                 await flushOfflineQueue();
             }
@@ -277,11 +289,9 @@
 
             const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
 
-            // Also merge pending offline messages into the rendered list visually
             const offlineQueue = loadOfflineQueue();
             const combinedList = [...filtered, ...offlineQueue];
             
-            // Sort combined list by timestamp to maintain correct chronological order
             combinedList.sort((a, b) => new Date(a.created_at || Date.now()) - new Date(b.created_at || Date.now()));
 
             combinedList.forEach(msg => appendMessageToDOM(msg, false));
@@ -309,14 +319,36 @@
             const isMe = msg.sender_username === currentUser.username;
 
             const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row relative transition-transform duration-200`;
+            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row relative transition-transform duration-200 select-none`;
             if (msg.id) wrapper.setAttribute('data-id', msg.id);
 
-            // --- Long Press Handlers ---
+            // Check if this message is currently selected in multi-select mode
+            const isSelected = msg.id && selectedMessageIds.has(msg.id);
+
+            // Outer bubble container layout to accommodate select checkbox/highlight
+            const rowFlex = document.createElement('div');
+            rowFlex.className = `flex items-center gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+
+            // Checkbox indicator for Multi-Select mode
+            const checkboxEl = document.createElement('div');
+            checkboxEl.className = `w-5 h-5 rounded-full border border-slate-600 flex items-center justify-center text-xs transition-all flex-shrink-0 ${isMultiSelectMode ? 'flex' : 'hidden'} ${isSelected ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900'}`;
+            checkboxEl.innerHTML = isSelected ? '✓' : '';
+            rowFlex.appendChild(checkboxEl);
+
+            // Highlight wrapper if selected
+            if (isSelected) {
+                wrapper.classList.add('bg-indigo-950/30', 'p-2', 'rounded-xl');
+            }
+
+            // --- Long Press & Click Handlers ---
             let pressTimer = null;
             const startPress = () => {
                 if (msg.is_offline_pending) return; 
-                pressTimer = setTimeout(() => openMessageOptions(msg), 600);
+                pressTimer = setTimeout(() => {
+                    if (!isMultiSelectMode) {
+                        enterMultiSelectMode(msg);
+                    }
+                }, 600);
             };
             const cancelPress = () => {
                 if (pressTimer) clearTimeout(pressTimer);
@@ -329,15 +361,47 @@
             wrapper.addEventListener('mouseup', cancelPress);
             wrapper.addEventListener('mouseleave', cancelPress);
 
-            // --- Swipe Right to Reply Handlers ---
+            // Standard click/tap behavior
+            wrapper.addEventListener('click', (e) => {
+                if (isMultiSelectMode && msg.id) {
+                    toggleMessageSelection(msg.id);
+                    e.stopPropagation();
+                } else if (!isMultiSelectMode) {
+                    // Check if long press didn't trigger, open standard individual options on regular short tap if desired, or let long press handle options.
+                }
+            });
+
+            // Also allow long press to open standard single options menu if NOT in multi-select mode
+            let singlePressTimer = null;
+            wrapper.addEventListener('touchstart', () => {
+                singlePressTimer = setTimeout(() => {
+                    // Handled by startPress for multi-select. If we want context menu on long press instead, or let multi-select take over.
+                }, 600);
+            });
+
+            // Double click or secondary way to trigger options menu: We can hook individual options modal to a specific action or button if needed, but long-press on single items can also trigger openMessageOptions if multi-select isn't active. Let's make long-press trigger multi-select directly as requested. For single options like reply/copy, we can open options modal via a quick double tap or normal tap context, or let's attach openMessageOptions to a separate gesture or keep it. Wait, the prompt states: "When you press and hold down, you should be able to select multiple messages". Let's make long press initiate multi-select mode and toggle that message!
+
+            // Override long-press behavior specifically for Multi-Select activation:
+            wrapper.oncontextmenu = (e) => {
+                e.preventDefault();
+                if (!msg.is_offline_pending && msg.id) {
+                    if (!isMultiSelectMode) {
+                        enterMultiSelectMode(msg);
+                    }
+                }
+            };
+
+            // --- Swipe Right to Reply Handlers (Disabled during multi-select) ---
             let touchStartX = 0;
             let touchCurrentX = 0;
 
             wrapper.addEventListener('touchstart', (e) => {
+                if (isMultiSelectMode) return;
                 touchStartX = e.touches[0].clientX;
             }, { passive: true });
 
             wrapper.addEventListener('touchmove', (e) => {
+                if (isMultiSelectMode) return;
                 touchCurrentX = e.touches[0].clientX;
                 const diff = touchCurrentX - touchStartX;
                 if (diff > 0 && diff < 100) {
@@ -346,6 +410,7 @@
             }, { passive: true });
 
             wrapper.addEventListener('touchend', () => {
+                if (isMultiSelectMode) return;
                 const diff = touchCurrentX - touchStartX;
                 wrapper.style.transform = 'translateX(0px)';
                 if (diff > 60) {
@@ -356,11 +421,10 @@
             });
 
             const bubble = document.createElement('div');
-            bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
+            bubble.className = `flex-1 px-3 py-2 rounded-2xl text-sm ${
                 isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
             }`;
 
-            // Render Replied Context if available in payload
             if (msg.reply_to) {
                 const replySnippet = document.createElement('div');
                 replySnippet.className = `mb-1 p-1.5 rounded text-xs border-l-2 ${isMe ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100' : 'bg-slate-900/60 border-indigo-500 text-slate-300'}`;
@@ -371,19 +435,19 @@
             const contentBody = document.createElement('div');
             const type = msg.message_type || 'text';
             if (type === 'image') {
-                contentBody.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="window.open('${msg.content}')">`;
+                contentBody.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="if(!isMultiSelectMode) window.open('${msg.content}')">`;
             } else if (type === 'video') {
                 contentBody.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
             } else if (type === 'audio') {
                 const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
                 contentBody.innerHTML = `
                     <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
-                        <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
+                        <button type="button" onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
                         <audio id="${audioId}" src="${msg.content}" preload="metadata"></audio>
                         <div class="flex flex-col flex-1 gap-1">
                             <div class="flex justify-between items-center text-[10px] opacity-80">
                                 <span class="audio-current-time">0:00</span>
-                                <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
+                                <button type="button" onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
                             </div>
                             <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
                         </div>
@@ -417,9 +481,10 @@
                 contentBody.textContent = msg.content;
             }
             bubble.appendChild(contentBody);
+            rowFlex.appendChild(bubble);
 
             const metaRow = document.createElement('div');
-            metaRow.className = 'flex items-center gap-1 px-1 text-[10px] text-slate-400';
+            metaRow.className = `flex items-center gap-1 px-1 text-[10px] text-slate-400 ${isMe ? 'mr-7' : 'ml-7'}`;
             
             const timeSpan = document.createElement('span');
             timeSpan.textContent = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -438,7 +503,7 @@
                 metaRow.appendChild(tickSpan);
             }
 
-            wrapper.appendChild(bubble);
+            wrapper.appendChild(rowFlex);
             wrapper.appendChild(metaRow);
             container.appendChild(wrapper);
 
@@ -447,8 +512,77 @@
             }
         }
 
+        // --- MULTI-SELECT FUNCTIONS ---
+        function enterMultiSelectMode(msg) {
+            isMultiSelectMode = true;
+            selectedMessageIds.clear();
+            if (msg && msg.id) {
+                selectedMessageIds.add(msg.id);
+            }
+            document.getElementById('multi-select-bar').classList.remove('hidden');
+            document.getElementById('multi-select-bar').classList.add('flex');
+            updateMultiSelectUI();
+            renderMessages(messagesCache);
+        }
+
+        function exitMultiSelectMode() {
+            isMultiSelectMode = false;
+            selectedMessageIds.clear();
+            document.getElementById('multi-select-bar').classList.remove('flex');
+            document.getElementById('multi-select-bar').classList.add('hidden');
+            renderMessages(messagesCache);
+        }
+
+        function toggleMessageSelection(msgId) {
+            if (selectedMessageIds.has(msgId)) {
+                selectedMessageIds.delete(msgId);
+            } else {
+                selectedMessageIds.add(msgId);
+            }
+
+            if (selectedMessageIds.size === 0) {
+                exitMultiSelectMode();
+                return;
+            }
+
+            updateMultiSelectUI();
+            renderMessages(messagesCache);
+        }
+
+        function updateMultiSelectUI() {
+            const countText = document.getElementById('selected-count-text');
+            countText.textContent = `${selectedMessageIds.size} selected`;
+        }
+
+        function deleteSelectedMessages() {
+            if (selectedMessageIds.size === 0) return;
+
+            let hiddenForMe = [];
+            try {
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+            } catch(e) {}
+
+            const idsToDelete = Array.from(selectedMessageIds);
+            idsToDelete.forEach(id => {
+                if (!hiddenForMe.includes(id)) {
+                    hiddenForMe.push(id);
+                }
+            });
+
+            localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+            
+            const countSnapshot = selectedMessageIds.size;
+            exitMultiSelectMode();
+            renderMessages(messagesCache);
+
+            showUndoBanner(10, () => {
+                fetchMessages();
+            });
+        }
+
         // --- REPLY MANAGEMENT FUNCTIONS ---
         function setReplyTarget(msg) {
+            if (isMultiSelectMode) return;
             replyingToMessage = msg;
             const replyBar = document.getElementById('reply-preview-bar');
             const senderNameEl = document.getElementById('reply-target-sender');
@@ -524,6 +658,7 @@
 
         // --- MESSAGE OPTIONS (LONG PRESS) & ACTIONS ---
         function openMessageOptions(msg) {
+            if (isMultiSelectMode) return;
             const modal = document.getElementById('message-options-modal');
             const actionsContainer = document.getElementById('message-options-actions');
             actionsContainer.innerHTML = '';
@@ -895,7 +1030,6 @@
                 created_at: new Date().toISOString()
             };
 
-            // If offline, queue it locally immediately
             if (!navigator.onLine) {
                 const offlineQueue = loadOfflineQueue();
                 const pendingItem = { ...payload, is_offline_pending: true };
