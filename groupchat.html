@@ -60,9 +60,18 @@
                     <button onclick="closeMessageOptions()" class="text-slate-400 hover:text-white text-base cursor-pointer">&times;</button>
                 </div>
                 <div id="message-options-actions" class="flex flex-col gap-1.5">
-                    <!-- Populated dynamically based on permissions & 3-hour limit for everyone -->
+                    <!-- Populated dynamically -->
                 </div>
             </div>
+        </div>
+
+        <!-- Reply Staging Preview Bar -->
+        <div id="reply-preview-bar" class="hidden px-3 py-2 bg-slate-950 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
+            <div class="flex flex-col border-l-2 border-orange-500 pl-2.5 overflow-hidden">
+                <span id="reply-preview-sender" class="text-[10px] font-bold text-orange-400 truncate"></span>
+                <span id="reply-preview-text" class="text-xs text-slate-300 truncate"></span>
+            </div>
+            <button type="button" onclick="cancelReply()" class="text-slate-400 hover:text-white text-sm cursor-pointer p-1">&times;</button>
         </div>
 
         <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
@@ -204,6 +213,7 @@
         let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
+        let activeReplyMessage = null;
 
         const GROUP_STORAGE_KEY = `chatlite_group_cache_${currentUser?.username}_${groupId}`;
         const GROUP_QUEUE_KEY = `chatlite_group_offline_queue_${currentUser?.username}_${groupId}`;
@@ -547,6 +557,28 @@
             document.getElementById('upload-progress-bar').style.width = '0%';
         }
 
+        // --- REPLY FEATURE ---
+        function setReplyToMessage(msg) {
+            activeReplyMessage = msg;
+            const previewBar = document.getElementById('reply-preview-bar');
+            const senderEl = document.getElementById('reply-preview-sender');
+            const textEl = document.getElementById('reply-preview-text');
+
+            senderEl.textContent = msg.sender_username === currentUser.username ? 'You' : (msg.sender_name || msg.sender_username);
+            textEl.textContent = msg.message || `[${msg.media_type || 'Media'}]`;
+            
+            previewBar.classList.remove('hidden');
+            previewBar.classList.add('flex');
+            document.getElementById('message-input').focus();
+        }
+
+        function cancelReply() {
+            activeReplyMessage = null;
+            const previewBar = document.getElementById('reply-preview-bar');
+            previewBar.classList.remove('flex');
+            previewBar.classList.add('hidden');
+        }
+
         // --- VOICE NOTE RECORDING ---
         async function startVoiceRecording() {
             try {
@@ -667,6 +699,11 @@
         }
 
         async function sendGroupPayloadToSupabase(content, type) {
+            const replyData = activeReplyMessage ? {
+                reply_to_sender: activeReplyMessage.sender_name || activeReplyMessage.sender_username,
+                reply_to_message: activeReplyMessage.message || `[${activeReplyMessage.media_type || 'Media'}]`
+            } : {};
+
             const localMessage = {
                 group_id: groupId,
                 sender_username: currentUser.username,
@@ -674,6 +711,7 @@
                 message: content,
                 media_url: type !== 'text' ? content : null,
                 media_type: type !== 'text' ? type : null,
+                ...replyData,
                 created_at: new Date().toISOString(),
                 is_pending: true
             };
@@ -681,6 +719,7 @@
             messagesCache.push(localMessage);
             saveLocalGroupCache(messagesCache);
             renderMessages(messagesCache);
+            cancelReply();
 
             if (!navigator.onLine) {
                 queueGroupOfflineMessage(localMessage);
@@ -693,7 +732,8 @@
                 sender_name: currentUser.name,
                 message: content,
                 media_url: type !== 'text' ? content : null,
-                media_type: type !== 'text' ? type : null
+                media_type: type !== 'text' ? type : null,
+                ...replyData
             };
 
             const { error } = await supabaseClient
@@ -725,7 +765,9 @@
                         sender_name: msg.sender_name,
                         message: msg.message,
                         media_url: msg.media_url,
-                        media_type: msg.media_type
+                        media_type: msg.media_type,
+                        reply_to_sender: msg.reply_to_sender,
+                        reply_to_message: msg.reply_to_message
                     }]);
                 }
                 saveGroupOfflineQueue([]);
@@ -794,9 +836,10 @@
             const chatContainer = document.getElementById('chat-messages');
             const isMe = msg.sender_username === currentUser.username;
             const bubble = document.createElement('div');
-            bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2`;
+            bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2 relative select-none`;
             if (msg.id) bubble.setAttribute('data-id', msg.id);
 
+            // --- Long press detection ---
             let pressTimer = null;
             const startPress = () => {
                 pressTimer = setTimeout(() => openMessageOptions(msg), 600);
@@ -812,7 +855,29 @@
             bubble.addEventListener('mouseup', cancelPress);
             bubble.addEventListener('mouseleave', cancelPress);
 
+            // --- Swipe to reply implementation ---
+            let touchStartX = 0;
+            bubble.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+            });
+            bubble.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                if (touchEndX - touchStartX > 70) {
+                    setReplyToMessage(msg);
+                }
+            });
+
             const timeString = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let replyQuoteHtml = '';
+            if (msg.reply_to_message) {
+                replyQuoteHtml = `
+                    <div class="mb-1.5 p-1.5 bg-black/20 border-l-2 border-orange-400 rounded text-[11px] overflow-hidden">
+                        <span class="block font-bold text-orange-300 truncate">${msg.reply_to_sender || 'Someone'}</span>
+                        <span class="block text-slate-200 truncate">${msg.reply_to_message}</span>
+                    </div>
+                `;
+            }
 
             let contentHtml = '';
             const type = msg.media_type || 'text';
@@ -889,6 +954,7 @@
             bubble.innerHTML = `
                 <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'}">
                     ${!isMe ? `<span class="block text-[10px] font-bold text-orange-400 mb-0.5">${msg.sender_name}</span>` : ''}
+                    ${replyQuoteHtml}
                     ${contentHtml}
                 </div>
             `;
@@ -914,6 +980,38 @@
             const diffHours = (now - msgTime) / (1000 * 60 * 60);
             const within3Hours = diffHours <= 3;
 
+            // Reply option
+            const replyBtn = document.createElement('button');
+            replyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            replyBtn.textContent = '↩️ Reply';
+            replyBtn.onclick = () => {
+                closeMessageOptions();
+                setReplyToMessage(msg);
+            };
+            actionsContainer.appendChild(replyBtn);
+
+            // Copy option
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            copyBtn.textContent = '📋 Copy';
+            copyBtn.onclick = () => {
+                closeMessageOptions();
+                navigator.clipboard.writeText(msg.message || msg.media_url || '');
+                alert('Message copied to clipboard.');
+            };
+            actionsContainer.appendChild(copyBtn);
+
+            // Forward option
+            const forwardBtn = document.createElement('button');
+            forwardBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+            forwardBtn.textContent = '↗️ Forward';
+            forwardBtn.onclick = () => {
+                closeMessageOptions();
+                alert('Forward functionality selected for: ' + (msg.message || 'Media'));
+            };
+            actionsContainer.appendChild(forwardBtn);
+
+            // Delete for me
             const deleteForMeBtn = document.createElement('button');
             deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
             deleteForMeBtn.textContent = '🗑️ Delete for me';
