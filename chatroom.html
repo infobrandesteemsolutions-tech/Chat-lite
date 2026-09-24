@@ -151,6 +151,7 @@
         document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
 
         const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
+        const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
 
         let messageSubscription = null;
         let messagesCache = loadLocalCache();
@@ -185,6 +186,19 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
         }
 
+        function loadOfflineQueue() {
+            try {
+                const data = localStorage.getItem(QUEUE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveOfflineQueue(queue) {
+            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+        }
+
         function toggleAttachmentMenu() {
             const menu = document.getElementById('attachment-menu');
             menu.classList.toggle('hidden');
@@ -201,6 +215,11 @@
         }
 
         async function fetchMessages() {
+            // Flush any offline queue items first if online
+            if (navigator.onLine) {
+                await flushOfflineQueue();
+            }
+
             const { data: messages, error } = await supabaseClient
                 .from('messages')
                 .select('*')
@@ -248,7 +267,14 @@
 
             const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
 
-            filtered.forEach(msg => appendMessageToDOM(msg, false));
+            // Also merge pending offline messages into the rendered list visually
+            const offlineQueue = loadOfflineQueue();
+            const combinedList = [...filtered, ...offlineQueue];
+            
+            // Sort combined list by timestamp to maintain correct chronological order
+            combinedList.sort((a, b) => new Date(a.created_at || Date.now()) - new Date(b.created_at || Date.now()));
+
+            combinedList.forEach(msg => appendMessageToDOM(msg, false));
 
             container.scrollTop = container.scrollHeight;
         }
@@ -278,6 +304,7 @@
 
             let pressTimer = null;
             const startPress = () => {
+                if (msg.is_offline_pending) return; // Don't open options for offline pending messages
                 pressTimer = setTimeout(() => openMessageOptions(msg), 600);
             };
             const cancelPress = () => {
@@ -354,8 +381,13 @@
             if (isMe) {
                 const tickSpan = document.createElement('span');
                 tickSpan.className = 'font-bold text-xs ';
-                tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
-                tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+                if (msg.is_offline_pending) {
+                    tickSpan.textContent = '🕒';
+                    tickSpan.title = 'Pending (Waiting for network)';
+                } else {
+                    tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                    tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+                }
                 metaRow.appendChild(tickSpan);
             }
 
@@ -367,6 +399,52 @@
                 container.scrollTop = container.scrollHeight;
             }
         }
+
+        // --- OFFLINE QUEUE MANAGEMENT & SYNC ---
+        async function flushOfflineQueue() {
+            const queue = loadOfflineQueue();
+            if (queue.length === 0) return;
+
+            const remainingQueue = [];
+            for (const item of queue) {
+                const payload = {
+                    sender_username: item.sender_username,
+                    receiver_username: item.receiver_username,
+                    content: item.content,
+                    message_type: item.message_type,
+                    is_read: false
+                };
+
+                let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+
+                if (error && error.message && error.message.includes('message_type')) {
+                    const fallback = {
+                        sender_username: item.sender_username,
+                        receiver_username: item.receiver_username,
+                        content: item.content,
+                        is_read: false
+                    };
+                    const retry = await supabaseClient.from('messages').insert([fallback]).select();
+                    data = retry.data;
+                    error = retry.error;
+                }
+
+                if (error) {
+                    // Still offline or failed, keep in queue
+                    remainingQueue.push(item);
+                } else if (data && data.length > 0) {
+                    messagesCache.push(data[0]);
+                }
+            }
+
+            saveOfflineQueue(remainingQueue);
+            saveLocalCache(messagesCache);
+        }
+
+        window.addEventListener('online', async () => {
+            console.log('Back online! Flushing offline queue...');
+            await fetchMessages();
+        });
 
         // --- MESSAGE DELETE & OPTIONS LOGIC ---
         function openMessageOptions(msg) {
@@ -691,8 +769,19 @@
                 receiver_username: targetUsername,
                 content: content,
                 message_type: type,
-                is_read: false
+                is_read: false,
+                created_at: new Date().toISOString()
             };
+
+            // If offline, queue it locally immediately instead of throwing error popup
+            if (!navigator.onLine) {
+                const offlineQueue = loadOfflineQueue();
+                const pendingItem = { ...payload, is_offline_pending: true };
+                offlineQueue.push(pendingItem);
+                saveOfflineQueue(offlineQueue);
+                renderMessages(messagesCache);
+                return;
+            }
 
             let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
 
@@ -701,7 +790,8 @@
                     sender_username: currentUser.username,
                     receiver_username: targetUsername,
                     content: content,
-                    is_read: false
+                    is_read: false,
+                    created_at: new Date().toISOString()
                 };
                 const retry = await supabaseClient.from('messages').insert([fallback]).select();
                 data = retry.data;
@@ -710,7 +800,11 @@
 
             if (error) {
                 console.error('Error sending message:', error);
-                alert('Failed to send message. Check console for details.');
+                // Fallback to queue if request fails due to sudden network drop
+                const offlineQueue = loadOfflineQueue();
+                offlineQueue.push({ ...payload, is_offline_pending: true });
+                saveOfflineQueue(offlineQueue);
+                renderMessages(messagesCache);
             } else if (data && data.length > 0) {
                 messagesCache.push(data[0]);
                 saveLocalCache(messagesCache);
