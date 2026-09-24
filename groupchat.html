@@ -7,100 +7,118 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-950 text-slate-100 h-[100dvh] flex flex-col font-sans overflow-hidden m-0">
 
-    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800 h-screen">
+    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
         
-        <!-- Header (Tappable to Open Group Backend Settings) -->
-        <div onclick="openGroupBackend()" class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur-md cursor-pointer group z-10">
-            <div class="flex items-center gap-3 min-w-0">
-                <button onclick="event.stopPropagation(); window.location.href='chatlist.html'" class="text-slate-400 hover:text-white p-1 cursor-pointer">
+        <!-- Header (Fixed & Non-scrolling, Tappable to Open Group Backend Settings) -->
+        <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
+            <div onclick="openGroupBackend()" class="flex items-center gap-2.5 overflow-hidden cursor-pointer group flex-1 min-w-0">
+                <button onclick="event.stopPropagation(); window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">
                     &larr;
                 </button>
-                <div id="group-header-avatar" class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-orange-400 text-sm overflow-hidden flex-shrink-0">
+                <div id="group-header-avatar" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-orange-400 text-xs flex-shrink-0 overflow-hidden">
                     GRP
                 </div>
-                <div class="min-w-0">
-                    <h2 id="group-header-name" class="font-bold text-sm text-white group-hover:text-orange-400 transition-colors truncate">Loading Group...</h2>
-                    <span id="group-header-meta" class="text-[11px] text-slate-400 truncate block">Tap for group settings</span>
+                <div class="overflow-hidden min-w-0">
+                    <h2 id="group-header-name" class="font-bold text-xs text-white group-hover:text-orange-400 transition-colors truncate">Loading Group...</h2>
+                    <span id="group-header-meta" class="text-[9px] text-slate-400 truncate block">Tap for group settings</span>
                 </div>
             </div>
-            <div class="text-xs font-mono bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700 flex-shrink-0">Settings</div>
+            <!-- Header Quick Action Buttons -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+                <button onclick="toggleSearchBox()" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Search Keywords">🔍</button>
+                <button onclick="openMediaGallery('file')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Files">📁</button>
+                <button onclick="openMediaGallery('image')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Images">🖼️</button>
+                <button onclick="openMediaGallery('video')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Videos">🎬</button>
+                <div class="text-[10px] font-mono bg-slate-800 px-2 py-1 rounded text-slate-300 border border-slate-700 ml-1">Settings</div>
+            </div>
         </div>
 
-        <!-- Messages Area -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-950/40 pb-20">
+        <!-- Hidden Search Bar Slide-down -->
+        <div id="search-container" class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
+            <input type="text" id="search-keyword-input" placeholder="Search keywords in group chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-orange-500">
+            <button onclick="toggleSearchBox()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
+        </div>
+
+        <!-- Messages Area (Scrollable independently underneath header) -->
+        <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
             <div class="text-center text-xs text-slate-500 py-4">Loading group messages...</div>
         </div>
 
-        <!-- Recording Indicator Bar -->
-        <div id="recording-bar" class="hidden absolute bottom-16 left-0 right-0 bg-slate-900 border-t border-slate-800 p-3 flex items-center justify-between z-20">
-            <div class="flex items-center gap-2 text-red-500 text-xs font-semibold animate-pulse">
-                <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                <span id="recording-timer">Recording... 0:00</span>
+        <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
+        <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-orange-400">Staged Media Preview</span>
+                <button type="button" onclick="clearStagedMedia()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded cursor-pointer">Discard</button>
             </div>
-            <button onclick="cancelRecording()" class="text-xs text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+            <div id="preview-container" class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
+                <!-- Preview content/thumbnail -->
+            </div>
+            <!-- Upload Progress Bar -->
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                <div id="upload-progress-bar" class="bg-orange-600 h-full w-0 transition-all duration-300"></div>
+            </div>
+            <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready. Hit Send button to upload & deliver.</span>
         </div>
 
-        <!-- Message Input Bar -->
-        <div class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-20">
-            <!-- Media Attachment / Tools Menu Toggle -->
-            <button onclick="toggleMediaMenu()" class="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-            </button>
+        <!-- Hidden File Inputs -->
+        <input type="file" id="media-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onchange="stageFileSelected(event)">
+        <input type="file" id="camera-photo-input" class="hidden" accept="image/*" capture="environment" onchange="stageFileSelected(event)">
+        <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="stageFileSelected(event)">
 
-            <!-- Text Input -->
-            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white" onkeydown="if(event.key==='Enter') sendGroupMessage()">
+        <!-- Attachment Options Popup Menu -->
+        <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-52 backdrop-blur-md">
+            <button type="button" onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+                📁 File / Document
+            </button>
+            <button type="button" onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+                📷 Take Photo Snap
+            </button>
+            <button type="button" onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+                📹 Record Video Note
+            </button>
+        </div>
+
+        <!-- Media Gallery Modal Drawer -->
+        <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h3 class="font-bold text-sm text-white" id="gallery-title">Group Media</h3>
+                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
+            </div>
+            <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
+                <!-- Gallery items populated here -->
+            </div>
+        </div>
+
+        <!-- Bottom Input Bar (Fixed & Always Visible) -->
+        <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
+            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-orange-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">
+                +
+            </button>
             
-            <!-- Send / Voice Note Button -->
-            <button id="main-action-btn" onclick="handleMainAction()" class="p-2.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl text-white transition-all cursor-pointer flex-shrink-0">
-                <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-            </button>
-        </div>
+            <!-- Standard Text Input -->
+            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white min-w-0">
+            
+            <!-- Live Recording Indicator & Controls UI (Hidden by default) -->
+            <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
+                    <span id="recording-timer" class="text-xs font-semibold text-red-400">0:00</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <button type="button" id="pause-rec-btn" onclick="togglePauseRecording()" class="text-[11px] text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">⏸ Pause</button>
+                    <button type="button" onclick="stopRecordingOnly()" class="text-[11px] text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">⏹ Stop</button>
+                    <button type="button" onclick="cancelRecording()" class="text-[11px] text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Discard</button>
+                </div>
+            </div>
 
-        <!-- Popup Media Toolbar Menu -->
-        <div id="media-menu" class="hidden absolute bottom-16 left-3 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 z-30 w-48">
-            <button onclick="triggerImageUpload()" class="flex items-center gap-3 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
-                <span class="w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">&#128247;</span> Photos & Files
+            <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0" title="Record Voice Note">
+                🎤
             </button>
-            <button onclick="openCameraModal()" class="flex items-center gap-3 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
-                <span class="w-7 h-7 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold">&#127909;</span> Camera Snap
-            </button>
-            <button onclick="openVideoNoteModal()" class="flex items-center gap-3 px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 rounded-xl transition-all cursor-pointer">
-                <span class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">&#9201;</span> Video Note
-            </button>
-        </div>
-        <input type="file" id="hidden-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" onchange="handleFileSelected(event)">
-    </div>
-
-    <!-- CAMERA CAPTURE MODAL -->
-    <div id="camera-modal" class="fixed inset-0 bg-black hidden flex-col z-50">
-        <div class="flex-1 relative flex items-center justify-center">
-            <video id="camera-preview" autoplay playsinline class="w-full h-full object-cover"></video>
-            <canvas id="camera-canvas" class="hidden"></canvas>
-        </div>
-        <div class="p-6 bg-slate-950 flex items-center justify-around">
-            <button onclick="closeCameraModal()" class="text-slate-400 px-4 py-2 text-sm cursor-pointer">Cancel</button>
-            <button onclick="capturePhoto()" class="w-16 h-16 rounded-full border-4 border-white bg-orange-600 cursor-pointer"></button>
-            <div class="w-12"></div>
-        </div>
-    </div>
-
-    <!-- VIDEO NOTE MODAL -->
-    <div id="video-note-modal" class="fixed inset-0 bg-black hidden flex-col z-50">
-        <div class="flex-1 relative flex items-center justify-center">
-            <video id="video-note-preview" autoplay muted playsinline class="w-full h-full object-cover"></video>
-            <div id="video-note-timer" class="absolute top-6 bg-red-600 text-white text-xs px-3 py-1 rounded-full font-mono hidden">0:00</div>
-        </div>
-        <div class="p-6 bg-slate-950 flex items-center justify-around">
-            <button onclick="closeVideoNoteModal()" class="text-slate-400 px-4 py-2 text-sm cursor-pointer">Cancel</button>
-            <button id="record-video-btn" onclick="toggleVideoNoteRecording()" class="w-16 h-16 rounded-full border-4 border-white bg-red-600 cursor-pointer animate-pulse"></button>
-            <div class="w-12"></div>
-        </div>
+            
+            <button type="submit" id="send-btn" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">Send</button>
+        </form>
     </div>
 
     <!-- GROUP BACKEND / SETTINGS MODAL -->
@@ -158,54 +176,43 @@
         let myRole = 'member'; // 'admin', 'assistant_admin', or 'member'
         let groupMembersCache = [];
 
-        // Recording & Media variables
+        // Multimedia & Recording variables
         let mediaRecorder = null;
         let audioChunks = [];
-        let isRecordingAudio = false;
-        let recordingInterval = null;
+        let recordedBlob = null;
+        let stagedPayload = null;
+        let isRecording = false;
+        let isPaused = false;
+        let recordingTimerInterval = null;
         let recordingSeconds = 0;
-        
-        let cameraStream = null;
-        let videoNoteStream = null;
-        let videoNoteRecorder = null;
-        let videoNoteChunks = [];
-        let isRecordingVideoNote = false;
+        let messagesCache = [];
+        let messageSubscription = null;
 
         if (!currentUser || !groupId) {
             window.location.href = 'chatlist.html';
         } else {
             initGroupRoom();
-            setInterval(fetchGroupMessages, 4000);
         }
 
-        // Input button dynamic toggling (mic vs send icon)
-        const messageInput = document.getElementById('message-input');
-        messageInput.addEventListener('input', () => {
-            const btnIcon = document.getElementById('mic-icon');
-            if (messageInput.value.trim().length > 0) {
-                btnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />`;
-            } else {
-                btnIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />`;
-            }
-        });
-
-        function handleMainAction() {
-            if (messageInput.value.trim().length > 0) {
-                sendGroupMessage();
-            } else {
-                toggleAudioRecording();
-            }
-        }
-
-        function toggleMediaMenu() {
-            const menu = document.getElementById('media-menu');
+        function toggleAttachmentMenu() {
+            const menu = document.getElementById('attachment-menu');
             menu.classList.toggle('hidden');
         }
 
-        // Close media menu when clicking outside
+        function toggleSearchBox() {
+            const searchBar = document.getElementById('search-container');
+            searchBar.classList.toggle('hidden');
+            if (!searchBar.classList.contains('hidden')) {
+                document.getElementById('search-keyword-input').focus();
+            } else {
+                filterMessages('');
+            }
+        }
+
+        // Close attachment menu when clicking outside
         window.addEventListener('click', (e) => {
-            if (!e.target.closest('#media-menu') && !e.target.closest('button[onclick="toggleMediaMenu()"]')) {
-                document.getElementById('media-menu').classList.add('hidden');
+            if (!e.target.closest('#attachment-menu') && !e.target.closest('#attach-btn')) {
+                document.getElementById('attachment-menu').classList.add('hidden');
             }
         });
 
@@ -236,7 +243,8 @@
             }
 
             await checkUserRoleAndLoadMembers();
-            fetchGroupMessages();
+            await fetchGroupMessages();
+            subscribeToGroupMessages();
         }
 
         async function checkUserRoleAndLoadMembers() {
@@ -427,22 +435,191 @@
             checkUserRoleAndLoadMembers();
         }
 
-        // --- MULTIMEDIA & MESSAGING FUNCTIONS ---
+        // --- STAGING FILES & MEDIA ---
+        function stageFileSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        async function sendGroupMessage(mediaUrl = null, mediaType = null) {
+            const reader = new FileReader();
+            const progressBar = document.getElementById('upload-progress-bar');
+            const statusText = document.getElementById('upload-status-text');
+            document.getElementById('media-preview-bar').classList.remove('hidden');
+            document.getElementById('media-preview-bar').classList.add('flex');
+            
+            progressBar.style.width = '10%';
+            statusText.textContent = 'Reading file stream...';
+
+            reader.onprogress = (data) => {
+                if (data.lengthComputable) {
+                    const percent = Math.round((data.loaded / data.total) * 90);
+                    progressBar.style.width = percent + '%';
+                }
+            };
+
+            reader.onload = function(e) {
+                progressBar.style.width = '100%';
+                statusText.textContent = 'Ready! Hit the Send button to dispatch.';
+
+                let type = 'file';
+                if (file.type.startsWith('image/')) type = 'image';
+                else if (file.type.startsWith('video/')) type = 'video';
+                else if (file.type.startsWith('audio/')) type = 'audio';
+
+                stagedPayload = {
+                    content: e.target.result,
+                    type: type,
+                    fileName: file.name
+                };
+
+                const previewContainer = document.getElementById('preview-container');
+                if (type === 'image') {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-20 rounded object-contain">`;
+                } else if (type === 'video') {
+                    previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-20 rounded" controls></video>`;
+                } else {
+                    previewContainer.innerHTML = `<span class="font-semibold">Staged File: ${file.name}</span>`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearStagedMedia() {
+            stagedPayload = null;
+            recordedBlob = null;
+            document.getElementById('media-preview-bar').classList.add('hidden');
+            document.getElementById('media-preview-bar').classList.remove('flex');
+            document.getElementById('upload-progress-bar').style.width = '0%';
+        }
+
+        // --- VOICE NOTE RECORDING ---
+        async function startVoiceRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                isPaused = false;
+                recordedBlob = null;
+
+                document.getElementById('message-input').classList.add('hidden');
+                document.getElementById('recording-ui').classList.remove('hidden');
+                document.getElementById('recording-ui').classList.add('flex');
+                document.getElementById('mic-btn').classList.add('hidden');
+
+                recordingSeconds = 0;
+                document.getElementById('recording-timer').textContent = '0:00';
+                recordingTimerInterval = setInterval(() => {
+                    if (!isPaused) {
+                        recordingSeconds++;
+                        const m = Math.floor(recordingSeconds / 60);
+                        const s = recordingSeconds % 60;
+                        document.getElementById('recording-timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+                    }
+                }, 1000);
+            } catch (err) {
+                alert('Microphone access denied or unavailable.');
+            }
+        }
+
+        function togglePauseRecording() {
+            if (!mediaRecorder) return;
+            const btn = document.getElementById('pause-rec-btn');
+            if (!isPaused) {
+                mediaRecorder.pause();
+                isPaused = true;
+                btn.textContent = '▶ Resume';
+            } else {
+                mediaRecorder.resume();
+                isPaused = false;
+                btn.textContent = '⏸ Pause';
+            }
+        }
+
+        function stopRecordingOnly() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+                clearInterval(recordingTimerInterval);
+                
+                document.getElementById('media-preview-bar').classList.remove('hidden');
+                document.getElementById('media-preview-bar').classList.add('flex');
+                document.getElementById('preview-container').innerHTML = `<span class="text-orange-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
+                document.getElementById('upload-progress-bar').style.width = '100%';
+                document.getElementById('upload-status-text').textContent = 'Hit the Send button to dispatch voice note.';
+            }
+        }
+
+        function cancelRecording() {
+            if (mediaRecorder && (isRecording || isPaused)) {
+                mediaRecorder.ondataavailable = null;
+                mediaRecorder.stop();
+            }
+            resetRecordingUI();
+            clearStagedMedia();
+        }
+
+        function resetRecordingUI() {
+            clearInterval(recordingTimerInterval);
+            isRecording = false;
+            isPaused = false;
+            document.getElementById('recording-ui').classList.add('hidden');
+            document.getElementById('recording-ui').classList.remove('flex');
+            document.getElementById('message-input').classList.remove('hidden');
+            document.getElementById('mic-btn').classList.remove('hidden');
+        }
+
+        // --- FORM SUBMISSION & SENDING MESSAGES ---
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            if (isRecording) {
+                stopRecordingOnly();
+                return;
+            }
+
+            if (recordedBlob) {
+                const reader = new FileReader();
+                reader.readAsDataURL(recordedBlob);
+                reader.onloadend = async () => {
+                    await sendGroupPayloadToSupabase(reader.result, 'audio');
+                    recordedBlob = null;
+                    resetRecordingUI();
+                    clearStagedMedia();
+                };
+                return;
+            }
+
+            if (stagedPayload) {
+                await sendGroupPayloadToSupabase(stagedPayload.content, stagedPayload.type);
+                clearStagedMedia();
+                return;
+            }
+
             const input = document.getElementById('message-input');
-            const text = input.value.trim();
-            if (!text && !mediaUrl) return;
+            const content = input.value.trim();
+            if (!content) return;
 
+            input.value = '';
+            await sendGroupPayloadToSupabase(content, 'text');
+        }
+
+        async function sendGroupPayloadToSupabase(content, type) {
             const { error } = await supabaseClient
                 .from('group_messages')
                 .insert([{
                     group_id: groupId,
                     sender_username: currentUser.username,
                     sender_name: currentUser.name,
-                    message: text || (mediaType === 'image' ? '📷 Photo' : mediaType === 'audio' ? '🎤 Voice Note' : mediaType === 'video' ? '📹 Video Note' : '📁 Attachment'),
-                    media_url: mediaUrl,
-                    media_type: mediaType
+                    message: content,
+                    media_url: type !== 'text' ? content : null,
+                    media_type: type !== 'text' ? type : null
                 }]);
 
             if (error) {
@@ -450,215 +627,10 @@
                 return;
             }
 
-            input.value = '';
-            document.getElementById('mic-icon').innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />`;
             fetchGroupMessages();
         }
 
-        function triggerImageUpload() {
-            document.getElementById('media-menu').classList.add('hidden');
-            document.getElementById('hidden-file-input').click();
-        }
-
-        async function handleFileSelected(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36.substring(2))}_${Date.now()}.${fileExt}`;
-            const filePath = `group_uploads/${fileName}`;
-
-            const { error: uploadErr } = await supabaseClient.storage
-                .from('chat_media')
-                .upload(filePath, file);
-
-            if (uploadErr) {
-                alert('Error uploading file: ' + uploadErr.message);
-                return;
-            }
-
-            const { data: publicURLData } = supabaseClient.storage
-                .from('chat_media')
-                .getPublicUrl(filePath);
-
-            const mediaType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file';
-            await sendGroupMessage(publicURLData.publicUrl, mediaType);
-            event.target.value = '';
-        }
-
-        // Audio Voice Notes
-        async function toggleAudioRecording() {
-            if (!isRecordingAudio) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
-
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                        const fileName = `audio_${Date.now()}.webm`;
-                        const filePath = `group_uploads/${fileName}`;
-
-                        const { error: uploadErr } = await supabaseClient.storage
-                            .from('chat_media')
-                            .upload(filePath, audioBlob);
-
-                        if (!uploadErr) {
-                            const { data } = supabaseClient.storage.from('chat_media').getPublicUrl(filePath);
-                            await sendGroupMessage(data.publicUrl, 'audio');
-                        }
-                        stream.getTracks().forEach(track => track.stop());
-                    };
-
-                    mediaRecorder.start();
-                    isRecordingAudio = true;
-                    document.getElementById('recording-bar').classList.remove('hidden');
-                    recordingSeconds = 0;
-                    document.getElementById('recording-timer').textContent = `Recording... 0:00`;
-                    recordingInterval = setInterval(() => {
-                        recordingSeconds++;
-                        const mins = Math.floor(recordingSeconds / 60);
-                        const secs = recordingSeconds % 60;
-                        document.getElementById('recording-timer').textContent = `Recording... ${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                    }, 1000);
-
-                    document.getElementById('main-action-btn').classList.remove('bg-orange-600', 'hover:bg-orange-500');
-                    document.getElementById('main-action-btn').classList.add('bg-red-600', 'hover:bg-red-500', 'animate-pulse');
-                } catch (err) {
-                    alert('Microphone access denied or unavailable.');
-                }
-            } else {
-                clearInterval(recordingInterval);
-                mediaRecorder.stop();
-                isRecordingAudio = false;
-                document.getElementById('recording-bar').classList.add('hidden');
-                document.getElementById('main-action-btn').classList.remove('bg-red-600', 'hover:bg-red-500', 'animate-pulse');
-                document.getElementById('main-action-btn').classList.add('bg-orange-600', 'hover:bg-orange-500');
-            }
-        }
-
-        function cancelRecording() {
-            if (isRecordingAudio && mediaRecorder) {
-                mediaRecorder.onstop = null;
-                mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(t => t.stop());
-            }
-            clearInterval(recordingInterval);
-            isRecordingAudio = false;
-            document.getElementById('recording-bar').classList.add('hidden');
-            document.getElementById('main-action-btn').classList.remove('bg-red-600', 'hover:bg-red-500', 'animate-pulse');
-            document.getElementById('main-action-btn').classList.add('bg-orange-600', 'hover:bg-orange-500');
-        }
-
-        // Camera Snap Modal
-        async function openCameraModal() {
-            document.getElementById('media-menu').classList.add('hidden');
-            const modal = document.getElementById('camera-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            try {
-                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
-                document.getElementById('camera-preview').srcObject = cameraStream;
-            } catch (err) {
-                alert('Camera access denied or unavailable.');
-                closeCameraModal();
-            }
-        }
-
-        function closeCameraModal() {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(t => t.stop());
-            }
-            const modal = document.getElementById('camera-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        async function capturePhoto() {
-            const video = document.getElementById('camera-preview');
-            const canvas = document.getElementById('camera-canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-
-            canvas.toBlob(async (blob) => {
-                closeCameraModal();
-                const fileName = `snap_${Date.now()}.jpg`;
-                const filePath = `group_uploads/${fileName}`;
-
-                const { error: uploadErr } = await supabaseClient.storage
-                    .from('chat_media')
-                    .upload(filePath, blob);
-
-                if (!uploadErr) {
-                    const { data } = supabaseClient.storage.from('chat_media').getPublicUrl(filePath);
-                    await sendGroupMessage(data.publicUrl, 'image');
-                }
-            }, 'image/jpeg', 0.85);
-        }
-
-        // Video Note Modal
-        async function openVideoNoteModal() {
-            document.getElementById('media-menu').classList.add('hidden');
-            const modal = document.getElementById('video-note-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            try {
-                videoNoteStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('video-note-preview').srcObject = videoNoteStream;
-            } catch (err) {
-                alert('Camera/Microphone access denied.');
-                closeVideoNoteModal();
-            }
-        }
-
-        function closeVideoNoteModal() {
-            if (videoNoteStream) {
-                videoNoteStream.getTracks().forEach(t => t.stop());
-            }
-            const modal = document.getElementById('video-note-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-            isRecordingVideoNote = false;
-        }
-
-        function toggleVideoNoteRecording() {
-            const timerEl = document.getElementById('video-note-timer');
-            const btn = document.getElementById('record-video-btn');
-
-            if (!isRecordingVideoNote) {
-                videoNoteChunks = [];
-                videoNoteRecorder = new MediaRecorder(videoNoteStream);
-                videoNoteRecorder.ondataavailable = e => videoNoteChunks.push(e.data);
-                videoNoteRecorder.onstop = async () => {
-                    const videoBlob = new Blob(videoNoteChunks, { type: 'video/webm' });
-                    const fileName = `vid_note_${Date.now()}.webm`;
-                    const filePath = `group_uploads/${fileName}`;
-
-                    const { error: uploadErr } = await supabaseClient.storage
-                        .from('chat_media')
-                        .upload(filePath, videoBlob);
-
-                    if (!uploadErr) {
-                        const { data } = supabaseClient.storage.from('chat_media').getPublicUrl(filePath);
-                        await sendGroupMessage(data.publicUrl, 'video');
-                    }
-                    closeVideoNoteModal();
-                };
-
-                videoNoteRecorder.start();
-                isRecordingVideoNote = true;
-                timerEl.classList.remove('hidden');
-                btn.classList.add('bg-white', 'scale-90');
-            } else {
-                videoNoteRecorder.stop();
-            }
-        }
-
+        // --- FETCH & RENDER MESSAGES ---
         async function fetchGroupMessages() {
             const { data: messages, error } = await supabaseClient
                 .from('group_messages')
@@ -668,6 +640,27 @@
 
             if (error) return;
 
+            if (messages) {
+                messagesCache = messages;
+                renderMessages(messagesCache);
+            }
+        }
+
+        function filterMessages(keyword) {
+            const term = keyword.toLowerCase();
+            if (!term) {
+                renderMessages(messagesCache);
+                return;
+            }
+            const filtered = messagesCache.filter(m => {
+                if (m.message && m.message.toLowerCase().includes(term)) return true;
+                if (m.media_type === keyword) return true;
+                return false;
+            });
+            renderMessages(filtered);
+        }
+
+        function renderMessages(messages) {
             const chatContainer = document.getElementById('chat-messages');
             chatContainer.innerHTML = '';
 
@@ -681,19 +674,61 @@
                 const bubble = document.createElement('div');
                 bubble.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-2`;
 
-                const timeString = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const timeString = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                let contentHtml = `<span>${escapeHtml(msg.message)}</span>`;
-                if (msg.media_type === 'image' && msg.media_url) {
-                    contentHtml = `<img src="${msg.media_url}" class="rounded-xl max-h-48 object-cover cursor-pointer mb-1" onclick="window.open('${msg.media_url}', '_blank')"><span>${escapeHtml(msg.message)}</span>`;
-                } else if (msg.media_type === 'video' && msg.media_url) {
-                    contentHtml = `<video src="${msg.media_url}" controls class="rounded-xl max-h-48 object-cover mb-1"></video><span>${escapeHtml(msg.message)}</span>`;
-                } else if (msg.media_type === 'audio' && msg.media_url) {
-                    contentHtml = `<audio src="${msg.media_url}" controls class="max-w-[200px] h-10 mb-1"></audio><span>${escapeHtml(msg.message)}</span>`;
+                let contentHtml = '';
+                const type = msg.media_type || 'text';
+
+                if (type === 'image') {
+                    contentHtml = `<img src="${msg.media_url || msg.message}" class="rounded-xl max-h-48 object-cover cursor-pointer mb-1" onclick="window.open('${msg.media_url || msg.message}', '_blank')">`;
+                } else if (type === 'video') {
+                    contentHtml = `<video src="${msg.media_url || msg.message}" controls class="rounded-xl max-h-48 object-cover mb-1"></video>`;
+                } else if (type === 'audio') {
+                    const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
+                    const audioSrc = msg.media_url || msg.message;
+                    contentHtml = `
+                        <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
+                            <button type="button" onclick="toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
+                            <audio id="${audioId}" src="${audioSrc}" preload="metadata"></audio>
+                            <div class="flex flex-col flex-1 gap-1">
+                                <div class="flex justify-between items-center text-[10px] opacity-80">
+                                    <span class="audio-current-time">0:00</span>
+                                    <button type="button" onclick="toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
+                                </div>
+                                <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
+                            </div>
+                        </div>
+                    `;
+
+                    setTimeout(() => {
+                        const audioEl = document.getElementById(audioId);
+                        if (!audioEl) return;
+                        const c = audioEl.closest('[data-audio-container]');
+                        const rangeEl = c.querySelector('.audio-range');
+                        const timeEl = c.querySelector('.audio-current-time');
+
+                        audioEl.addEventListener('loadedmetadata', () => {
+                            timeEl.textContent = formatAudioTime(audioEl.duration);
+                        });
+                        audioEl.addEventListener('timeupdate', () => {
+                            if (!audioEl.duration) return;
+                            rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
+                            timeEl.textContent = formatAudioTime(audioEl.currentTime);
+                        });
+                        audioEl.addEventListener('ended', () => {
+                            c.querySelector('button').textContent = '▶';
+                            audioEl.currentTime = 0;
+                        });
+                    }, 50);
+
+                } else if (type === 'file') {
+                    contentHtml = `<a href="${msg.media_url || msg.message}" download class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
+                } else {
+                    contentHtml = `<span>${escapeHtml(msg.message)}</span>`;
                 }
 
                 bubble.innerHTML = `
-                    <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none'}">
+                    <div class="max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${isMe ? 'bg-orange-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'}">
                         ${!isMe ? `<span class="block text-[10px] font-bold text-orange-400 mb-0.5">${msg.sender_name}</span>` : ''}
                         ${contentHtml}
                     </div>
@@ -703,6 +738,88 @@
             });
 
             chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // --- AUDIO CONTROLS HELPER FUNCTIONS ---
+        function toggleAudioPlay(audioId, btn) {
+            const audio = document.getElementById(audioId);
+            if (audio.paused) {
+                audio.play();
+                btn.textContent = '⏸';
+            } else {
+                audio.pause();
+                btn.textContent = '▶';
+            }
+        }
+
+        function seekAudio(audioId, value) {
+            const audio = document.getElementById(audioId);
+            if (!audio.duration) return;
+            audio.currentTime = (value / 100) * audio.duration;
+        }
+
+        function toggleAudioSpeed(audioId, speedBtn) {
+            const audio = document.getElementById(audioId);
+            let nextRate = audio.playbackRate === 1 ? 1.5 : audio.playbackRate === 1.5 ? 2 : 1;
+            audio.playbackRate = nextRate;
+            speedBtn.textContent = nextRate + 'x';
+        }
+
+        function formatAudioTime(secs) {
+            if (isNaN(secs)) return '0:00';
+            const mins = Math.floor(secs / 60);
+            const rSecs = Math.floor(secs % 60);
+            return `${mins}:${rSecs < 10 ? '0' : ''}${rSecs}`;
+        }
+
+        // --- MEDIA GALLERY MODAL ---
+        function openMediaGallery(typeFilter) {
+            const modal = document.getElementById('media-gallery-modal');
+            const grid = document.getElementById('gallery-content-grid');
+            const title = document.getElementById('gallery-title');
+            modal.classList.remove('hidden');
+            grid.innerHTML = '';
+            title.textContent = `Group ${typeFilter.toUpperCase()} Gallery`;
+
+            const matching = messagesCache.filter(m => {
+                const url = m.media_url || m.message;
+                if (typeFilter === 'image' && m.media_type === 'image') return true;
+                if (typeFilter === 'video' && m.media_type === 'video') return true;
+                if (typeFilter === 'file' && (m.media_type === 'file' || m.media_type === 'audio')) return true;
+                return false;
+            });
+
+            if (matching.length === 0) {
+                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this group.</span>`;
+                return;
+            }
+
+            matching.forEach(m => {
+                const url = m.media_url || m.message;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
+                if (m.media_type === 'image') {
+                    card.innerHTML = `<img src="${url}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${url}')">`;
+                } else if (m.media_type === 'video') {
+                    card.innerHTML = `<video src="${url}" class="h-24 w-full rounded object-cover" controls></video>`;
+                } else {
+                    card.innerHTML = `<a href="${url}" download class="text-xs text-orange-400 underline font-semibold py-4">Download ${m.media_type || 'File'}</a>`;
+                }
+                grid.appendChild(card);
+            });
+        }
+
+        function closeMediaGallery() {
+            document.getElementById('media-gallery-modal').classList.add('hidden');
+        }
+
+        function subscribeToGroupMessages() {
+            messageSubscription = supabaseClient
+                .channel('public:group_messages')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` }, payload => {
+                    fetchGroupMessages();
+                })
+                .subscribe();
         }
 
         function escapeHtml(text) {
