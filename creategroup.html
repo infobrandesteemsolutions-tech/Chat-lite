@@ -68,16 +68,65 @@
 
     </div>
 
+    <!-- CUSTOM FANCY MODAL POPUP -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 z-50 transition-all">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-6 text-center shadow-2xl transform scale-95 transition-transform" id="modal-content-box">
+            <div id="modal-icon-container" class="w-12 h-12 rounded-full bg-orange-600/20 border border-orange-500/30 flex items-center justify-center mx-auto mb-3 text-orange-400 text-xl font-bold">
+                i
+            </div>
+            <h3 id="modal-title" class="font-bold text-base text-white mb-1">Notice</h3>
+            <p id="modal-message" class="text-xs text-slate-400 mb-5 leading-relaxed">Message text goes here.</p>
+            <button id="modal-ok-btn" onclick="closeCustomModal()" class="w-full py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-orange-600/20 transition-all cursor-pointer">
+                Okay
+            </button>
+        </div>
+    </div>
+
     <script src="supabase.js"></script>
     <script>
         let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
         let groupAvatarBase64 = null;
         let connectionsList = [];
+        let modalCallback = null;
 
         if (!currentUser) {
             window.location.href = 'index.html';
         } else {
             loadUserConnections();
+        }
+
+        function showModal(title, message, isSuccess = true, callback = null) {
+            const modal = document.getElementById('custom-modal');
+            const box = document.getElementById('modal-content-box');
+            const titleEl = document.getElementById('modal-title');
+            const msgEl = document.getElementById('modal-message');
+            const iconEl = document.getElementById('modal-icon-container');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            modalCallback = callback;
+
+            if (isSuccess) {
+                iconEl.className = 'w-12 h-12 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3 text-emerald-400 text-xl';
+                iconEl.innerHTML = '✓';
+            } else {
+                iconEl.className = 'w-12 h-12 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center mx-auto mb-3 text-red-400 text-xl';
+                iconEl.innerHTML = '!';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => box.classList.remove('scale-95'), 10);
+        }
+
+        function closeCustomModal() {
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            if (modalCallback) {
+                modalCallback();
+                modalCallback = null;
+            }
         }
 
         function handleFileSelect(event) {
@@ -212,18 +261,19 @@
                 .single();
 
             if (groupError) {
-                alert('Error creating group: ' + groupError.message);
-                createBtn.textContent = 'Create Group';
-                createBtn.disabled = false;
+                showModal('Error', 'Error creating group: ' + groupError.message, false, () => {
+                    createBtn.textContent = 'Create Group';
+                    createBtn.disabled = false;
+                });
                 return;
             }
 
-            // 2. Add creator as Admin, and selected connections as 'pending' members so they can accept/decline
+            // 2. Add creator as Admin, and selected connections as 'pending' members
             const membersPayload = [{
                 group_id: groupData.id,
                 username: currentUser.username,
                 role: 'admin',
-                status: 'accepted' // Creator joins immediately
+                status: 'accepted'
             }];
 
             selectedUsernames.forEach(username => {
@@ -231,7 +281,7 @@
                     group_id: groupData.id,
                     username: username,
                     role: 'member',
-                    status: 'pending' // Needs acceptance/action
+                    status: 'pending'
                 });
             });
 
@@ -240,12 +290,14 @@
                 .insert(membersPayload);
 
             if (memError) {
-                alert('Group created, but encountered an error adding members: ' + memError.message);
+                showModal('Warning', 'Group created, but encountered an error adding members: ' + memError.message, false, () => {
+                    window.location.href = 'chatlist.html';
+                });
             } else {
-                alert('Group created successfully! Invitations sent to selected connections.');
+                showModal('Success!', 'Group created successfully! Invitations sent to selected connections.', true, () => {
+                    window.location.href = 'chatlist.html';
+                });
             }
-
-            window.location.href = 'chatlist.html';
         }
     </script>
 </body>
