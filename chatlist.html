@@ -28,17 +28,13 @@
             <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-red-400 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 transition-all cursor-pointer backdrop-blur-md">Sign Out</button>
         </div>
         
-        <!-- Chat Code Banner & Add Contact Action Bar -->
-        <div class="px-4 py-3 bg-slate-950 border-b border-slate-800/80 flex items-center justify-between">
-            <div>
-                <span class="text-[10px] text-slate-400 block uppercase tracking-wider font-semibold">Your Chat Code</span>
-                <div class="flex items-center gap-2 mt-0.5">
-                    <span id="my-chat-code" class="text-xs font-mono font-bold text-orange-400 bg-orange-950/30 px-2 py-0.5 rounded border border-orange-500/20">Loading...</span>
-                    <button onclick="copyChatCode()" class="text-[10px] text-slate-300 bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded cursor-pointer transition-all">Copy</button>
-                </div>
-            </div>
-            <button onclick="openInviteModal()" class="px-3.5 py-2 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-orange-600/20 transition-all cursor-pointer">
+        <!-- Action Bar: Add Contact & Create Group Buttons -->
+        <div class="px-4 py-3 bg-slate-950 border-b border-slate-800/80 flex items-center gap-2">
+            <button onclick="openInviteModal()" class="flex-1 py-2.5 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl text-xs shadow-lg shadow-orange-600/20 transition-all cursor-pointer text-center">
                 + Add Contact
+            </button>
+            <button onclick="window.location.href='creategroup.html'" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold rounded-xl text-xs transition-all cursor-pointer text-center">
+                + Create Group
             </button>
         </div>
 
@@ -84,19 +80,12 @@
 
         function initHeaderProfile() {
             document.getElementById('current-user-name').textContent = currentUser.name;
-            document.getElementById('my-chat-code').textContent = currentUser.chat_code || 'N/A';
             const avatarContainer = document.getElementById('header-avatar');
             if (currentUser.avatar_url) {
                 avatarContainer.innerHTML = `<img src="${currentUser.avatar_url}" class="w-full h-full object-cover">`;
             } else {
                 avatarContainer.textContent = currentUser.name.charAt(0).toUpperCase();
             }
-        }
-
-        function copyChatCode() {
-            if (!currentUser.chat_code) return;
-            navigator.clipboard.writeText(currentUser.chat_code);
-            alert('Chat Code copied to clipboard: ' + currentUser.chat_code);
         }
 
         function openInviteModal() {
