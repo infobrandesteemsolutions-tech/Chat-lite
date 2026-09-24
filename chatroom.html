@@ -131,8 +131,11 @@
         document.getElementById('active-chat-gender').textContent = `@${targetUsername} • ${targetGender}`;
         document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
 
+        const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
+        const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
+
         let messageSubscription = null;
-        let messagesCache = [];
+        let messagesCache = loadLocalCache();
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
@@ -141,6 +144,38 @@
         let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
+
+        // Load cached messages instantly on boot (Stale-While-Revalidate)
+        if (messagesCache.length > 0) {
+            renderMessages(messagesCache);
+        }
+
+        function loadLocalCache() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLocalCache(messages) {
+            messagesCache = messages;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        }
+
+        function getOfflineQueue() {
+            try {
+                const data = localStorage.getItem(QUEUE_KEY);
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveOfflineQueue(queue) {
+            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+        }
 
         function toggleAttachmentMenu() {
             const menu = document.getElementById('attachment-menu');
@@ -158,6 +193,8 @@
         }
 
         async function fetchMessages() {
+            if (!navigator.onLine) return; // Skip network fetch if offline
+
             const { data: messages, error } = await supabaseClient
                 .from('messages')
                 .select('*')
@@ -170,13 +207,14 @@
             }
 
             if (messages) {
-                messagesCache = messages;
+                saveLocalCache(messages);
                 renderMessages(messagesCache);
-                markIncomingMessagesAsRead(messagesCache);
+                markIncomingMessagesAsRead(messages);
             }
         }
 
         async function markIncomingMessagesAsRead(messages) {
+            if (!navigator.onLine) return;
             const unreadIds = messages
                 .filter(m => m.receiver_username === currentUser.username && !m.is_read)
                 .map(m => m.id);
@@ -194,6 +232,11 @@
             container.innerHTML = '';
 
             messages.forEach(msg => appendMessageToDOM(msg, false));
+            
+            // Append any locally queued pending items not yet confirmed on server
+            const queue = getOfflineQueue();
+            queue.forEach(qMsg => appendMessageToDOM(qMsg, false));
+
             container.scrollTop = container.scrollHeight;
         }
 
@@ -217,7 +260,7 @@
 
             const wrapper = document.createElement('div');
             wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row`;
-            wrapper.setAttribute('data-id', msg.id);
+            if (msg.id) wrapper.setAttribute('data-id', msg.id);
 
             const bubble = document.createElement('div');
             bubble.className = `max-w-[85%] px-3 py-2 rounded-2xl text-sm ${
@@ -276,13 +319,18 @@
             metaRow.className = 'flex items-center gap-1 px-1 text-[10px] text-slate-400';
             
             const timeSpan = document.createElement('span');
-            timeSpan.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timeSpan.textContent = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             metaRow.appendChild(timeSpan);
 
             if (isMe) {
                 const tickSpan = document.createElement('span');
                 tickSpan.className = 'font-bold text-xs ' + (msg.is_read ? 'text-indigo-300' : 'text-slate-500');
-                tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                if (msg.is_pending) {
+                    tickSpan.textContent = '🕒'; // Pending sync icon
+                    tickSpan.title = 'Waiting for network...';
+                } else {
+                    tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
+                }
                 metaRow.appendChild(tickSpan);
             }
 
@@ -493,11 +541,32 @@
             const content = input.value.trim();
             if (!content) return;
 
-            await sendPayloadToSupabase(content, 'text');
             input.value = '';
+            await sendPayloadToSupabase(content, 'text');
         }
 
         async function sendPayloadToSupabase(content, type) {
+            const localMessage = {
+                sender_username: currentUser.username,
+                receiver_username: targetUsername,
+                content: content,
+                message_type: type,
+                is_read: false,
+                created_at: new Date().toISOString(),
+                is_pending: true
+            };
+
+            // 1. Instantly drop message into local cache & render immediately (Optimistic UI)
+            messagesCache.push(localMessage);
+            saveLocalCache(messagesCache);
+            renderMessages(messagesCache);
+
+            // 2. Try dispatching to Supabase if online
+            if (!navigator.onLine) {
+                queueOfflineMessage(localMessage);
+                return;
+            }
+
             const payload = {
                 sender_username: currentUser.username,
                 receiver_username: targetUsername,
@@ -519,11 +588,44 @@
             }
 
             if (error) {
-                alert('Failed to send message: ' + error.message);
+                // If network failed mid-flight, queue it for background retry
+                queueOfflineMessage(localMessage);
             } else {
+                // Remove pending flag locally and fetch fresh server state
+                messagesCache = messagesCache.filter(m => m !== localMessage);
+                saveLocalCache(messagesCache);
                 fetchMessages();
             }
         }
+
+        function queueOfflineMessage(msg) {
+            const queue = getOfflineQueue();
+            queue.push(msg);
+            saveOfflineQueue(queue);
+        }
+
+        // Background sync listener when internet connection is restored
+        window.addEventListener('online', async () => {
+            const queue = getOfflineQueue();
+            if (queue.length === 0) {
+                fetchMessages();
+                return;
+            }
+
+            for (const msg of queue) {
+                const payload = {
+                    sender_username: msg.sender_username,
+                    receiver_username: msg.receiver_username,
+                    content: msg.content,
+                    message_type: msg.message_type || 'text',
+                    is_read: false
+                };
+                await supabaseClient.from('messages').insert([payload]);
+            }
+
+            saveOfflineQueue([]); // Clear queue after successful flush
+            fetchMessages();
+        });
 
         function openMediaGallery(typeFilter) {
             const modal = document.getElementById('media-gallery-modal');
@@ -570,6 +672,11 @@
                     fetchMessages();
                 })
                 .subscribe();
+        }
+
+        // Initialize background network sync flush if queue has leftover items
+        if (navigator.onLine && getOfflineQueue().length > 0) {
+            window.dispatchEvent(new Event('online'));
         }
 
         fetchMessages();
