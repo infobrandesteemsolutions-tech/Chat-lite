@@ -85,25 +85,34 @@
             const listContainer = document.getElementById('members-list');
 
             if (error || !members || members.length === 0) {
-                listContainer.innerHTML = `<div class="p-8 text-center text-slate-500 text-sm">No other family members found yet. Have them create profiles!</div>`;
+                listContainer.innerHTML = `<div class="p-8 text-center text-slate-500 text-sm">No other users found yet.</div>`;
                 return;
             }
 
-            // Fetch all messages involving current user to compute last messages & unread stats
-            const { data: messages } = await supabaseClient
+            // Fetch all messages sent by or received by current user safely without failing on syntax filters
+            const { data: sentMessages } = await supabaseClient
                 .from('messages')
                 .select('*')
-                .or(`sender.eq.${currentUser.username},receiver.eq.${currentUser.username}`)
-                .order('created_at', { ascending: false });
+                .eq('sender', currentUser.username);
+
+            const { data: receivedMessages } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .eq('receiver', currentUser.username);
+
+            const messages = [...(sentMessages || []), ...(receivedMessages || [])];
+            
+            // Sort all messages descending by creation time
+            messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
             listContainer.innerHTML = '';
 
             members.forEach(member => {
-                // Find latest message between current user and this member
-                const conversationMessages = messages ? messages.filter(m => 
+                // Find messages between current user and this specific member
+                const conversationMessages = messages.filter(m => 
                     (m.sender === currentUser.username && m.receiver === member.username) ||
                     (m.sender === member.username && m.receiver === currentUser.username)
-                ) : [];
+                );
 
                 const lastMessage = conversationMessages.length > 0 ? conversationMessages[0] : null;
                 
