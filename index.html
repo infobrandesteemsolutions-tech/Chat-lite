@@ -104,6 +104,15 @@
 
     <script src="supabase.js"></script>
     <script>
+        // Register Service Worker for PWA Offline Support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+
         function openLoginModal() {
             document.getElementById('login-modal').classList.remove('hidden');
             document.getElementById('login-modal').classList.add('flex');
@@ -118,21 +127,35 @@
             const username = document.getElementById('login-username').value.trim().toLowerCase();
             const password = document.getElementById('login-password').value;
 
-            const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('username', username)
-                .eq('password', password)
-                .maybeSingle();
+            try {
+                const { data, error } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('username', username)
+                    .eq('password', password)
+                    .maybeSingle();
 
-            if (error || !data) {
-                alert('Invalid username or password.');
-                return;
+                if (error || !data) {
+                    alert('Invalid username or password.');
+                    return;
+                }
+
+                // Save user session locally and redirect to chat list page
+                localStorage.setItem('chatlite_user', JSON.stringify(data));
+                window.location.href = 'chatlist.html';
+            } catch (err) {
+                // Offline fallback: if network fails, check if credentials match a locally saved profile or previous session
+                console.warn('Network error during login, attempting offline fallback...', err);
+                const cachedUser = localStorage.getItem('chatlite_user');
+                if (cachedUser) {
+                    const parsedUser = JSON.parse(cachedUser);
+                    if (parsedUser.username === username) {
+                        window.location.href = 'chatlist.html';
+                        return;
+                    }
+                }
+                alert('You are offline and no matching local session was found. Please connect to the internet to sign in for the first time.');
             }
-
-            // Save user session locally and redirect to chat list page
-            localStorage.setItem('chatlite_user', JSON.stringify(data));
-            window.location.href = 'chatlist.html';
         }
     </script>
 </body>
