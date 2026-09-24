@@ -43,12 +43,21 @@
     <script src="supabase.js"></script>
     <script>
         let currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        const CHATLIST_MEMBERS_CACHE_KEY = `chatlite_members_cache_${currentUser ? currentUser.username : 'guest'}`;
+        const CHATLIST_MESSAGES_CACHE_KEY = `chatlite_global_messages_cache_${currentUser ? currentUser.username : 'guest'}`;
+
         if (!currentUser) {
             window.location.href = 'index.html';
         } else {
             initHeaderProfile();
+            
+            // 1. Render immediately from local storage cache if available (Offline-first boot)
+            renderCachedChatListUI();
+
+            // 2. Fetch fresh data from network if online
             loadChatList();
-            // Poll for message status updates every 4 seconds
+
+            // Poll for message status updates every 4 seconds (guarded inside loadChatList)
             setInterval(loadChatList, 4000);
         }
 
@@ -62,7 +71,24 @@
             }
         }
 
+        function renderCachedChatListUI() {
+            const cachedMembers = localStorage.getItem(CHATLIST_MEMBERS_CACHE_KEY);
+            const cachedMessages = localStorage.getItem(CHATLIST_MESSAGES_CACHE_KEY);
+            if (cachedMembers) {
+                try {
+                    const members = JSON.parse(cachedMembers);
+                    const messages = cachedMessages ? JSON.parse(cachedMessages) : [];
+                    buildChatListDOM(members, messages);
+                } catch (e) {
+                    // Fallback silently if cache is malformed
+                }
+            }
+        }
+
         async function loadChatList() {
+            // If offline, skip network fetch entirely and rely on existing cache
+            if (!navigator.onLine) return;
+
             // Fetch latest profile info to keep session fresh
             const { data: freshProfile } = await supabaseClient
                 .from('profiles')
@@ -85,11 +111,13 @@
             const listContainer = document.getElementById('members-list');
 
             if (error || !members || members.length === 0) {
-                listContainer.innerHTML = `<div class="p-8 text-center text-slate-500 text-sm">No other users found yet.</div>`;
+                if (!localStorage.getItem(CHATLIST_MEMBERS_CACHE_KEY)) {
+                    listContainer.innerHTML = `<div class="p-8 text-center text-slate-500 text-sm">No other users found yet.</div>`;
+                }
                 return;
             }
 
-            // Fetch all messages sent by or received by current user safely without failing on syntax filters
+            // Fetch all messages sent by or received by current user safely
             const { data: sentMessages } = await supabaseClient
                 .from('messages')
                 .select('*')
@@ -102,25 +130,28 @@
 
             const messages = [...(sentMessages || []), ...(receivedMessages || [])];
             
-            // Sort all messages descending by creation time
-            messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            // Save to localStorage for complete offline support next time
+            localStorage.setItem(CHATLIST_MEMBERS_CACHE_KEY, JSON.stringify(members));
+            localStorage.setItem(CHATLIST_MESSAGES_CACHE_KEY, JSON.stringify(messages));
 
+            buildChatListDOM(members, messages);
+        }
+
+        function buildChatListDOM(members, messages) {
+            messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const listContainer = document.getElementById('members-list');
             listContainer.innerHTML = '';
 
             members.forEach(member => {
-                // Find messages between current user and this specific member
                 const conversationMessages = messages.filter(m => 
                     (m.sender === currentUser.username && m.receiver === member.username) ||
                     (m.sender === member.username && m.receiver === currentUser.username)
                 );
 
                 const lastMessage = conversationMessages.length > 0 ? conversationMessages[0] : null;
-                
-                // Determine unread count / status
                 const unreadMessages = conversationMessages.filter(m => m.receiver === currentUser.username && !m.is_read);
                 const hasUnread = unreadMessages.length > 0;
 
-                // Format timestamp
                 let timeString = '';
                 if (lastMessage) {
                     const date = new Date(lastMessage.created_at);
@@ -132,14 +163,11 @@
                     }
                 }
 
-                // Status indicator formatting (WhatsApp style ticks for outgoing messages)
                 let statusIndicator = '';
                 if (lastMessage && lastMessage.sender === currentUser.username) {
                     if (lastMessage.is_read) {
-                        // Read: glowing blue double check (✓✓)
                         statusIndicator = `<span class="text-sky-400 font-bold drop-shadow-[0_0_6px_rgba(56,189,248,0.7)] text-xs tracking-tighter" title="Read">✓✓</span>`;
                     } else {
-                        // Delivered/Unread by other end: single tick (✓)
                         statusIndicator = `<span class="text-slate-400 font-semibold text-xs" title="Delivered / Unread">✓</span>`;
                     }
                 }
@@ -163,7 +191,7 @@
                         </div>
                         <div class="flex items-center justify-between">
                             <p class="text-xs truncate pr-2 ${hasUnread ? 'text-emerald-300 font-semibold' : 'text-slate-400'}">
-                                ${lastMessage ? (lastMessage.sender === currentUser.username ? 'You: ' : '') + lastMessage.message : 'Tap to start chatting'}
+                                ${lastMessage ? (lastMessage.sender === currentUser.username ? 'You: ' : '') + (lastMessage.message || lastMessage.content || '') : 'Tap to start chatting'}
                             </p>
                             <div class="flex items-center gap-1.5 flex-shrink-0">
                                 ${statusIndicator}

@@ -145,7 +145,7 @@
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
 
-        // Load cached messages instantly on boot (Stale-While-Revalidate)
+        // Load cached messages instantly on boot (Offline First)
         if (messagesCache.length > 0) {
             renderMessages(messagesCache);
         }
@@ -326,7 +326,7 @@
                 const tickSpan = document.createElement('span');
                 tickSpan.className = 'font-bold text-xs ' + (msg.is_read ? 'text-indigo-300' : 'text-slate-500');
                 if (msg.is_pending) {
-                    tickSpan.textContent = '🕒'; // Pending sync icon
+                    tickSpan.textContent = '🕒'; 
                     tickSpan.title = 'Waiting for network...';
                 } else {
                     tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
@@ -588,10 +588,8 @@
             }
 
             if (error) {
-                // If network failed mid-flight, queue it for background retry
                 queueOfflineMessage(localMessage);
             } else {
-                // Remove pending flag locally and fetch fresh server state
                 messagesCache = messagesCache.filter(m => m !== localMessage);
                 saveLocalCache(messagesCache);
                 fetchMessages();
@@ -623,7 +621,7 @@
                 await supabaseClient.from('messages').insert([payload]);
             }
 
-            saveOfflineQueue([]); // Clear queue after successful flush
+            saveOfflineQueue([]); 
             fetchMessages();
         });
 
@@ -666,6 +664,7 @@
         }
 
         function subscribeToMessages() {
+            if (!navigator.onLine) return; // Guard subscription offline
             messageSubscription = supabaseClient
                 .channel('public:messages')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
@@ -674,7 +673,6 @@
                 .subscribe();
         }
 
-        // Initialize background network sync flush if queue has leftover items
         if (navigator.onLine && getOfflineQueue().length > 0) {
             window.dispatchEvent(new Event('online'));
         }
