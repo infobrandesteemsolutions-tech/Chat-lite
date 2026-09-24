@@ -634,7 +634,7 @@
                     receiver_username: item.receiver_username,
                     content: item.content,
                     message_type: item.message_type,
-                    reply_to: item.reply_to,
+                    reply_to: item.reply_to || null,
                     is_read: false
                 };
 
