@@ -638,19 +638,7 @@
                     is_read: false
                 };
 
-                let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
-
-                if (error && error.message && error.message.includes('message_type')) {
-                    const fallback = {
-                        sender_username: item.sender_username,
-                        receiver_username: item.receiver_username,
-                        content: item.content,
-                        is_read: false
-                    };
-                    const retry = await supabaseClient.from('messages').insert([fallback]).select();
-                    data = retry.data;
-                    error = retry.error;
-                }
+                const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
 
                 if (error) {
                     remainingQueue.push(item);
@@ -903,7 +891,6 @@
             document.getElementById('media-preview-bar').classList.add('hidden');
             document.getElementById('media-preview-bar').classList.remove('flex');
             document.getElementById('upload-progress-bar').style.width = '0%';
-            // Reset the file input values so re-selecting the same file works properly
             document.getElementById('media-file-input').value = '';
             document.getElementById('camera-photo-input').value = '';
             document.getElementById('camera-video-input').value = '';
@@ -961,7 +948,6 @@
 
         function stopRecordingOnly() {
             if (mediaRecorder && (isRecording || isPaused)) {
-                // Ensure mediaRecorder is active before calling stop
                 if (mediaRecorder.state !== 'inactive') {
                     mediaRecorder.stop();
                 }
@@ -969,18 +955,15 @@
                 isPaused = false;
                 clearInterval(recordingTimerInterval);
                 
-                // Stop all audio stream tracks to release microphone light/access
                 if (mediaRecorder.stream) {
                     mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 }
 
-                // Hide the live recording controls interface so the main form buttons become active for sending
                 document.getElementById('recording-ui').classList.add('hidden');
                 document.getElementById('recording-ui').classList.remove('flex');
                 document.getElementById('message-input').classList.remove('hidden');
                 document.getElementById('mic-btn').classList.remove('hidden');
 
-                // Show the media preview staging bar so user can see it's ready to dispatch
                 document.getElementById('media-preview-bar').classList.remove('hidden');
                 document.getElementById('media-preview-bar').classList.add('flex');
                 document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
@@ -1015,7 +998,6 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
 
-            // If the user clicks send while actively recording, stop the recording first instead of ignoring or getting stuck
             if (isRecording) {
                 stopRecordingOnly();
                 return;
@@ -1031,7 +1013,7 @@
 
             if (recordedBlob) {
                 const blobToSend = recordedBlob;
-                recordedBlob = null; // Clear immediately to prevent double submits
+                recordedBlob = null;
                 const reader = new FileReader();
                 reader.readAsDataURL(blobToSend);
                 reader.onloadend = async () => {
@@ -1045,7 +1027,7 @@
 
             if (stagedPayload) {
                 const payloadToSend = stagedPayload;
-                stagedPayload = null; // Clear immediately
+                stagedPayload = null;
                 await sendPayloadToSupabase(payloadToSend.content, payloadToSend.type, replyMeta);
                 clearStagedMedia();
                 cancelReply();
@@ -1081,20 +1063,7 @@
                 return;
             }
 
-            let { data, error } = await supabaseClient.from('messages').insert([payload]).select();
-
-            if (error && error.message && (error.message.includes('message_type') || error.message.includes('reply_to'))) {
-                const fallback = {
-                    sender_username: currentUser.username,
-                    receiver_username: targetUsername,
-                    content: content,
-                    is_read: false,
-                    created_at: new Date().toISOString()
-                };
-                const retry = await supabaseClient.from('messages').insert([fallback]).select();
-                data = retry.data;
-                error = retry.error;
-            }
+            const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
 
             if (error) {
                 console.error('Error sending message:', error);
