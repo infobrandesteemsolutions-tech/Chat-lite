@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col justify-between overflow-hidden">
+
+    <header class="bg-slate-800 p-4 shadow-md flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <a href="chats.html" class="text-slate-400 hover:text-white text-sm font-semibold">&larr; Back</a>
+            <h1 id="chatroom-title" class="text-base font-bold text-emerald-400">Chat Room</h1>
+        </div>
+        <span class="text-xs text-emerald-400">Connected</span>
+    </header>
+
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
+        <!-- Messages stream dynamically -->
+    </div>
+
+    <form id="message-form" class="bg-slate-800 p-3 flex gap-2">
+        <input type="text" id="message-input" placeholder="Type a message..." class="bg-slate-700 px-3 py-2 rounded-lg text-sm flex-1 outline-none focus:ring-2 focus:ring-emerald-500 text-white" required>
+        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">Send</button>
+    </form>
+
+    <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        const activeChatRecipient = JSON.parse(localStorage.getItem('chatlite_recipient'));
+
+        if (!currentUser || !activeChatRecipient) {
+            window.location.href = 'chats.html';
+        }
+
+        document.getElementById('chatroom-title').textContent = `Chat with ${activeChatRecipient.name}`;
+
+        let messageSubscription = null;
+
+        async function loadChatMessages() {
+            const chatContainer = document.getElementById('chat-messages');
+            chatContainer.innerHTML = '';
+
+            const { data, error } = await client
+                .from('messages')
+                .select('*')
+                .or(`and(sender.eq.${currentUser.username},recipient.eq.${activeChatRecipient.username}),and(sender.eq.${activeChatRecipient.username},recipient.eq.${currentUser.username})`)
+                .order('created_at', { ascending: true });
+
+            if (!error && data) {
+                data.forEach(msg => appendMessageUI(msg));
+                scrollToBottom();
+            }
+        }
+
+        function appendMessageUI(msg) {
+            const chatContainer = document.getElementById('chat-messages');
+            const isMe = msg.sender === currentUser.username;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `max-w-[75%] p-3 rounded-xl text-sm flex flex-col ${isMe ? 'self-end bg-emerald-700 text-white' : 'self-start bg-slate-800 text-slate-200'}`;
+            
+            const timeString = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <span class="break-words">${escapeHtml(msg.content)}</span>
+                <span class="text-[10px] text-slate-300 self-end mt-1">${timeString}</span>
+            `;
+            chatContainer.appendChild(messageDiv);
+        }
+
+        document.getElementById('message-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const content = input.value.trim();
+            if (!content) return;
+
+            const { error } = await client.from('messages').insert([{
+                sender: currentUser.username,
+                recipient: activeChatRecipient.username,
+                content: content
+            }]);
+
+            if (!error) input.value = '';
+        });
+
+        function setupRealtimeMessages() {
+            messageSubscription = client
+                .channel('room-messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    const msg = payload.new;
+                    if (
+                        (msg.sender === currentUser.username && msg.recipient === activeChatRecipient.username) ||
+                        (msg.sender === activeChatRecipient.username && msg.recipient === currentUser.username)
+                    ) {
+                        appendMessageUI(msg);
+                        scrollToBottom();
+                    }
+                })
+                .subscribe();
+        }
+
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-messages');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        loadChatMessages();
+        setupRealtimeMessages();
+    </script>
+</body>
+</html>

@@ -3,106 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Lite</title>
-    <!-- Tailwind CSS for modern mobile styling -->
+    <title>Chat Lite - Welcome</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 h-screen flex flex-col justify-between overflow-hidden">
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col items-center justify-center p-6 text-center">
 
-    <!-- VIEW 1: WELCOME SCREEN -->
-    <div id="view-welcome" class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
+    <!-- WELCOME SCREEN -->
+    <div class="space-y-6 max-w-xs w-full">
         <div class="space-y-2">
             <h1 class="text-4xl font-black tracking-wider text-emerald-400">Chat Lite</h1>
-            <p class="text-slate-400 text-sm">Secure, private community messaging.</p>
+            <p class="text-slate-400 text-sm">Secure community platform.</p>
         </div>
-        <div class="w-full max-w-xs space-y-3">
-            <button onclick="showView('view-register')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-semibold transition shadow-lg text-white">Create a Profile</button>
+        <div class="space-y-3">
+            <a href="register.html" class="block w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-semibold transition shadow-lg text-white text-center">Create a Profile</a>
             <button onclick="openLoginModal()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-3 rounded-xl font-semibold transition text-slate-200">Access Chats</button>
         </div>
     </div>
 
-    <!-- VIEW 2: CREATE PROFILE SCREEN -->
-    <div id="view-register" class="hidden flex-1 flex flex-col p-6 overflow-y-auto">
-        <div class="flex items-center mb-6">
-            <button onclick="showView('view-welcome')" class="text-slate-400 hover:text-white mr-4 text-sm font-semibold">&larr; Back</button>
-            <h2 class="text-xl font-bold text-emerald-400">Create Your Profile</h2>
-        </div>
-        <form id="register-form" class="space-y-4 max-w-sm mx-auto w-full">
-            <div>
-                <label class="block text-xs text-slate-400 mb-1 font-medium">Full Name</label>
-                <input type="text" id="reg-name" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500">
-            </div>
-            <div>
-                <label class="block text-xs text-slate-400 mb-1 font-medium">Gender</label>
-                <select id="reg-gender" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500">
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs text-slate-400 mb-1 font-medium">Username</label>
-                <input type="text" id="reg-username" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500">
-            </div>
-            <div>
-                <label class="block text-xs text-slate-400 mb-1 font-medium">Password</label>
-                <input type="password" id="reg-password" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500">
-            </div>
-            <div>
-                <label class="block text-xs text-slate-400 mb-1 font-medium">Access Code</label>
-                <input type="text" id="reg-accesscode" placeholder="Required system code" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm outline-none focus:border-emerald-500">
-            </div>
-            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 py-3 rounded-xl font-semibold transition text-white mt-4">Register Profile</button>
-        </form>
-    </div>
-
-    <!-- VIEW 3: CHAT LISTS / MEMBER DIRECTORY -->
-    <div id="view-chatlist" class="hidden flex-1 flex flex-col h-full">
-        <header class="bg-slate-800 p-4 shadow-md flex justify-between items-center">
-            <div>
-                <h1 class="text-lg font-bold text-emerald-400">Members Directory</h1>
-                <p id="logged-in-user-label" class="text-xs text-slate-400">Logged in as: </p>
-            </div>
-            <button onclick="logout()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-1.5 rounded-lg font-medium transition">Logout</button>
-        </header>
-        <div class="p-3 bg-slate-800/50 border-b border-slate-800 text-xs text-slate-400">
-            Tap on any member below to open a chat room:
-        </div>
-        <div id="members-container" class="flex-1 overflow-y-auto p-4 space-y-2">
-            <!-- Dynamically populated members list -->
-        </div>
-    </div>
-
-    <!-- VIEW 4: ACTIVE CHAT ROOM -->
-    <div id="view-chatroom" class="hidden flex-1 flex flex-col h-full">
-        <header class="bg-slate-800 p-4 shadow-md flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <button onclick="showView('view-chatlist')" class="text-slate-400 hover:text-white text-sm font-semibold">&larr; Back</button>
-                <h1 id="chatroom-title" class="text-base font-bold text-emerald-400">Chat Room</h1>
-            </div>
-            <span id="sync-status" class="text-xs text-emerald-400">Connected</span>
-        </header>
-
-        <!-- Messages Stream Container -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
-            <!-- Messages load dynamically here -->
-        </div>
-
-        <!-- Chat Input Form -->
-        <form id="message-form" class="bg-slate-800 p-3 flex gap-2">
-            <input type="text" id="message-input" placeholder="Type a message..." class="bg-slate-700 px-3 py-2 rounded-lg text-sm flex-1 outline-none focus:ring-2 focus:ring-emerald-500 text-white" required>
-            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg text-sm font-semibold transition text-white">Send</button>
-        </form>
-    </div>
-
     <!-- LOGIN MODAL POPUP -->
     <div id="login-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl text-left">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-bold text-emerald-400">Access Chats</h3>
-                <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+                <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </div>
             <form id="login-form" class="space-y-4">
                 <div>
@@ -118,67 +42,14 @@
         </div>
     </div>
 
-    <!-- APP CLIENT LOGIC SCRIPT -->
     <script>
-        // REPLACE WITH YOUR ACTUAL SUPABASE CREDENTIALS
         const SUPABASE_URL = 'YOUR_SUPABASE_URL';
         const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const CORRECT_ACCESS_CODE = 'Krinox1803';
-        let currentUser = null;
-        let activeChatRecipient = null;
-        let messageSubscription = null;
+        function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); }
+        function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
 
-        // View Switcher Utility
-        function showView(viewId) {
-            ['view-welcome', 'view-register', 'view-chatlist', 'view-chatroom'].forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-            });
-            document.getElementById(viewId).classList.remove('hidden');
-        }
-
-        function openLoginModal() {
-            document.getElementById('login-modal').classList.remove('hidden');
-        }
-
-        function closeLoginModal() {
-            document.getElementById('login-modal').classList.add('hidden');
-        }
-
-        // 1. REGISTER PROFILE LOGIC
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('reg-name').value.trim();
-            const gender = document.getElementById('reg-gender').value;
-            const username = document.getElementById('reg-username').value.trim().toLowerCase();
-            const password = document.getElementById('reg-password').value;
-            const accessCode = document.getElementById('reg-accesscode').value.trim();
-
-            if (accessCode !== CORRECT_ACCESS_CODE) {
-                alert('Invalid Access Code! Registration denied.');
-                return;
-            }
-
-            // Check if username already exists
-            const { data: existing } = await client.from('profiles').select('*').eq('username', username);
-            if (existing && existing.length > 0) {
-                alert('Username is already taken. Choose another.');
-                return;
-            }
-
-            // Insert new profile into Supabase
-            const { error } = await client.from('profiles').insert([{ name, gender, username, password }]);
-            if (error) {
-                alert('Error creating profile: ' + error.message);
-            } else {
-                alert('Profile created successfully! Please sign in.');
-                document.getElementById('register-form').reset();
-                showView('view-welcome');
-            }
-        });
-
-        // 2. LOGIN LOGIC
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username').value.trim().toLowerCase();
@@ -196,149 +67,10 @@
                 return;
             }
 
-            currentUser = data;
-            document.getElementById('logged-in-user-label').textContent = `Logged in as: ${currentUser.name} (@${currentUser.username})`;
-            closeLoginModal();
-            document.getElementById('login-form').reset();
-            loadMembersDirectory();
-            showView('view-chatlist');
+            // Save user session locally and redirect to chat lists page
+            localStorage.setItem('chatlite_user', JSON.stringify(data));
+            window.location.href = 'chats.html';
         });
-
-        function logout() {
-            currentUser = null;
-            activeChatRecipient = null;
-            if (messageSubscription) client.removeChannel(messageSubscription);
-            showView('view-welcome');
-        }
-
-        // 3. LOAD MEMBERS DIRECTORY
-        async function loadMembersDirectory() {
-            const container = document.getElementById('members-container');
-            container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Loading members...</p>';
-
-            const { data, error } = await client.from('profiles').select('*').neq('username', currentUser.username);
-
-            if (error) {
-                container.innerHTML = '<p class="text-xs text-red-400 text-center py-4">Failed to load members.</p>';
-                return;
-            }
-
-            if (data.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No other members registered yet.</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            data.forEach(member => {
-                const card = document.createElement('div');
-                card.className = 'bg-slate-800 hover:bg-slate-700/80 p-4 rounded-xl flex items-center justify-between cursor-pointer transition border border-slate-700/50';
-                card.innerHTML = `
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
-                            ${member.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm text-slate-200">${escapeHtml(member.name)}</h4>
-                            <span class="text-xs text-slate-400">@${escapeHtml(member.username)} &bull; ${escapeHtml(member.gender)}</span>
-                        </div>
-                    </div>
-                    <span class="text-xs bg-emerald-600/20 text-emerald-400 px-3 py-1.5 rounded-lg font-medium">Chat</span>
-                `;
-                card.onclick = () => openChatRoom(member);
-                container.appendChild(card);
-            });
-        }
-
-        // 4. OPEN CHAT ROOM BETWEEN USERS
-        function openChatRoom(recipient) {
-            activeChatRecipient = recipient;
-            document.getElementById('chatroom-title').textContent = `Chat with ${recipient.name}`;
-            showView('view-chatroom');
-            loadChatMessages();
-            setupRealtimeMessages();
-        }
-
-        async function loadChatMessages() {
-            const chatContainer = document.getElementById('chat-messages');
-            chatContainer.innerHTML = '';
-
-            // Fetch messages where sender/receiver match current pairing
-            const { data, error } = await client
-                .from('messages')
-                .select('*')
-                .or(`and(sender.eq.${currentUser.username},recipient.eq.${activeChatRecipient.username}),and(sender.eq.${activeChatRecipient.username},recipient.eq.${currentUser.username})`)
-                .order('created_at', { ascending: true });
-
-            if (!error && data) {
-                data.forEach(msg => appendMessageUI(msg));
-                scrollToBottom();
-            }
-        }
-
-        function appendMessageUI(msg) {
-            const chatContainer = document.getElementById('chat-messages');
-            const isMe = msg.sender === currentUser.username;
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `max-w-[75%] p-3 rounded-xl text-sm flex flex-col ${isMe ? 'self-end bg-emerald-700 text-white' : 'self-start bg-slate-800 text-slate-200'}`;
-            
-            const timeString = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
-            messageDiv.innerHTML = `
-                <span class="break-words">${escapeHtml(msg.content)}</span>
-                <span class="text-[10px] text-slate-300 self-end mt-1">${timeString}</span>
-            `;
-            chatContainer.appendChild(messageDiv);
-        }
-
-        // Send Message
-        document.getElementById('message-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('message-input');
-            const content = input.value.trim();
-            if (!content || !activeChatRecipient) return;
-
-            const { error } = await client.from('messages').insert([{
-                sender: currentUser.username,
-                recipient: activeChatRecipient.username,
-                content: content
-            }]);
-
-            if (error) {
-                alert('Failed to send message: ' + error.message);
-            } else {
-                input.value = '';
-            }
-        });
-
-        // Realtime Listener for active room
-        function setupRealtimeMessages() {
-            if (messageSubscription) client.removeChannel(messageSubscription);
-
-            messageSubscription = client
-                .channel('room-messages')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    const msg = payload.new;
-                    // Check if message belongs to this active conversation thread
-                    if (
-                        (msg.sender === currentUser.username && msg.recipient === activeChatRecipient.username) ||
-                        (msg.sender === activeChatRecipient.username && msg.recipient === currentUser.username)
-                    ) {
-                        appendMessageUI(msg);
-                        scrollToBottom();
-                    }
-                })
-                .subscribe();
-        }
-
-        function scrollToBottom() {
-            const chatContainer = document.getElementById('chat-messages');
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
     </script>
 </body>
 </html>

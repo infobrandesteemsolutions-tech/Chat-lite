@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Lite - Members Directory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-slate-800 p-4 shadow-md flex justify-between items-center">
+        <div>
+            <h1 class="text-lg font-bold text-emerald-400">Members Directory</h1>
+            <p id="logged-in-user-label" class="text-xs text-slate-400">Loading profile...</p>
+        </div>
+        <button onclick="logout()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/30 px-3 py-1.5 rounded-lg font-medium transition">Logout</button>
+    </header>
+
+    <div class="p-3 bg-slate-800/50 border-b border-slate-800 text-xs text-slate-400">
+        Tap on any member below to open a chat room:
+    </div>
+
+    <div id="members-container" class="flex-1 overflow-y-auto p-4 space-y-2">
+        <!-- Members load here -->
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        } else {
+            document.getElementById('logged-in-user-label').textContent = `Logged in as: ${currentUser.name} (@${currentUser.username})`;
+            loadMembersDirectory();
+        }
+
+        function logout() {
+            localStorage.removeItem('chatlite_user');
+            window.location.href = 'index.html';
+        }
+
+        async function loadMembersDirectory() {
+            const container = document.getElementById('members-container');
+            const { data, error } = await client.from('profiles').select('*').neq('username', currentUser.username);
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No other members registered yet.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach(member => {
+                const card = document.createElement('div');
+                card.className = 'bg-slate-800 hover:bg-slate-700/80 p-4 rounded-xl flex items-center justify-between cursor-pointer transition border border-slate-700/50';
+                card.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-600/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                            ${member.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-slate-200">${escapeHtml(member.name)}</h4>
+                            <span class="text-xs text-slate-400">@${escapeHtml(member.username)} &bull; ${escapeHtml(member.gender)}</span>
+                        </div>
+                    </div>
+                    <span class="text-xs bg-emerald-600/20 text-emerald-400 px-3 py-1.5 rounded-lg font-medium">Chat</span>
+                `;
+                card.onclick = () => {
+                    localStorage.setItem('chatlite_recipient', JSON.stringify(member));
+                    window.location.href = 'chatroom.html';
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+    </script>
+</body>
+</html>
