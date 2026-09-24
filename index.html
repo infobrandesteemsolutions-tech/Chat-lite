@@ -11,22 +11,37 @@
 
     <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative overflow-hidden shadow-2xl bg-slate-900 border-x border-slate-800">
         
-        <!-- Welcome View Container -->
-        <div class="flex flex-col items-center justify-center flex-1 p-8 text-center space-y-8">
-            <div class="space-y-3">
-                <h1 class="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-sky-400 to-indigo-500 bg-clip-text text-transparent">
-                    Chat Lite
-                </h1>
-                <p class="text-slate-400 text-sm">Your private family messaging space.</p>
-            </div>
+        <!-- Background Image Container with Gradient Overlay matching Frame 2 style -->
+        <div class="absolute inset-0 bg-[url('image1-bg.jpg')] bg-cover bg-center">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/30"></div>
+        </div>
+
+        <!-- Content Area (Pushed to bottom like an onboarding mobile frame) -->
+        <div class="relative z-10 flex flex-col justify-end flex-1 p-6 pb-8 space-y-6">
             
-            <div class="w-full space-y-4">
-                <!-- Directs to separate Register Page -->
-                <button onclick="window.location.href='register.html'" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all cursor-pointer">
-                    Create a Profile
+            <!-- Left-aligned Welcome Copy -->
+            <div class="space-y-2 text-left">
+                <h1 class="text-4xl font-extrabold tracking-tight text-white leading-tight">
+                    Take control of your conversations, effortlessly.
+                </h1>
+                <p class="text-slate-300 text-sm leading-relaxed">
+                    Your private, secure family messaging space built just for you and your loved ones.
+                </p>
+            </div>
+
+            <!-- Pagination Dots Indicator -->
+            <div class="flex items-center space-x-1.5 py-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                <span class="w-6 h-1.5 rounded-full bg-orange-500"></span>
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+            </div>
+
+            <!-- Side-by-Side Action Buttons (Matching reference frame button layout) -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button onclick="window.location.href='register.html'" class="w-full py-3.5 px-4 bg-slate-800/80 hover:bg-slate-800 text-white font-semibold rounded-xl border border-slate-700/60 backdrop-blur-md transition-all text-center cursor-pointer shadow-lg">
+                    Create Profile
                 </button>
-                <!-- Opens Login Modal -->
-                <button onclick="openLoginModal()" class="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition-all cursor-pointer">
+                <button onclick="openLoginModal()" class="w-full py-3.5 px-4 bg-orange-600 hover:bg-orange-500 text-white font-semibold rounded-xl shadow-lg shadow-orange-600/30 transition-all text-center cursor-pointer">
                     Access Chats
                 </button>
             </div>
@@ -36,19 +51,19 @@
         <div id="login-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-bold">Access Chats</h3>
+                    <h3 class="text-lg font-bold text-white">Access Chats</h3>
                     <button onclick="closeLoginModal()" class="text-slate-400 hover:text-white text-xl cursor-pointer">&times;</button>
                 </div>
                 <form onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Username</label>
-                        <input type="text" id="login-username" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                        <input type="text" id="login-username" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Password</label>
-                        <input type="password" id="login-password" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm">
+                        <input type="password" id="login-password" required class="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-orange-500 text-sm text-white">
                     </div>
-                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all mt-2 cursor-pointer">
+                    <button type="submit" class="w-full py-3.5 bg-orange-600 hover:bg-orange-500 font-semibold rounded-xl shadow-lg shadow-orange-600/30 transition-all mt-2 cursor-pointer text-white">
                         Sign In &rarr;
                     </button>
                 </form>
