@@ -46,14 +46,14 @@
         
         <!-- Background Image Container with gradient overlay -->
         <div class="absolute inset-0 bg-slate-950 bg-cover bg-center" style="background-image: url('image1-bg.jpg'); z-index: 0;">
-            <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(2, 6, 23, 0.25) 0%, rgba(2, 6, 23, 0.75) 50%, rgba(2, 6, 23, 0.96) 100%);"></div>
+            <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(2, 6, 23, 0.2) 0%, rgba(2, 6, 23, 0.7) 40%, rgba(2, 6, 23, 0.98) 85%, rgba(2, 6, 23, 1) 100%);"></div>
         </div>
 
-        <!-- Content Area: Adjusted top padding to push text down closer to the bottom controls -->
-        <div class="relative z-10 flex flex-col justify-between flex-1 p-6 pt-40 pb-10 min-h-screen">
+        <!-- Content Area: Grouped at the bottom to sit right above the buttons -->
+        <div class="relative z-10 flex flex-col justify-end flex-1 p-6 pb-10 min-h-screen space-y-5">
             
-            <!-- Top Header & Text Section (Pushed down & well aligned) -->
-            <div class="space-y-5 text-left">
+            <!-- Top Header & Text Section (Pushed down near buttons) -->
+            <div class="space-y-4 text-left">
                 <div class="text-left w-full pb-1 overflow-hidden">
                     <h2 class="text-5xl tracking-wide text-white drop-shadow-md animate-swirl inline-block" style="font-family: 'Playfair Display', serif; font-style: italic; font-weight: 700;">
                         CHAT<span class="text-orange-500">lite</span>
@@ -68,7 +68,7 @@
             </div>
 
             <!-- Bottom Action Group: Indicators + Side-by-Side Buttons -->
-            <div class="space-y-6 pt-6">
+            <div class="space-y-4 pt-2">
                 <!-- Pagination Dots Indicator -->
                 <div class="flex items-center space-x-1.5">
                     <span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span>
