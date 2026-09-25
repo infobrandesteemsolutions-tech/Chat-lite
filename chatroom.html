@@ -10,17 +10,16 @@
 <body class="bg-slate-950 text-slate-100 h-[100dvh] flex flex-col font-sans overflow-hidden m-0">
 
     <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
-        <!-- Header (Fixed & Non-scrolling) -->
+        <!-- Header -->
         <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
             <div class="flex items-center gap-2.5 overflow-hidden">
                 <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">&larr;</button>
-                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden" id="active-chat-avatar">G</div>
+                <div class="w-8 h-8 rounded-full bg-indigo-600/35 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0" id="active-chat-avatar">G</div>
                 <div class="overflow-hidden">
-                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Group Name</h3>
-                    <span class="text-[9px] text-slate-400 truncate block" id="active-chat-members">Loading members...</span>
+                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Group Chat</h3>
+                    <span class="text-[9px] text-slate-400 truncate block">Connected securely</span>
                 </div>
             </div>
-            <!-- Header Quick Action Buttons -->
             <div class="flex items-center gap-1 flex-shrink-0">
                 <button onclick="toggleSearchBox()" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Search Keywords">🔍</button>
                 <button onclick="openMediaGallery('file')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Files">📁</button>
@@ -29,18 +28,18 @@
             </div>
         </div>
 
-        <!-- Hidden Search Bar Slide-down -->
+        <!-- Hidden Search Bar -->
         <div id="search-container" class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
             <input type="text" id="search-keyword-input" placeholder="Search keywords in group chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
             <button onclick="toggleSearchBox()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
         </div>
 
-        <!-- Messages Area (Scrollable independently underneath the fixed header) -->
+        <!-- Messages Area -->
         <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
-            <!-- Messages load here -->
+            <!-- Dynamic Messages Inject Here -->
         </div>
 
-        <!-- Multi-Select Action Footer Bar (Hidden by default) -->
+        <!-- Multi-Select Footer Bar -->
         <div id="multi-select-bar" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 flex items-center justify-between">
             <span id="selected-count-text" class="text-xs font-semibold text-indigo-300">0 selected</span>
             <div class="flex items-center gap-1.5">
@@ -51,26 +50,24 @@
             </div>
         </div>
 
-        <!-- Undo Notification Banner (10 Seconds Timer) -->
+        <!-- Undo Notification Banner -->
         <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
-            <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
+            <span class="text-xs text-slate-200">Message action executed.</span>
             <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
         </div>
 
-        <!-- Message Options Popup Modal (Long Press Menu) -->
+        <!-- Message Options Modal -->
         <div id="message-options-modal" class="hidden absolute inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
                 <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
                     <span>Message Options</span>
                     <button onclick="closeMessageOptions()" class="text-slate-400 hover:text-white text-base cursor-pointer">&times;</button>
                 </div>
-                <div id="message-options-actions" class="flex flex-col gap-1.5">
-                    <!-- Populated dynamically based on permissions & 3-hour limit for everyone -->
-                </div>
+                <div id="message-options-actions" class="flex flex-col gap-1.5"></div>
             </div>
         </div>
 
-        <!-- Reply Preview Bar (Shown when replying to a message) -->
+        <!-- Reply Preview Bar -->
         <div id="reply-preview-bar" class="hidden p-2.5 bg-slate-900 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
             <div class="flex flex-col border-l-2 border-indigo-500 pl-2 overflow-hidden">
                 <span class="text-[10px] font-bold text-indigo-400" id="reply-target-sender">Replying to...</span>
@@ -79,61 +76,46 @@
             <button type="button" onclick="cancelReply()" class="text-slate-400 hover:text-white text-base px-2 cursor-pointer">&times;</button>
         </div>
 
-        <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
+        <!-- Media Preview Bar -->
         <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
             <div class="flex items-center justify-between">
                 <span class="text-xs font-semibold text-indigo-400">Staged Media Preview</span>
                 <button type="button" onclick="clearStagedMedia()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">Discard</button>
             </div>
-            <div id="preview-container" class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
-                <!-- Preview content/thumbnail -->
-            </div>
-            <!-- Upload Progress Bar -->
+            <div id="preview-container" class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300"></div>
             <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                 <div id="upload-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
             </div>
-            <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready. Hit Send button to upload & deliver.</span>
+            <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready to dispatch.</span>
         </div>
 
-        <!-- Hidden File Inputs -->
+        <!-- Hidden Inputs -->
         <input type="file" id="media-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onchange="stageFileSelected(event)">
         <input type="file" id="camera-photo-input" class="hidden" accept="image/*" capture="environment" onchange="stageFileSelected(event)">
         <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="stageFileSelected(event)">
 
-        <!-- Attachment Options Popup Menu -->
+        <!-- Attachment Menu -->
         <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
-            <button type="button" onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📁 File / Document
-            </button>
-            <button type="button" onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📷 Take Photo
-            </button>
-            <button type="button" onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📹 Record Video Note
-            </button>
+            <button type="button" onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">📁 File / Document</button>
+            <button type="button" onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">📷 Take Photo</button>
+            <button type="button" onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">📹 Record Video Note</button>
         </div>
 
-        <!-- Media Gallery Modal Drawer -->
+        <!-- Media Gallery Modal -->
         <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                 <h3 class="font-bold text-sm text-white" id="gallery-title">Group Media</h3>
-                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">Close</button>
+                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
             </div>
-            <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
-                <!-- Gallery items populated here -->
-            </div>
+            <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3"></div>
         </div>
 
-        <!-- Bottom Input Bar (Fixed & Always Visible) -->
+        <!-- Bottom Chat Input Form -->
         <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
-            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">
-                +
-            </button>
+            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">+</button>
             
-            <!-- Standard Text Input -->
             <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
             
-            <!-- Live Recording Indicator & Controls UI (Hidden by default) -->
             <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
                 <div class="flex items-center gap-2">
                     <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
@@ -146,9 +128,7 @@
                 </div>
             </div>
 
-            <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0" title="Record Voice Note">
-                🎤
-            </button>
+            <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0" title="Record Voice Note">🎤</button>
             
             <button type="submit" id="send-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">Send</button>
         </form>
@@ -168,29 +148,25 @@
         document.getElementById('active-chat-name').textContent = targetGroupName;
         document.getElementById('active-chat-avatar').textContent = targetGroupName.charAt(0).toUpperCase();
 
-        let messageSubscription = null;
         let messagesCache = [];
+        let messageSubscription = null;
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
-        let stagedPayload = null; 
+        let stagedPayload = null;
         let isRecording = false;
         let isPaused = false;
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
         let replyingToMessage = null;
 
-        // Multi-select state variables
         let isMultiSelectMode = false;
         let selectedMessageIds = new Set();
-
-        // Undo & Deletion management variables
         let pendingDeleteTimer = null;
         let undoTargetMessage = null;
 
         function toggleAttachmentMenu() {
-            const menu = document.getElementById('attachment-menu');
-            menu.classList.toggle('hidden');
+            document.getElementById('attachment-menu').classList.toggle('hidden');
         }
 
         function toggleSearchBox() {
@@ -204,19 +180,19 @@
         }
 
         async function fetchMessages() {
-            const { data: messages, error } = await supabaseClient
+            const { data, error } = await supabaseClient
                 .from('group_messages')
                 .select('*')
                 .eq('group_id', targetGroupId)
                 .order('created_at', { ascending: true });
 
             if (error) {
-                console.error('Error fetching group messages:', error);
+                console.error('Error fetching messages:', error);
                 return;
             }
 
-            if (messages) {
-                messagesCache = messages;
+            if (data) {
+                messagesCache = data;
                 renderMessages(messagesCache);
             }
         }
@@ -233,7 +209,6 @@
             const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
 
             filtered.forEach(msg => appendMessageToDOM(msg, false));
-
             container.scrollTop = container.scrollHeight;
         }
 
@@ -245,8 +220,9 @@
             }
             const filtered = messagesCache.filter(m => {
                 if (m.is_deleted_for_everyone) return false;
-                if ((m.message_type || 'text') === 'text' && m.content.toLowerCase().includes(term)) return true;
-                if ((m.message_type || 'text') === keyword) return true;
+                const type = m.message_type || 'text';
+                if (type === 'text' && m.content.toLowerCase().includes(term)) return true;
+                if (type === term) return true;
                 if (m.sender_username && m.sender_username.toLowerCase().includes(term)) return true;
                 return false;
             });
@@ -258,11 +234,10 @@
             const isMe = msg.sender_username === currentUser.username;
 
             const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row relative transition-transform duration-200 select-none`;
-            if (msg.id) wrapper.setAttribute('data-id', msg.id);
+            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 relative select-none transition-all`;
+            wrapper.setAttribute('data-id', msg.id);
 
-            const isSelected = msg.id && selectedMessageIds.has(msg.id);
-
+            const isSelected = selectedMessageIds.has(msg.id);
             const rowFlex = document.createElement('div');
             rowFlex.className = `flex items-center gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
 
@@ -271,23 +246,19 @@
             checkboxEl.innerHTML = isSelected ? '✓' : '';
             rowFlex.appendChild(checkboxEl);
 
-            if (isSelected) {
-                wrapper.classList.add('bg-indigo-950/30', 'p-2', 'rounded-xl');
-            }
+            if (isSelected) wrapper.classList.add('bg-indigo-950/30', 'p-2', 'rounded-xl');
 
             let pressTimer = null;
             const startPress = () => {
                 pressTimer = setTimeout(() => {
                     if (isMultiSelectMode) {
-                        if (msg.id) toggleMessageSelection(msg.id);
+                        toggleMessageSelection(msg.id);
                     } else {
                         openMessageOptions(msg);
                     }
                 }, 600);
             };
-            const cancelPress = () => {
-                if (pressTimer) clearTimeout(pressTimer);
-            };
+            const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); };
 
             wrapper.addEventListener('touchstart', startPress);
             wrapper.addEventListener('touchend', cancelPress);
@@ -297,7 +268,7 @@
             wrapper.addEventListener('mouseleave', cancelPress);
 
             wrapper.addEventListener('click', (e) => {
-                if (isMultiSelectMode && msg.id) {
+                if (isMultiSelectMode) {
                     toggleMessageSelection(msg.id);
                     e.stopPropagation();
                 }
@@ -305,51 +276,17 @@
 
             wrapper.oncontextmenu = (e) => {
                 e.preventDefault();
-                if (msg.id) {
-                    if (!isMultiSelectMode) {
-                        openMessageOptions(msg);
-                    }
-                }
+                if (!isMultiSelectMode) openMessageOptions(msg);
             };
 
-            let touchStartX = 0;
-            let touchCurrentX = 0;
-
-            wrapper.addEventListener('touchstart', (e) => {
-                if (isMultiSelectMode) return;
-                touchStartX = e.touches[0].clientX;
-            }, { passive: true });
-
-            wrapper.addEventListener('touchmove', (e) => {
-                if (isMultiSelectMode) return;
-                touchCurrentX = e.touches[0].clientX;
-                const diff = touchCurrentX - touchStartX;
-                if (diff > 0 && diff < 100) {
-                    wrapper.style.transform = `translateX(${diff}px)`;
-                }
-            }, { passive: true });
-
-            wrapper.addEventListener('touchend', () => {
-                if (isMultiSelectMode) return;
-                const diff = touchCurrentX - touchStartX;
-                wrapper.style.transform = 'translateX(0px)';
-                if (diff > 60) {
-                    setReplyTarget(msg);
-                }
-                touchStartX = 0;
-                touchCurrentX = 0;
-            });
-
             const bubble = document.createElement('div');
-            bubble.className = `flex-1 px-3 py-2 rounded-2xl text-sm ${
-                isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
-            }`;
+            bubble.className = `flex-1 px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'}`;
 
             if (!isMe) {
-                const senderLabelEl = document.createElement('span');
-                senderLabelEl.className = 'text-[10px] font-bold text-indigo-400 block mb-0.5';
-                senderLabelEl.textContent = `@${msg.sender_username}`;
-                bubble.appendChild(senderLabelEl);
+                const senderLabel = document.createElement('span');
+                senderLabel.className = 'text-[10px] font-bold text-indigo-400 block mb-0.5';
+                senderLabel.textContent = `@${msg.sender_username}`;
+                bubble.appendChild(senderLabel);
             }
 
             if (msg.reply_to) {
@@ -361,7 +298,7 @@
 
             const contentBody = document.createElement('div');
             const type = msg.message_type || 'text';
-            
+
             if (type === 'image') {
                 contentBody.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="if(!isMultiSelectMode) window.open('${msg.content}')">`;
             } else if (type === 'video') {
@@ -381,7 +318,6 @@
                         </div>
                     </div>
                 `;
-
                 setTimeout(() => {
                     const audioEl = document.getElementById(audioId);
                     if (!audioEl) return;
@@ -389,58 +325,45 @@
                     const rangeEl = c.querySelector('.audio-range');
                     const timeEl = c.querySelector('.audio-current-time');
 
-                    audioEl.addEventListener('loadedmetadata', () => {
-                        timeEl.textContent = formatAudioTime(audioEl.duration);
-                    });
+                    audioEl.addEventListener('loadedmetadata', () => { timeEl.textContent = formatAudioTime(audioEl.duration); });
                     audioEl.addEventListener('timeupdate', () => {
                         if (!audioEl.duration) return;
                         rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
                         timeEl.textContent = formatAudioTime(audioEl.currentTime);
                     });
-                    audioEl.addEventListener('ended', () => {
-                        c.querySelector('button').textContent = '▶';
-                        audioEl.currentTime = 0;
-                    });
+                    audioEl.addEventListener('ended', () => { c.querySelector('button').textContent = '▶'; audioEl.currentTime = 0; });
                 }, 50);
-
             } else if (type === 'file') {
                 contentBody.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
             } else {
                 contentBody.textContent = msg.content || '';
             }
-            
+
             bubble.appendChild(contentBody);
             rowFlex.appendChild(bubble);
 
             const metaRow = document.createElement('div');
             metaRow.className = `flex items-center gap-1 px-1 text-[10px] text-slate-400 ${isMe ? 'mr-7' : 'ml-7'}`;
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.textContent = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            metaRow.appendChild(timeSpan);
+            metaRow.textContent = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             if (isMe) {
-                const tickSpan = document.createElement('span');
-                tickSpan.className = 'font-bold text-xs text-slate-500';
-                tickSpan.textContent = '✓';
-                metaRow.appendChild(tickSpan);
+                const tick = document.createElement('span');
+                tick.className = 'font-bold text-xs text-slate-500';
+                tick.textContent = '✓';
+                metaRow.appendChild(tick);
             }
 
             wrapper.appendChild(rowFlex);
             wrapper.appendChild(metaRow);
             container.appendChild(wrapper);
 
-            if (scrollToBottom) {
-                container.scrollTop = container.scrollHeight;
-            }
+            if (scrollToBottom) container.scrollTop = container.scrollHeight;
         }
 
         function enterMultiSelectMode(msg) {
             isMultiSelectMode = true;
             selectedMessageIds.clear();
-            if (msg && msg.id) {
-                selectedMessageIds.add(msg.id);
-            }
+            if (msg && msg.id) selectedMessageIds.add(msg.id);
             document.getElementById('multi-select-bar').classList.remove('hidden');
             document.getElementById('multi-select-bar').classList.add('flex');
             updateMultiSelectUI();
@@ -456,29 +379,23 @@
         }
 
         function toggleMessageSelection(msgId) {
-            if (selectedMessageIds.has(msgId)) {
-                selectedMessageIds.delete(msgId);
-            } else {
-                selectedMessageIds.add(msgId);
-            }
+            if (selectedMessageIds.has(msgId)) selectedMessageIds.delete(msgId);
+            else selectedMessageIds.add(msgId);
 
             if (selectedMessageIds.size === 0) {
                 exitMultiSelectMode();
                 return;
             }
-
             updateMultiSelectUI();
             renderMessages(messagesCache);
         }
 
         function updateMultiSelectUI() {
-            const countText = document.getElementById('selected-count-text');
-            countText.textContent = `${selectedMessageIds.size} selected`;
+            document.getElementById('selected-count-text').textContent = `${selectedMessageIds.size} selected`;
         }
 
         function handleMultiSelectAction(actionType) {
             if (selectedMessageIds.size === 0) return;
-
             const selectedMsgs = messagesCache.filter(m => selectedMessageIds.has(m.id));
 
             if (actionType === 'forward') {
@@ -496,19 +413,14 @@
                 try {
                     hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`) || '[]');
                 } catch(e) {}
-
-                selectedMessageIds.forEach(id => {
-                    if (!hiddenForMe.includes(id)) hiddenForMe.push(id);
-                });
+                selectedMessageIds.forEach(id => { if (!hiddenForMe.includes(id)) hiddenForMe.push(id); });
                 localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`, JSON.stringify(hiddenForMe));
-
                 exitMultiSelectMode();
                 renderMessages(messagesCache);
                 showUndoBanner(10, () => fetchMessages());
             } else if (actionType === 'everyone') {
                 const now = new Date().getTime();
                 const validIds = [];
-
                 selectedMsgs.forEach(msg => {
                     const isSender = msg.sender_username === currentUser.username;
                     const diffHours = (now - new Date(msg.created_at).getTime()) / (1000 * 60 * 60);
@@ -517,16 +429,11 @@
                         validIds.push(msg.id);
                     }
                 });
-
                 exitMultiSelectMode();
                 renderMessages(messagesCache);
-
                 showUndoBanner(10, async () => {
                     if (validIds.length > 0) {
-                        await supabaseClient
-                            .from('group_messages')
-                            .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
-                            .in('id', validIds);
+                        await supabaseClient.from('group_messages').update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' }).in('id', validIds);
                     }
                     fetchMessages();
                 });
@@ -537,20 +444,16 @@
             if (isMultiSelectMode) return;
             replyingToMessage = msg;
             const replyBar = document.getElementById('reply-preview-bar');
-            const senderNameEl = document.getElementById('reply-target-sender');
-            const contentEl = document.getElementById('reply-target-content');
-
-            const senderLabel = msg.sender_username === currentUser.username ? 'You' : `@${msg.sender_username}`;
-            senderNameEl.textContent = `Replying to ${senderLabel}`;
+            document.getElementById('reply-target-sender').textContent = `Replying to ${msg.sender_username === currentUser.username ? 'You' : '@' + msg.sender_username}`;
             
-            let previewText = msg.content;
-            const msgType = msg.message_type || 'text';
-            if (msgType === 'image') previewText = '[Photo Attachment]';
-            else if (msgType === 'video') previewText = '[Video Attachment]';
-            else if (msgType === 'audio') previewText = '[Voice Note]';
-            else if (msgType === 'file') previewText = '[File Attachment]';
+            let preview = msg.content;
+            const type = msg.message_type || 'text';
+            if (type === 'image') preview = '[Photo Attachment]';
+            else if (type === 'video') preview = '[Video Attachment]';
+            else if (type === 'audio') preview = '[Voice Note]';
+            else if (type === 'file') preview = '[File Attachment]';
 
-            contentEl.textContent = previewText;
+            document.getElementById('reply-target-content').textContent = preview;
             replyBar.classList.remove('hidden');
             replyBar.classList.add('flex');
             document.getElementById('message-input').focus();
@@ -566,73 +469,34 @@
         function openMessageOptions(msg) {
             if (isMultiSelectMode) return;
             const modal = document.getElementById('message-options-modal');
-            const actionsContainer = document.getElementById('message-options-actions');
-            actionsContainer.innerHTML = '';
+            const actions = document.getElementById('message-options-actions');
+            actions.innerHTML = '';
 
             const isSender = msg.sender_username === currentUser.username;
-            const msgTime = new Date(msg.created_at).getTime();
-            const now = new Date().getTime();
-            const diffHours = (now - msgTime) / (1000 * 60 * 60);
-            const within3Hours = diffHours <= 3;
+            const diffHours = (new Date().getTime() - new Date(msg.created_at).getTime()) / (1000 * 60 * 60);
             const msgType = msg.message_type || 'text';
 
-            const selectMultipleBtn = document.createElement('button');
-            selectMultipleBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            selectMultipleBtn.textContent = '☑️ Select Multiple';
-            selectMultipleBtn.onclick = () => {
-                closeMessageOptions();
-                enterMultiSelectMode(msg);
+            const addBtn = (label, cls, cb) => {
+                const b = document.createElement('button');
+                b.className = `w-full text-left px-3 py-2 text-xs font-medium rounded-xl transition-all cursor-pointer ${cls}`;
+                b.textContent = label;
+                b.onclick = () => { closeMessageOptions(); cb(); };
+                actions.appendChild(b);
             };
-            actionsContainer.appendChild(selectMultipleBtn);
 
-            const replyBtn = document.createElement('button');
-            replyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            replyBtn.textContent = '↩️ Reply';
-            replyBtn.onclick = () => {
-                closeMessageOptions();
-                setReplyTarget(msg);
-            };
-            actionsContainer.appendChild(replyBtn);
-
-            if (msgType === 'text' && msg.content) {
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-                copyBtn.textContent = '📋 Copy';
-                copyBtn.onclick = () => {
-                    navigator.clipboard.writeText(msg.content);
-                    closeMessageOptions();
-                };
-                actionsContainer.appendChild(copyBtn);
+            addBtn('☑️ Select Multiple', 'text-indigo-400 hover:bg-slate-800', () => enterMultiSelectMode(msg));
+            addBtn('↩️ Reply', 'text-slate-200 hover:bg-slate-800', () => setReplyTarget(msg));
+            if (msgType === 'text') {
+                addBtn('📋 Copy', 'text-slate-200 hover:bg-slate-800', () => navigator.clipboard.writeText(msg.content));
             }
-
-            const forwardBtn = document.createElement('button');
-            forwardBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            forwardBtn.textContent = '↗️ Forward';
-            forwardBtn.onclick = () => {
-                closeMessageOptions();
+            addBtn('↗️ Forward', 'text-slate-200 hover:bg-slate-800', () => {
                 localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: msg.content, type: msgType }));
                 window.location.href = 'chatlist.html?forward=true';
-            };
-            actionsContainer.appendChild(forwardBtn);
+            });
+            addBtn('🗑️ Only me', 'text-slate-200 hover:bg-slate-800', () => executeDeleteMessage(msg, 'me'));
 
-            const deleteForMeBtn = document.createElement('button');
-            deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            deleteForMeBtn.textContent = '🗑️ Only me';
-            deleteForMeBtn.onclick = () => {
-                closeMessageOptions();
-                executeDeleteMessage(msg, 'me');
-            };
-            actionsContainer.appendChild(deleteForMeBtn);
-
-            if (isSender && within3Hours) {
-                const deleteForEveryoneBtn = document.createElement('button');
-                deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-                deleteForEveryoneBtn.textContent = '🗑️ Delete for everyone';
-                deleteForEveryoneBtn.onclick = () => {
-                    closeMessageOptions();
-                    executeDeleteMessage(msg, 'everyone');
-                };
-                actionsContainer.appendChild(deleteForEveryoneBtn);
+            if (isSender && diffHours <= 3) {
+                addBtn('🗑️ Delete for everyone', 'text-red-400 hover:bg-slate-800', () => executeDeleteMessage(msg, 'everyone'));
             }
 
             modal.classList.remove('hidden');
@@ -640,14 +504,12 @@
         }
 
         function closeMessageOptions() {
-            const modal = document.getElementById('message-options-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
+            document.getElementById('message-options-modal').classList.remove('flex');
+            document.getElementById('message-options-modal').classList.add('hidden');
         }
 
         function executeDeleteMessage(msg, scope) {
             undoTargetMessage = { msg, scope };
-
             if (scope === 'me') {
                 let hiddenForMe = [];
                 try {
@@ -662,10 +524,7 @@
 
             showUndoBanner(10, async () => {
                 if (scope === 'everyone' && msg.id) {
-                    await supabaseClient
-                        .from('group_messages')
-                        .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
-                        .eq('id', msg.id);
+                    await supabaseClient.from('group_messages').update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' }).eq('id', msg.id);
                 }
                 fetchMessages();
             });
@@ -679,7 +538,6 @@
 
             let timeLeft = seconds;
             countdownEl.textContent = timeLeft;
-
             if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
 
             pendingDeleteTimer = setInterval(() => {
@@ -696,9 +554,8 @@
 
         function triggerUndoAction() {
             if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
-            const banner = document.getElementById('undo-banner');
-            banner.classList.remove('flex');
-            banner.classList.add('hidden');
+            document.getElementById('undo-banner').classList.remove('flex');
+            document.getElementById('undo-banner').classList.add('hidden');
 
             if (undoTargetMessage) {
                 const { msg, scope } = undoTargetMessage;
@@ -719,19 +576,13 @@
 
         function toggleAudioPlay(audioId, btn) {
             const audio = document.getElementById(audioId);
-            if (audio.paused) {
-                audio.play();
-                btn.textContent = '⏸';
-            } else {
-                audio.pause();
-                btn.textContent = '▶';
-            }
+            if (audio.paused) { audio.play(); btn.textContent = '⏸'; }
+            else { audio.pause(); btn.textContent = '▶'; }
         }
 
         function seekAudio(audioId, value) {
             const audio = document.getElementById(audioId);
-            if (!audio.duration) return;
-            audio.currentTime = (value / 100) * audio.duration;
+            if (audio.duration) audio.currentTime = (value / 100) * audio.duration;
         }
 
         function toggleAudioSpeed(audioId, speedBtn) {
@@ -754,42 +605,27 @@
 
             const reader = new FileReader();
             const progressBar = document.getElementById('upload-progress-bar');
-            const statusText = document.getElementById('upload-status-text');
             document.getElementById('media-preview-bar').classList.remove('hidden');
             document.getElementById('media-preview-bar').classList.add('flex');
-            
             progressBar.style.width = '10%';
-            statusText.textContent = 'Reading file stream...';
 
-            reader.onprogress = (data) => {
-                if (data.lengthComputable) {
-                    const percent = Math.round((data.loaded / data.total) * 90);
-                    progressBar.style.width = percent + '%';
-                }
+            reader.onprogress = (e) => {
+                if (e.lengthComputable) progressBar.style.width = Math.round((e.loaded / e.total) * 90) + '%';
             };
 
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 progressBar.style.width = '100%';
-                statusText.textContent = 'Ready! Hit the Send button to dispatch.';
-
                 let type = 'file';
                 if (file.type.startsWith('image/')) type = 'image';
                 else if (file.type.startsWith('video/')) type = 'video';
                 else if (file.type.startsWith('audio/')) type = 'audio';
 
-                stagedPayload = {
-                    content: e.target.result,
-                    type: type
-                };
-
+                stagedPayload = { content: e.target.result, type };
                 const previewContainer = document.getElementById('preview-container');
-                if (type === 'image') {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-20 rounded object-contain">`;
-                } else if (type === 'video') {
-                    previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-20 rounded" controls></video>`;
-                } else {
-                    previewContainer.innerHTML = `<span class="font-semibold">Staged File: ${file.name}</span>`;
-                }
+
+                if (type === 'image') previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-20 rounded object-contain">`;
+                else if (type === 'video') previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-20 rounded" controls></video>`;
+                else previewContainer.innerHTML = `<span class="font-semibold text-xs">Staged File: ${file.name}</span>`;
             };
             reader.readAsDataURL(file);
         }
@@ -812,9 +648,7 @@
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                };
+                mediaRecorder.onstop = () => { recordedBlob = new Blob(audioChunks, { type: 'audio/webm' }); };
 
                 mediaRecorder.start();
                 isRecording = true;
@@ -844,29 +678,18 @@
         function togglePauseRecording() {
             if (!mediaRecorder) return;
             const btn = document.getElementById('pause-rec-btn');
-            if (!isPaused) {
-                mediaRecorder.pause();
-                isPaused = true;
-                btn.textContent = '▶ Resume';
-            } else {
-                mediaRecorder.resume();
-                isPaused = false;
-                btn.textContent = '⏸ Pause';
-            }
+            if (!isPaused) { mediaRecorder.pause(); isPaused = true; btn.textContent = '▶ Resume'; }
+            else { mediaRecorder.resume(); isPaused = false; btn.textContent = '⏸ Pause'; }
         }
 
         function stopRecordingOnly() {
             if (mediaRecorder && (isRecording || isPaused)) {
-                if (mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                }
+                if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
                 isRecording = false;
                 isPaused = false;
                 clearInterval(recordingTimerInterval);
-                
-                if (mediaRecorder.stream) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                }
+
+                if (mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
 
                 document.getElementById('recording-ui').classList.add('hidden');
                 document.getElementById('recording-ui').classList.remove('flex');
@@ -877,18 +700,13 @@
                 document.getElementById('media-preview-bar').classList.add('flex');
                 document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
                 document.getElementById('upload-progress-bar').style.width = '100%';
-                document.getElementById('upload-status-text').textContent = 'Hit the Send button to dispatch voice note.';
             }
         }
 
         function cancelRecording() {
             if (mediaRecorder && (isRecording || isPaused)) {
-                if (mediaRecorder.state !== 'inactive') {
-                    mediaRecorder.stop();
-                }
-                if (mediaRecorder.stream) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                }
+                if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+                if (mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
             }
             resetRecordingUI();
             clearStagedMedia();
@@ -906,11 +724,7 @@
 
         async function handleFormSubmit(e) {
             e.preventDefault();
-
-            if (isRecording) {
-                stopRecordingOnly();
-                return;
-            }
+            if (isRecording) { stopRecordingOnly(); return; }
 
             let replyMeta = null;
             if (replyingToMessage) {
@@ -922,10 +736,10 @@
             }
 
             if (recordedBlob) {
-                const blobToSend = recordedBlob;
+                const blob = recordedBlob;
                 recordedBlob = null;
                 const reader = new FileReader();
-                reader.readAsDataURL(blobToSend);
+                reader.readAsDataURL(blob);
                 reader.onloadend = async () => {
                     await sendPayloadToSupabase(reader.result, 'audio', replyMeta);
                     resetRecordingUI();
@@ -936,9 +750,9 @@
             }
 
             if (stagedPayload) {
-                const payloadToSend = stagedPayload;
+                const payload = stagedPayload;
                 stagedPayload = null;
-                await sendPayloadToSupabase(payloadToSend.content, payloadToSend.type, replyMeta);
+                await sendPayloadToSupabase(payload.content, payload.type, replyMeta);
                 clearStagedMedia();
                 cancelReply();
                 return;
@@ -963,11 +777,10 @@
                 created_at: new Date().toISOString()
             };
 
-            const { data, error } = await supabaseClient.from('group_messages').insert([payload]).select();
-
+            const { error } = await supabaseClient.from('group_messages').insert([payload]);
             if (error) {
-                console.error('DETAILED SUPABASE INSERT ERROR:', JSON.stringify(error, null, 2));
-                alert('Failed to send message: ' + error.message);
+                console.error('Supabase send error:', error);
+                alert('Failed to send message.');
             } else {
                 fetchMessages();
             }
@@ -976,36 +789,31 @@
         function openMediaGallery(typeFilter) {
             const modal = document.getElementById('media-gallery-modal');
             const grid = document.getElementById('gallery-content-grid');
-            const title = document.getElementById('gallery-title');
+            document.getElementById('gallery-title').textContent = `Group ${typeFilter.toUpperCase()} Gallery`;
             modal.classList.remove('hidden');
             grid.innerHTML = '';
-            title.textContent = `Group ${typeFilter.toUpperCase()} Gallery`;
 
             const matching = messagesCache.filter(m => {
                 if (m.is_deleted_for_everyone) return false;
-                const mType = m.message_type || 'text';
-                if (typeFilter === 'image' && mType === 'image') return true;
-                if (typeFilter === 'video' && mType === 'video') return true;
-                if (typeFilter === 'file' && (mType === 'file' || mType === 'audio')) return true;
+                const type = m.message_type || 'text';
+                if (typeFilter === 'image' && type === 'image') return true;
+                if (typeFilter === 'video' && type === 'video') return true;
+                if (typeFilter === 'file' && (type === 'file' || type === 'audio')) return true;
                 return false;
             });
 
             if (matching.length === 0) {
-                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this group.</span>`;
+                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found.</span>`;
                 return;
             }
 
             matching.forEach(m => {
                 const card = document.createElement('div');
                 card.className = 'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
-                const mType = m.message_type || 'text';
-                if (mType === 'image') {
-                    card.innerHTML = `<img src="${m.content}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${m.content}')">`;
-                } else if (mType === 'video') {
-                    card.innerHTML = `<video src="${m.content}" class="h-24 w-full rounded object-cover" controls></video>`;
-                } else {
-                    card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${mType}</a>`;
-                }
+                const type = m.message_type || 'text';
+                if (type === 'image') card.innerHTML = `<img src="${m.content}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${m.content}')">`;
+                else if (type === 'video') card.innerHTML = `<video src="${m.content}" class="h-24 w-full rounded object-cover" controls></video>`;
+                else card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${type}</a>`;
                 grid.appendChild(card);
             });
         }
@@ -1015,28 +823,17 @@
         }
 
         function subscribeToMessages() {
-            if (messageSubscription) {
-                supabaseClient.removeChannel(messageSubscription);
-            }
+            if (messageSubscription) supabaseClient.removeChannel(messageSubscription);
 
             messageSubscription = supabaseClient
                 .channel(`public:group_messages:${targetGroupId}`)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'group_messages',
-                        filter: `group_id=eq.${targetGroupId}`
-                    },
-                    payload => {
-                        const newMsg = payload.new;
-                        if (newMsg && !messagesCache.some(m => m.id === newMsg.id)) {
-                            messagesCache.push(newMsg);
-                            renderMessages(messagesCache);
-                        }
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${targetGroupId}` }, payload => {
+                    const newMsg = payload.new;
+                    if (newMsg && !messagesCache.some(m => m.id === newMsg.id)) {
+                        messagesCache.push(newMsg);
+                        renderMessages(messagesCache);
                     }
-                )
+                })
                 .subscribe();
         }
 
