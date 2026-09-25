@@ -634,7 +634,9 @@
                 if (error) {
                     remainingQueue.push(item);
                 } else if (data && data.length > 0) {
-                    messagesCache.push(data[0]);
+                    if (!messagesCache.some(m => m.id === data[0].id)) {
+                        messagesCache.push(data[0]);
+                    }
                 }
             }
 
@@ -1058,7 +1060,6 @@
             const { data, error } = await supabaseClient.from('group_messages').insert([payload]).select();
 
             if (error) {
-                // DETAILED LOGGING FOR TROUBLESHOOTING
                 console.error('DETAILED SUPABASE INSERT ERROR:', JSON.stringify(error, null, 2));
 
                 const offlineQueue = loadOfflineQueue();
@@ -1066,8 +1067,10 @@
                 saveOfflineQueue(offlineQueue);
                 renderMessages(messagesCache);
             } else if (data && data.length > 0) {
-                messagesCache.push(data[0]);
-                saveLocalCache(messagesCache);
+                if (!messagesCache.some(m => m.id === data[0].id)) {
+                    messagesCache.push(data[0]);
+                    saveLocalCache(messagesCache);
+                }
                 renderMessages(messagesCache);
             }
         }
@@ -1119,7 +1122,7 @@
             }
 
             messageSubscription = supabaseClient
-                .channel(`public:group_messages:group_id=eq.${targetGroupId}`)
+                .channel(`public:group_messages:${targetGroupId}`)
                 .on(
                     'postgres_changes',
                     {
