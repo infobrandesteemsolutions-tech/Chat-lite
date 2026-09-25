@@ -41,7 +41,7 @@
         </div>
 
         <!-- Multi-Select Action Footer Bar (Hidden by default) -->
-        <div id="multi-select-bar" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 flex items-center justify-between">
+        <div id="multi-select-bar" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 items-center justify-between">
             <span id="selected-count-text" class="text-xs font-semibold text-indigo-300">0 selected</span>
             <div class="flex items-center gap-1.5">
                 <button type="button" onclick="handleMultiSelectAction('everyone')" class="px-2.5 py-1.5 bg-red-600/70 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg cursor-pointer">Delete for everyone</button>
@@ -52,13 +52,13 @@
         </div>
 
         <!-- Undo Notification Banner (10 Seconds Timer) -->
-        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
+        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 items-center justify-between">
             <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
             <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
         </div>
 
         <!-- Message Options Popup Modal (Long Press Menu) -->
-        <div id="message-options-modal" class="hidden absolute inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+        <div id="message-options-modal" class="hidden absolute inset-0 bg-slate-950/70 z-50 items-center justify-center p-4 backdrop-blur-xs">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
                 <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
                     <span>Message Options</span>
@@ -114,10 +114,10 @@
         </div>
 
         <!-- Media Gallery Modal Drawer -->
-        <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
+        <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex-col p-4 backdrop-blur-sm">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
                 <h3 class="font-bold text-sm text-white" id="gallery-title">Chat Media</h3>
-                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">Close</button>
+                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
             </div>
             <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
                 <!-- Gallery items populated here -->
@@ -166,9 +166,9 @@
             window.location.href = 'chatlist.html';
         }
 
-        document.getElementById('active-chat-name').textContent = targetName;
-        document.getElementById('active-chat-gender').textContent = `@${targetUsername} • ${targetGender}`;
-        document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
+        document.getElementById('active-chat-name').textContent = targetName || targetUsername;
+        document.getElementById('active-chat-gender').textContent = `@${targetUsername} • ${targetGender || 'Member'}`;
+        document.getElementById('active-chat-avatar').textContent = (targetName || targetUsername).charAt(0).toUpperCase();
 
         const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
         const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
@@ -330,7 +330,7 @@
             rowFlex.className = `flex items-center gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
 
             const checkboxEl = document.createElement('div');
-            checkboxEl.className = `w-5 h-5 rounded-full border border-slate-600 flex items-center justify-center text-xs transition-all flex-shrink-0 ${isMultiSelectMode ? 'flex' : 'hidden'} ${isSelected ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900'}`;
+            checkboxEl.className = `w-5 h-5 rounded-full border border-slate-600 items-center justify-center text-xs transition-all flex-shrink-0 ${isMultiSelectMode ? 'flex' : 'hidden'} ${isSelected ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900'}`;
             checkboxEl.innerHTML = isSelected ? '✓' : '';
             rowFlex.appendChild(checkboxEl);
 
@@ -427,12 +427,12 @@
                 const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
                 contentBody.innerHTML = `
                     <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
-                        <button type="button" onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
+                        <button type="button" onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
                         <audio id="${audioId}" src="${msg.content}" preload="metadata"></audio>
                         <div class="flex flex-col flex-1 gap-1">
-                            <div class="flex justify-between items-center text-[10px] opacity-80">
+                            <div class="flex justify-between items-center text-[10px] opacity-85">
                                 <span class="audio-current-time">0:00</span>
-                                <button type="button" onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)" class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
+                                <button type="button" onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)" class="bg-white/15 hover:bg-white/25 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
                             </div>
                             <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
                         </div>
@@ -504,8 +504,9 @@
             if (msg && msg.id) {
                 selectedMessageIds.add(msg.id);
             }
-            document.getElementById('multi-select-bar').classList.remove('hidden');
-            document.getElementById('multi-select-bar').classList.add('flex');
+            const bar = document.getElementById('multi-select-bar');
+            bar.classList.remove('hidden');
+            bar.classList.add('flex');
             updateMultiSelectUI();
             renderMessages(messagesCache);
         }
@@ -513,8 +514,9 @@
         function exitMultiSelectMode() {
             isMultiSelectMode = false;
             selectedMessageIds.clear();
-            document.getElementById('multi-select-bar').classList.remove('flex');
-            document.getElementById('multi-select-bar').classList.add('hidden');
+            const bar = document.getElementById('multi-select-bar');
+            bar.classList.remove('flex');
+            bar.classList.add('hidden');
             renderMessages(messagesCache);
         }
 
@@ -1060,7 +1062,6 @@
                 created_at: new Date().toISOString()
             };
 
-            // Attempt direct insert when browser reports online connection
             if (navigator.onLine) {
                 const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
 
@@ -1068,14 +1069,12 @@
                     messagesCache.push(data[0]);
                     saveLocalCache(messagesCache);
                     renderMessages(messagesCache);
-                    return; // Successfully sent, exit early
+                    return; 
                 }
                 
-                // If direct insert fails due to a network or silent server drop, fall through to queue
                 console.warn('Direct send failed or encountered error, caching into offline queue:', error);
             }
 
-            // Fallback: Store inside local offline queue with pending flag if offline or network request errored
             const offlineQueue = loadOfflineQueue();
             const pendingItem = { ...payload, is_offline_pending: true };
             offlineQueue.push(pendingItem);
@@ -1088,6 +1087,7 @@
             const grid = document.getElementById('gallery-content-grid');
             const title = document.getElementById('gallery-title');
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
             grid.innerHTML = '';
             title.textContent = `${typeFilter.toUpperCase()} Gallery`;
 
@@ -1121,7 +1121,9 @@
         }
 
         function closeMediaGallery() {
-            document.getElementById('media-gallery-modal').classList.add('hidden');
+            const modal = document.getElementById('media-gallery-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
         }
 
         function subscribeToMessages() {
