@@ -168,11 +168,8 @@
         document.getElementById('active-chat-name').textContent = targetGroupName;
         document.getElementById('active-chat-avatar').textContent = targetGroupName.charAt(0).toUpperCase();
 
-        const STORAGE_KEY = `chatlite_group_cache_${currentUser.username}_${targetGroupId}`;
-        const QUEUE_KEY = `chatlite_group_offline_queue_${currentUser.username}_${targetGroupId}`;
-
         let messageSubscription = null;
-        let messagesCache = loadLocalCache();
+        let messagesCache = [];
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
@@ -191,37 +188,6 @@
         let pendingDeleteTimer = null;
         let undoTargetMessage = null;
 
-        if (messagesCache.length > 0) {
-            renderMessages(messagesCache);
-        }
-
-        function loadLocalCache() {
-            try {
-                const data = localStorage.getItem(STORAGE_KEY);
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveLocalCache(messages) {
-            messagesCache = messages;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-        }
-
-        function loadOfflineQueue() {
-            try {
-                const data = localStorage.getItem(QUEUE_KEY);
-                return data ? JSON.parse(data) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveOfflineQueue(queue) {
-            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-        }
-
         function toggleAttachmentMenu() {
             const menu = document.getElementById('attachment-menu');
             menu.classList.toggle('hidden');
@@ -238,10 +204,6 @@
         }
 
         async function fetchMessages() {
-            if (navigator.onLine) {
-                await flushOfflineQueue();
-            }
-
             const { data: messages, error } = await supabaseClient
                 .from('group_messages')
                 .select('*')
@@ -254,7 +216,7 @@
             }
 
             if (messages) {
-                saveLocalCache(messages);
+                messagesCache = messages;
                 renderMessages(messagesCache);
             }
         }
@@ -270,12 +232,7 @@
 
             const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
 
-            const offlineQueue = loadOfflineQueue();
-            const combinedList = [...filtered, ...offlineQueue];
-            
-            combinedList.sort((a, b) => new Date(a.created_at || Date.now()) - new Date(b.created_at || Date.now()));
-
-            combinedList.forEach(msg => appendMessageToDOM(msg, false));
+            filtered.forEach(msg => appendMessageToDOM(msg, false));
 
             container.scrollTop = container.scrollHeight;
         }
@@ -320,7 +277,6 @@
 
             let pressTimer = null;
             const startPress = () => {
-                if (msg.is_offline_pending) return; 
                 pressTimer = setTimeout(() => {
                     if (isMultiSelectMode) {
                         if (msg.id) toggleMessageSelection(msg.id);
@@ -349,7 +305,7 @@
 
             wrapper.oncontextmenu = (e) => {
                 e.preventDefault();
-                if (!msg.is_offline_pending && msg.id) {
+                if (msg.id) {
                     if (!isMultiSelectMode) {
                         openMessageOptions(msg);
                     }
@@ -389,7 +345,6 @@
                 isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
             }`;
 
-            // Sender Name Label for Group Messages
             if (!isMe) {
                 const senderLabelEl = document.createElement('span');
                 senderLabelEl.className = 'text-[10px] font-bold text-indigo-400 block mb-0.5';
@@ -466,14 +421,8 @@
 
             if (isMe) {
                 const tickSpan = document.createElement('span');
-                tickSpan.className = 'font-bold text-xs ';
-                if (msg.is_offline_pending) {
-                    tickSpan.textContent = '🕒';
-                    tickSpan.title = 'Pending (Waiting for network)';
-                } else {
-                    tickSpan.textContent = '✓';
-                    tickSpan.classList.add('text-slate-500');
-                }
+                tickSpan.className = 'font-bold text-xs text-slate-500';
+                tickSpan.textContent = '✓';
                 metaRow.appendChild(tickSpan);
             }
 
@@ -613,40 +562,6 @@
             replyBar.classList.remove('flex');
             replyBar.classList.add('hidden');
         }
-
-        async function flushOfflineQueue() {
-            const queue = loadOfflineQueue();
-            if (queue.length === 0) return;
-
-            const remainingQueue = [];
-            for (const item of queue) {
-                const payload = {
-                    group_id: item.group_id,
-                    sender_username: item.sender_username,
-                    content: item.content,
-                    message_type: item.message_type || 'text',
-                    reply_to: item.reply_to || null,
-                    created_at: item.created_at || new Date().toISOString()
-                };
-
-                const { data, error } = await supabaseClient.from('group_messages').insert([payload]).select();
-
-                if (error) {
-                    remainingQueue.push(item);
-                } else if (data && data.length > 0) {
-                    if (!messagesCache.some(m => m.id === data[0].id)) {
-                        messagesCache.push(data[0]);
-                    }
-                }
-            }
-
-            saveOfflineQueue(remainingQueue);
-            saveLocalCache(messagesCache);
-        }
-
-        window.addEventListener('online', async () => {
-            await fetchMessages();
-        });
 
         function openMessageOptions(msg) {
             if (isMultiSelectMode) return;
@@ -1048,30 +963,13 @@
                 created_at: new Date().toISOString()
             };
 
-            if (!navigator.onLine) {
-                const offlineQueue = loadOfflineQueue();
-                const pendingItem = { ...payload, is_offline_pending: true };
-                offlineQueue.push(pendingItem);
-                saveOfflineQueue(offlineQueue);
-                renderMessages(messagesCache);
-                return;
-            }
-
             const { data, error } = await supabaseClient.from('group_messages').insert([payload]).select();
 
             if (error) {
                 console.error('DETAILED SUPABASE INSERT ERROR:', JSON.stringify(error, null, 2));
-
-                const offlineQueue = loadOfflineQueue();
-                offlineQueue.push({ ...payload, is_offline_pending: true });
-                saveOfflineQueue(offlineQueue);
-                renderMessages(messagesCache);
-            } else if (data && data.length > 0) {
-                if (!messagesCache.some(m => m.id === data[0].id)) {
-                    messagesCache.push(data[0]);
-                    saveLocalCache(messagesCache);
-                }
-                renderMessages(messagesCache);
+                alert('Failed to send message: ' + error.message);
+            } else {
+                fetchMessages();
             }
         }
 
@@ -1135,7 +1033,6 @@
                         const newMsg = payload.new;
                         if (newMsg && !messagesCache.some(m => m.id === newMsg.id)) {
                             messagesCache.push(newMsg);
-                            saveLocalCache(messagesCache);
                             renderMessages(messagesCache);
                         }
                     }
