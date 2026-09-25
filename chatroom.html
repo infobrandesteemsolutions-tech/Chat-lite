@@ -362,6 +362,8 @@ async function fetchMessages() {
     const loadingEl = document.getElementById('loading-message');
     loadingEl.classList.remove('hidden');
 
+    console.log('[fetchMessages] currentUser:', currentUser.username, 'targetUsername:', targetUsername);
+
     const { data, error } = await supabaseClient
         .from('messages')
         .select('*')
@@ -373,6 +375,9 @@ async function fetchMessages() {
 
     loadingEl.classList.add('hidden');
 
+    console.log('[fetchMessages] error:', error);
+    console.log('[fetchMessages] data:', data);
+
     if (error) {
         console.error('fetchMessages error:', error);
         showStatus('Could not load messages: ' + error.message, 'error');
@@ -380,6 +385,7 @@ async function fetchMessages() {
     }
 
     messagesCache = data || [];
+    console.log('[fetchMessages] messagesCache after assign:', messagesCache);
     renderMessages();
 }
 
