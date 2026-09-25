@@ -1,492 +1,2860 @@
-<style>
-  html,
-  body {
-    height: 100%;
-    margin: 0;
-    background: #f1f5f9;
-    font-family: Arial, sans-serif;
-  }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* =========================================
-     MAIN CHAT WIDTH
-     ========================================= */
-
-  header,
-  #search-bar,
-  #reply-preview,
-  #media-preview,
-  #recording-bar,
-  #message-form {
-    width: 100%;
-  }
-
-  header {
-    flex-shrink: 0;
-  }
-
-  /*
-   * Keeps the actual chat comfortably narrow
-   * on large screens.
-   */
-  .chat-width {
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  /* =========================================
-     MESSAGE AREA
-     ========================================= */
-
-  #messages {
-    scrollbar-width: thin;
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 18px 14px 24px;
-  }
-
-  .message-bubble {
-    word-break: break-word;
-    overflow-wrap: anywhere;
-  }
-
-  /*
-   * Prevent very long desktop bubbles.
-   */
-  #messages .message-bubble {
-    max-width: min(78%, 520px);
-  }
-
-  .message-image,
-  .message-video {
-    max-width: 280px;
-    max-height: 340px;
-    border-radius: 14px;
-    object-fit: cover;
-    display: block;
-  }
-
-  .message-audio {
-    width: 240px;
-    max-width: 100%;
-  }
-
-  /* =========================================
-     HEADER
-     ========================================= */
-
-  header {
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(10px);
-  }
-
-  header > div,
-  header > button {
-    flex-shrink: 0;
-  }
-
-  #target-name {
-    font-size: 15px;
-  }
-
-  #target-info {
-    font-size: 11px;
-  }
-
-  #target-avatar {
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-  }
-
-  /* =========================================
-     SEARCH
-     ========================================= */
-
-  #search-bar {
-    background: white;
-  }
-
-  #search-bar > input {
-    max-width: 760px;
-    margin: 0 auto;
-    display: block;
-  }
-
-  /* =========================================
-     REPLY PREVIEW
-     ========================================= */
-
-  #reply-preview {
-    background: white;
-  }
-
-  #reply-preview > div {
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  .reply-quote {
-    border-left: 3px solid #6366f1;
-    background: rgba(99, 102, 241, 0.08);
-  }
-
-  /* =========================================
-     MEDIA PREVIEW
-     ========================================= */
-
-  #media-preview {
-    background: white;
-  }
-
-  #media-preview > div {
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  /* =========================================
-     ATTACHMENT MENU
-     ========================================= */
-
-  #attachment-menu {
-    position: relative;
-    background: transparent;
-    border: 0;
-    padding: 8px 12px 10px;
-  }
-
-  #attachment-menu > div {
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-
-    padding: 12px;
-
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-
-    box-shadow:
-      0 8px 25px rgba(15, 23, 42, 0.10);
-  }
-
-  /*
-   * Turn the four-column grid into four
-   * compact attachment buttons.
-   */
-  #attachment-menu button {
-    flex: 1;
-    min-width: 0;
-    max-width: 130px;
-    height: 68px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 4px;
-
-    padding: 8px;
-
-    border-radius: 14px;
-
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-
-    transition:
-      transform 0.15s ease,
-      background 0.15s ease;
-  }
-
-  #attachment-menu button:hover {
-    background: #f1f5f9;
-    transform: translateY(-1px);
-  }
-
-  #attachment-menu button:active {
-    transform: scale(0.96);
-  }
-
-  #attachment-menu button span:first-child {
-    font-size: 22px;
-    line-height: 1;
-  }
-
-  #attachment-menu button span:last-child {
-    font-size: 11px;
-    color: #475569;
-  }
-
-  /* =========================================
-     RECORDING
-     ========================================= */
-
-  #recording-bar {
-    background: #fff;
-  }
-
-  #recording-bar > div {
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-  }
-
-  .recording-pulse {
-    animation: pulse 1s infinite;
-  }
-
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private Chat</title>  <script src="https://cdn.tailwindcss.com"></script>  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>  <script src="supabase.js"></script>  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background: #f1f5f9;
+      font-family: Arial, sans-serif;
     }
 
-    50% {
-      opacity: 0.45;
+    * {
+      box-sizing: border-box;
     }
-  }
 
-  /* =========================================
-     COMPOSER
-     ========================================= */
+    /*
+     * =========================================================
+     * UI ONLY
+     * =========================================================
+     * The JavaScript and HTML structure below are intentionally
+     * kept compatible with the previously working version.
+     */
 
-  #message-form {
-    background: rgba(255, 255, 255, 0.98);
-    padding: 10px 12px;
-    gap: 8px;
-  }
-
-  #message-form > * {
-    flex-shrink: 0;
-  }
-
-  /*
-   * Center composer on desktop.
-   */
-  #message-form {
-    display: flex;
-    justify-content: center;
-  }
-
-  #message-form > input {
-    width: 100%;
-    max-width: 620px;
-  }
-
-  /*
-   * + / microphone / send buttons
-   */
-  #message-form button {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-  }
-
-  /*
-   * Attachment + button
-   */
-  #message-form button:first-child {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #334155;
-
-    font-size: 25px;
-    font-weight: 300;
-
-    line-height: 1;
-
-    transition:
-      background 0.15s ease,
-      transform 0.15s ease;
-  }
-
-  #message-form button:first-child:hover {
-    background: #e2e8f0;
-  }
-
-  #message-form button:first-child:active {
-    transform: scale(0.94);
-  }
-
-  /*
-   * Microphone button
-   */
-  #mic-button {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    font-size: 18px;
-  }
-
-  /*
-   * Send button
-   */
-  #message-form button[type="submit"] {
-    background: #4f46e5;
-    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.22);
-    font-size: 17px;
-  }
-
-  #message-form button[type="submit"]:active {
-    transform: scale(0.94);
-  }
-
-  /*
-   * Message input
-   */
-  #message-input {
-    height: 42px;
-    min-height: 42px;
-    border-color: #e2e8f0;
-    background: #f8fafc;
-    font-size: 14px;
-  }
-
-  #message-input:focus {
-    background: white;
-  }
-
-  /* =========================================
-     MESSAGE OPTIONS
-     ========================================= */
-
-  .message-options {
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.18);
-  }
-
-  /* =========================================
-     UNDO
-     ========================================= */
-
-  #undo-banner {
-    max-width: 760px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  /* =========================================
-     MEDIA GALLERY
-     ========================================= */
-
-  #media-gallery img,
-  #media-gallery video {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 10px;
-  }
-
-  /* =========================================
-     MOBILE
-     ========================================= */
-
-  @media (max-width: 640px) {
-
+    /* Main chat column */
     #messages {
-      padding-left: 10px;
-      padding-right: 10px;
+      scrollbar-width: thin;
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto;
+      padding-left: 16px;
+      padding-right: 16px;
     }
 
-    #messages .message-bubble {
-      max-width: 84%;
+    /* Header */
+    body > header {
+      width: 100%;
+      background: #ffffff;
     }
 
+    body > header > * {
+      flex-shrink: 0;
+    }
+
+    body > header {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    body > header .flex-1 {
+      min-width: 0;
+    }
+
+    /* Search */
+    #search-bar {
+      width: 100%;
+      background: #ffffff;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    #search-input {
+      display: block;
+      width: 100%;
+      max-width: 748px;
+      margin: 0 auto;
+      height: 42px;
+    }
+
+    /* Message bubbles */
+    .message-bubble {
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      max-width: min(82%, 520px);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    /* Media inside messages */
     .message-image,
     .message-video {
-      max-width: 240px;
-      max-height: 300px;
+      max-width: 260px;
+      max-height: 320px;
+      border-radius: 14px;
+      object-fit: cover;
+      display: block;
     }
 
+    .message-audio {
+      width: 240px;
+      max-width: 100%;
+    }
+
+    /* Reply quote */
+    .reply-quote {
+      border-left: 3px solid #6366f1;
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    /* Recording */
+    .recording-pulse {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: .45;
+      }
+    }
+
+    /* Message options */
+    .message-options {
+      box-shadow: 0 15px 40px rgba(0, 0, 0, .18);
+    }
+
+    /* Gallery */
+    #media-gallery img,
+    #media-gallery video {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    /*
+     * =========================================================
+     * ATTACHMENT MENU
+     * =========================================================
+     */
+
     #attachment-menu {
-      padding: 7px 8px 9px;
+      background: transparent;
+      border-top: 0;
+      padding: 8px 12px 10px;
     }
 
     #attachment-menu > div {
-      gap: 6px;
-      padding: 9px;
-      border-radius: 16px;
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+
+      padding: 10px;
+
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+
+      box-shadow:
+        0 8px 25px rgba(15, 23, 42, .08);
     }
 
     #attachment-menu button {
-      height: 62px;
-      padding: 6px 3px;
-      border-radius: 12px;
+      flex: 1;
+      max-width: 130px;
+      min-width: 0;
+      height: 64px;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      gap: 3px;
+
+      border-radius: 14px;
+      transition:
+        background .15s ease,
+        transform .15s ease;
+    }
+
+    #attachment-menu button:hover {
+      background: #f8fafc;
+    }
+
+    #attachment-menu button:active {
+      transform: scale(.96);
     }
 
     #attachment-menu button span:first-child {
-      font-size: 20px;
+      font-size: 22px;
+      line-height: 1;
     }
 
     #attachment-menu button span:last-child {
-      font-size: 10px;
+      font-size: 11px;
+      color: #475569;
     }
+
+    /*
+     * =========================================================
+     * REPLY PREVIEW
+     * =========================================================
+     */
+
+    #reply-preview {
+      background: #ffffff;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    #reply-preview > div {
+      width: 100%;
+      max-width: 748px;
+      margin: 0 auto;
+      min-height: 42px;
+    }
+
+    /*
+     * =========================================================
+     * MEDIA PREVIEW
+     * =========================================================
+     */
+
+    #media-preview {
+      background: #ffffff;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    #media-preview > div {
+      width: 100%;
+      max-width: 748px;
+      margin: 0 auto;
+      min-height: 64px;
+    }
+
+    /*
+     * =========================================================
+     * RECORDING BAR
+     * =========================================================
+     */
+
+    #recording-bar {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    #recording-bar > div {
+      width: 100%;
+      max-width: 748px;
+      margin: 0 auto;
+    }
+
+    /*
+     * =========================================================
+     * COMPOSER
+     * =========================================================
+     */
 
     #message-form {
-      padding:
-        8px
-        max(8px, env(safe-area-inset-right))
-        calc(8px + env(safe-area-inset-bottom))
-        max(8px, env(safe-area-inset-left));
+      width: 100%;
+      background: #ffffff;
+      padding: 10px 16px;
+      gap: 8px;
     }
 
-    #message-form button {
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
+    #message-form > * {
+      flex-shrink: 0;
     }
 
-    #message-input {
-      height: 40px;
-      min-height: 40px;
-      padding-left: 15px;
-      padding-right: 15px;
+    #message-form #message-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: 42px;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    #message-form #message-input:focus {
+      background: #ffffff;
+    }
+
+    /* Plus / attachment button */
+    #message-form button:first-child {
+      width: 42px;
+      min-width: 42px;
+      height: 42px;
+
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+
+      border-radius: 50%;
+
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 400;
+
+      transition:
+        background .15s ease,
+        transform .15s ease;
+    }
+
+    #message-form button:first-child:hover {
+      background: #eef2ff;
+    }
+
+    #message-form button:first-child:active {
+      transform: scale(.94);
+    }
+
+    /* Microphone button */
+    #mic-button {
+      width: 42px;
+      min-width: 42px;
+      height: 42px;
+
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+
+      border-radius: 50%;
+    }
+
+    #mic-button:hover {
+      background: #eef2ff;
+    }
+
+    /* Send button */
+    #message-form button[type="submit"] {
+      width: 42px;
+      min-width: 42px;
+      height: 42px;
+
+      border-radius: 50%;
+
+      box-shadow:
+        0 4px 10px rgba(79, 70, 229, .22);
+    }
+
+    #message-form button[type="submit"]:active {
+      transform: scale(.94);
+    }
+
+    /*
+     * =========================================================
+     * UNDO BANNER
+     * =========================================================
+     */
+
+    #undo-banner {
+      width: calc(100% - 24px);
+      max-width: 748px;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+    }
+
+    /*
+     * =========================================================
+     * DESKTOP
+     * =========================================================
+     */
+
+    @media (min-width: 768px) {
+
+      html,
+      body {
+        background: #e2e8f0;
+      }
+
+      body > header {
+        border-radius: 0;
+      }
+
+      #messages {
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+
+      .message-bubble {
+        max-width: 520px;
+      }
+
+      #message-form {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+    }
+
+    /*
+     * =========================================================
+     * MOBILE
+     * =========================================================
+     */
+
+    @media (max-width: 600px) {
+
+      html,
+      body {
+        background: #f8fafc;
+      }
+
+      #messages {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .message-bubble {
+        max-width: 84%;
+      }
+
+      #attachment-menu {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      #attachment-menu > div {
+        gap: 5px;
+        padding: 7px;
+        border-radius: 16px;
+      }
+
+      #attachment-menu button {
+        height: 58px;
+        padding: 5px;
+        border-radius: 12px;
+      }
+
+      #attachment-menu button span:first-child {
+        font-size: 20px;
+      }
+
+      #attachment-menu button span:last-child {
+        font-size: 10px;
+      }
+
+      #message-form {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      #message-form #message-input {
+        font-size: 15px;
+      }
+
+      .message-image,
+      .message-video {
+        max-width: 230px;
+        max-height: 300px;
+      }
+    }
+  </style></head><body class="h-screen flex flex-col">  <!-- HEADER -->  <header class="bg-white border-b px-3 py-3 flex items-center gap-3"><button
+  onclick="goBack()"
+  class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-xl">
+  ←
+</button>
+
+<div
+  id="target-avatar"
+  class="w-11 h-11 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+  ?
+</div>
+
+<div class="flex-1 min-w-0">
+  <div id="target-name" class="font-semibold truncate">Chat</div>
+  <div id="target-info" class="text-xs text-slate-500 truncate"></div>
+</div>
+
+<button
+  onclick="toggleSearch()"
+  class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center">
+  🔍
+</button>
+
+  </header>  <!-- SEARCH -->  <div id="search-bar" class="hidden bg-white border-b px-3 py-2">
+    <input
+      id="search-input"
+      type="text"
+      placeholder="Search messages..."
+      class="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-200"
+      oninput="renderMessages()">
+  </div>  <!-- MESSAGES -->  <main
+    id="messages"
+    class="flex-1 overflow-y-auto px-3 py-4 space-y-3">
+  </main>  <!-- EMPTY / LOADING -->  <div
+    id="loading-message"
+    class="hidden text-center text-sm text-slate-400 py-3">
+    Loading messages...
+  </div>  <!-- UNDO -->  <div
+    id="undo-banner"
+    class="hidden fixed bottom-24 left-3 right-3 z-50 bg-slate-900 text-white rounded-xl px-4 py-3 flex items-center justify-between">
+    <span>Message deleted</span>
+    <button
+      onclick="undoDelete()"
+      class="font-semibold text-indigo-300">
+      UNDO
+    </button>
+  </div>  <!-- MESSAGE OPTIONS -->  <div
+    id="message-options-overlay"
+    class="hidden fixed inset-0 z-50 bg-black/30"
+    onclick="closeMessageOptions()"><div
+  id="message-options"
+  class="message-options absolute left-1/2 -translate-x-1/2 bottom-4 w-[calc(100%-24px)] max-w-md bg-white rounded-2xl overflow-hidden"
+  onclick="event.stopPropagation()">
+
+  <div class="px-4 py-3 border-b">
+    <div class="text-xs text-slate-400">Message options</div>
+    <div id="options-preview" class="text-sm mt-1 truncate"></div>
+  </div>
+
+  <button
+    onclick="replyToSelected()"
+    class="w-full text-left px-4 py-4 hover:bg-slate-50">
+    ↩️ Reply
+  </button>
+
+  <button
+    onclick="copySelected()"
+    class="w-full text-left px-4 py-4 hover:bg-slate-50">
+    📋 Copy
+  </button>
+
+  <button
+    onclick="forwardSelected()"
+    class="w-full text-left px-4 py-4 hover:bg-slate-50">
+    ↗️ Forward
+  </button>
+
+  <button
+    onclick="deleteSelectedForMe()"
+    class="w-full text-left px-4 py-4 hover:bg-slate-50">
+    🗑️ Delete for me
+  </button>
+
+  <button
+    id="delete-everyone-button"
+    onclick="deleteSelectedForEveryone()"
+    class="w-full text-left px-4 py-4 hover:bg-slate-50 text-red-600">
+    🗑️ Delete for everyone
+  </button>
+
+  <button
+    onclick="closeMessageOptions()"
+    class="w-full text-left px-4 py-4 border-t hover:bg-slate-50">
+    Cancel
+  </button>
+
+</div>
+
+  </div>  <!-- REPLY PREVIEW -->  <div
+    id="reply-preview"
+    class="hidden bg-white border-t px-3 py-2"><div class="flex items-center gap-3">
+
+  <div class="flex-1 min-w-0">
+
+    <div class="text-xs font-semibold text-indigo-600">
+      Replying to <span id="reply-name"></span>
+    </div>
+
+    <div
+      id="reply-text"
+      class="text-sm text-slate-500 truncate">
+    </div>
+
+  </div>
+
+  <button
+    onclick="cancelReply()"
+    class="w-8 h-8 rounded-full hover:bg-slate-100">
+    ✕
+  </button>
+
+</div>
+
+  </div>  <!-- MEDIA PREVIEW -->  <div
+    id="media-preview"
+    class="hidden bg-white border-t px-3 py-2"><div class="flex items-center gap-3">
+
+  <div
+    id="media-preview-content"
+    class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">
+  </div>
+
+  <div class="flex-1 min-w-0">
+
+    <div
+      class="font-medium text-sm truncate"
+      id="media-file-name">
+    </div>
+
+    <div
+      class="text-xs text-slate-400"
+      id="media-file-type">
+    </div>
+
+  </div>
+
+  <button
+    onclick="cancelMedia()"
+    class="w-8 h-8 rounded-full hover:bg-slate-100">
+    ✕
+  </button>
+
+</div>
+
+  </div>  <!-- ATTACHMENT MENU -->  <div
+    id="attachment-menu"
+    class="hidden bg-white border-t px-3 py-3"><div class="flex items-center justify-center gap-2">
+
+  <button
+    onclick="openFilePicker()"
+    class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
+
+    <span class="text-2xl">📎</span>
+    <span class="text-xs">File</span>
+
+  </button>
+
+  <button
+    onclick="openImagePicker()"
+    class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
+
+    <span class="text-2xl">🖼️</span>
+    <span class="text-xs">Photo</span>
+
+  </button>
+
+  <button
+    onclick="openCameraPicker()"
+    class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
+
+    <span class="text-2xl">📷</span>
+    <span class="text-xs">Camera</span>
+
+  </button>
+
+  <button
+    onclick="startRecording()"
+    class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
+
+    <span class="text-2xl">🎙️</span>
+    <span class="text-xs">Voice</span>
+
+  </button>
+
+</div>
+
+  </div>  <!-- HIDDEN INPUTS --><input
+id="file-input"
+type="file"
+class="hidden"
+onchange="stageSelectedFile(this.files[0])">
+
+<input
+id="image-input"
+type="file"
+accept="image/*"
+class="hidden"
+onchange="stageSelectedFile(this.files[0])">
+
+<input
+id="camera-input"
+type="file"
+accept="image/*"
+capture="environment"
+class="hidden"
+onchange="stageSelectedFile(this.files[0])">
+
+  <!-- RECORDING BAR -->  <div
+    id="recording-bar"
+    class="hidden bg-red-50 border-t px-3 py-3"><div class="flex items-center gap-3">
+
+  <div class="w-3 h-3 rounded-full bg-red-500 recording-pulse"></div>
+
+  <div class="flex-1">
+
+    <div class="font-semibold text-red-600">
+      Recording
+    </div>
+
+    <div
+      id="recording-time"
+      class="text-xs text-slate-500">
+      00:00
+    </div>
+
+  </div>
+
+  <button
+    id="pause-recording"
+    onclick="togglePauseRecording()"
+    class="px-3 py-2 rounded-lg bg-white border text-sm">
+    Pause
+  </button>
+
+  <button
+    onclick="stopRecording()"
+    class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm">
+    Stop
+  </button>
+
+</div>
+
+  </div>  <!-- COMPOSER -->  <form
+    id="message-form"
+    class="bg-white border-t px-3 py-3 flex items-center gap-2"><button
+  type="button"
+  onclick="toggleAttachmentMenu()"
+  class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-xl">
+  +
+</button>
+
+<input
+  id="message-input"
+  type="text"
+  autocomplete="off"
+  placeholder="Message..."
+  class="flex-1 min-w-0 border rounded-full px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200">
+
+<button
+  id="mic-button"
+  type="button"
+  onclick="startRecording()"
+  class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center">
+  🎙️
+</button>
+
+<button
+  type="submit"
+  class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center">
+  ➤
+</button>
+
+  </form>  <script>
+/* =========================================================
+   PRIVATE CHAT
+   ========================================================= */
+
+const currentUser =
+  JSON.parse(localStorage.getItem('chatlite_user') || 'null');
+
+const params = new URLSearchParams(window.location.search);
+
+const targetUsername =
+  decodeURIComponent(params.get('to') || '');
+
+const targetName =
+  decodeURIComponent(params.get('name') || targetUsername || 'Chat');
+
+const targetGender =
+  decodeURIComponent(params.get('gender') || '');
+
+let messagesCache = [];
+
+let messageSubscription = null;
+
+let mediaRecorder = null;
+let audioChunks = [];
+let recordedBlob = null;
+let isRecording = false;
+let isPaused = false;
+let recordingSeconds = 0;
+let recordingTimerInterval = null;
+
+let stagedPayload = null;
+let activeReplyMessage = null;
+let selectedMessage = null;
+
+let deletedForMe = loadDeletedForMe();
+
+let pendingDeleteTimer = null;
+let undoTargetMessage = null;
+
+
+/* =========================================================
+   SAFETY / INITIALIZATION
+   ========================================================= */
+
+document.addEventListener('DOMContentLoaded', initChat);
+
+async function initChat() {
+
+  if (!currentUser || !currentUser.username) {
+    window.location.href = 'chatlist.html';
+    return;
+  }
+
+  if (!targetUsername) {
+    window.location.href = 'chatlist.html';
+    return;
+  }
+
+  setupHeader();
+
+  document
+    .getElementById('message-form')
+    .addEventListener('submit', handleSend);
+
+  renderMessages();
+
+  await fetchPrivateMessages();
+
+  subscribeToPrivateMessages();
+
+  window.addEventListener('online', async () => {
+    await sendOfflineQueue();
+    await fetchPrivateMessages();
+  });
+
+  await sendOfflineQueue();
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+function setupHeader() {
+
+  const nameElement =
+    document.getElementById('target-name');
+
+  const infoElement =
+    document.getElementById('target-info');
+
+  const avatarElement =
+    document.getElementById('target-avatar');
+
+  nameElement.textContent =
+    targetName || targetUsername;
+
+  infoElement.textContent =
+    '@' + targetUsername +
+    (targetGender ? ' • ' + targetGender : '');
+
+  const firstLetter =
+    (targetName || targetUsername || '?')
+      .charAt(0)
+      .toUpperCase();
+
+  avatarElement.textContent = firstLetter;
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function goBack() {
+  window.location.href = 'chatlist.html';
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+function toggleSearch() {
+
+  const bar =
+    document.getElementById('search-bar');
+
+  bar.classList.toggle('hidden');
+
+  if (!bar.classList.contains('hidden')) {
+    document.getElementById('search-input').focus();
+  }
+}
+
+
+/* =========================================================
+   ATTACHMENT MENU
+   ========================================================= */
+
+function toggleAttachmentMenu() {
+
+  const menu =
+    document.getElementById('attachment-menu');
+
+  menu.classList.toggle('hidden');
+}
+
+function closeAttachmentMenu() {
+
+  document
+    .getElementById('attachment-menu')
+    .classList.add('hidden');
+}
+
+function openFilePicker() {
+
+  closeAttachmentMenu();
+
+  document
+    .getElementById('file-input')
+    .click();
+}
+
+function openImagePicker() {
+
+  closeAttachmentMenu();
+
+  document
+    .getElementById('image-input')
+    .click();
+}
+
+function openCameraPicker() {
+
+  closeAttachmentMenu();
+
+  document
+    .getElementById('camera-input')
+    .click();
+}
+
+
+/* =========================================================
+   FILE / MEDIA STAGING
+   ========================================================= */
+
+function stageSelectedFile(file) {
+
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+
+    const dataUrl =
+      event.target.result;
+
+    let type = 'file';
+
+    if (file.type.startsWith('image/')) {
+      type = 'image';
+    } else if (file.type.startsWith('video/')) {
+      type = 'video';
+    } else if (file.type.startsWith('audio/')) {
+      type = 'audio';
+    }
+
+    stagedPayload = {
+      type,
+      content: dataUrl,
+      fileName: file.name,
+      mimeType: file.type
+    };
+
+    showMediaPreview();
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function showMediaPreview() {
+
+  if (!stagedPayload) return;
+
+  const preview =
+    document.getElementById('media-preview');
+
+  const previewContent =
+    document.getElementById('media-preview-content');
+
+  const fileName =
+    document.getElementById('media-file-name');
+
+  const fileType =
+    document.getElementById('media-file-type');
+
+  previewContent.innerHTML = '';
+
+  fileName.textContent =
+    stagedPayload.fileName || 'Attachment';
+
+  fileType.textContent =
+    stagedPayload.type;
+
+  if (stagedPayload.type === 'image') {
+
+    const img =
+      document.createElement('img');
+
+    img.src =
+      stagedPayload.content;
+
+    img.className =
+      'w-full h-full object-cover';
+
+    previewContent.appendChild(img);
+
+  } else if (stagedPayload.type === 'video') {
+
+    const video =
+      document.createElement('video');
+
+    video.src =
+      stagedPayload.content;
+
+    video.className =
+      'w-full h-full object-cover';
+
+    video.muted = true;
+
+    previewContent.appendChild(video);
+
+  } else {
+
+    previewContent.innerHTML =
+      '<span class="text-2xl">📎</span>';
+  }
+
+  preview.classList.remove('hidden');
+}
+
+function cancelMedia() {
+
+  stagedPayload = null;
+
+  document
+    .getElementById('media-preview')
+    .classList.add('hidden');
+
+  document
+    .getElementById('media-preview-content')
+    .innerHTML = '';
+}
+
+
+/* =========================================================
+   VOICE RECORDING
+   ========================================================= */
+
+async function startRecording() {
+
+  if (isRecording) return;
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+    mediaRecorder =
+      new MediaRecorder(stream);
+
+    audioChunks = [];
+    recordedBlob = null;
+
+    mediaRecorder.ondataavailable =
+      function(event) {
+
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+    mediaRecorder.onstop =
+      function() {
+
+        recordedBlob =
+          new Blob(audioChunks, {
+            type: mediaRecorder.mimeType ||
+              'audio/webm'
+          });
+
+        stream.getTracks().forEach(track => {
+          track.stop();
+        });
+
+        isRecording = false;
+        isPaused = false;
+
+        clearInterval(recordingTimerInterval);
+
+        document
+          .getElementById('recording-bar')
+          .classList.add('hidden');
+
+        document
+          .getElementById('pause-recording')
+          .textContent = 'Pause';
+
+        sendRecordedAudio();
+      };
+
+    mediaRecorder.start();
+
+    isRecording = true;
+    isPaused = false;
+    recordingSeconds = 0;
+
+    document
+      .getElementById('recording-bar')
+      .classList.remove('hidden');
+
+    updateRecordingTime();
+
+    recordingTimerInterval =
+      setInterval(() => {
+
+        if (!isPaused) {
+
+          recordingSeconds++;
+
+          updateRecordingTime();
+        }
+
+      }, 1000);
+
+  } catch (error) {
+
+    console.error('Microphone error:', error);
+
+    alert(
+      'Microphone access was not allowed. Please allow microphone access and try again.'
+    );
+  }
+}
+
+function togglePauseRecording() {
+
+  if (!mediaRecorder || !isRecording) return;
+
+  if (isPaused) {
+
+    mediaRecorder.resume();
+
+    isPaused = false;
+
+    document
+      .getElementById('pause-recording')
+      .textContent = 'Pause';
+
+  } else {
+
+    mediaRecorder.pause();
+
+    isPaused = true;
+
+    document
+      .getElementById('pause-recording')
+      .textContent = 'Resume';
+  }
+}
+
+function stopRecording() {
+
+  if (!mediaRecorder || !isRecording) return;
+
+  mediaRecorder.stop();
+}
+
+function updateRecordingTime() {
+
+  const minutes =
+    Math.floor(recordingSeconds / 60)
+      .toString()
+      .padStart(2, '0');
+
+  const seconds =
+    (recordingSeconds % 60)
+      .toString()
+      .padStart(2, '0');
+
+  document
+    .getElementById('recording-time')
+    .textContent =
+      minutes + ':' + seconds;
+}
+
+function sendRecordedAudio() {
+
+  if (!recordedBlob) return;
+
+  const reader =
+    new FileReader();
+
+  reader.onload = async function(event) {
+
+    const dataUrl =
+      event.target.result;
+
+    await sendPrivatePayload({
+      type: 'audio',
+      content: dataUrl,
+      fileName: 'voice-note.webm',
+      mimeType:
+        recordedBlob.type || 'audio/webm'
+    });
+
+    recordedBlob = null;
+  };
+
+  reader.readAsDataURL(recordedBlob);
+}
+
+
+/* =========================================================
+   REPLY
+   ========================================================= */
+
+function setReply(message) {
+
+  activeReplyMessage = message;
+
+  document
+    .getElementById('reply-preview')
+    .classList.remove('hidden');
+
+  document
+    .getElementById('reply-name')
+    .textContent =
+      message.sender_username === currentUser.username
+        ? 'You'
+        : targetName;
+
+  document
+    .getElementById('reply-text')
+    .textContent =
+      getDisplayText(message);
+
+  document
+    .getElementById('message-input')
+    .focus();
+}
+
+function cancelReply() {
+
+  activeReplyMessage = null;
+
+  document
+    .getElementById('reply-preview')
+    .classList.add('hidden');
+}
+
+
+/* =========================================================
+   SEND
+   ========================================================= */
+
+async function handleSend(event) {
+
+  event.preventDefault();
+
+  if (isRecording) {
+    stopRecording();
+    return;
+  }
+
+  if (recordedBlob) {
+    sendRecordedAudio();
+    return;
+  }
+
+  if (stagedPayload) {
+
+    const payload =
+      stagedPayload;
+
+    stagedPayload = null;
+
+    document
+      .getElementById('media-preview')
+      .classList.add('hidden');
+
+    await sendPrivatePayload(payload);
+
+    return;
+  }
+
+  const input =
+    document.getElementById('message-input');
+
+  const text =
+    input.value.trim();
+
+  if (!text) return;
+
+  input.value = '';
+
+  await sendPrivatePayload({
+    type: 'text',
+    content: text
+  });
+}
+
+
+/* =========================================================
+   UNIQUE CLIENT ID
+   ========================================================= */
+
+function makeClientId() {
+
+  return Date.now().toString(36) +
+    '-' +
+    Math.random()
+      .toString(36)
+      .slice(2, 12);
+}
+
+
+/* =========================================================
+   PRIVATE MESSAGE ENVELOPE
+   ========================================================= */
+
+function createPrivateEnvelope(payload) {
+
+  return {
+    __chatlite_private: true,
+
+    client_id: makeClientId(),
+
+    type: payload.type || 'text',
+
+    content: payload.content || '',
+
+    fileName: payload.fileName || null,
+
+    mimeType: payload.mimeType || null,
+
+    reply_to_sender:
+      activeReplyMessage
+        ? activeReplyMessage.sender_username
+        : null,
+
+    reply_to_message:
+      activeReplyMessage
+        ? getDisplayText(activeReplyMessage)
+        : null
+  };
+}
+
+
+/* =========================================================
+   SEND PRIVATE PAYLOAD
+   ========================================================= */
+
+async function sendPrivatePayload(payload) {
+
+  const envelope =
+    createPrivateEnvelope(payload);
+
+  const dbContent =
+    JSON.stringify(envelope);
+
+  const localMessage = {
+
+    local_only: true,
+
+    client_id:
+      envelope.client_id,
+
+    sender_username:
+      currentUser.username,
+
+    receiver_username:
+      targetUsername,
+
+    content:
+      envelope.content,
+
+    raw_content:
+      dbContent,
+
+    type:
+      envelope.type,
+
+    fileName:
+      envelope.fileName,
+
+    mimeType:
+      envelope.mimeType,
+
+    reply_to_sender:
+      envelope.reply_to_sender,
+
+    reply_to_message:
+      envelope.reply_to_message,
+
+    created_at:
+      new Date().toISOString(),
+
+    is_pending: true
+  };
+
+  messagesCache.push(localMessage);
+
+  renderMessages();
+
+  cancelReply();
+
+  if (!navigator.onLine) {
+
+    addToOfflineQueue(localMessage);
+
+    return;
+  }
+
+  await insertPrivateMessage(localMessage);
+}
+
+
+/* =========================================================
+   DATABASE INSERT
+   ========================================================= */
+
+async function insertPrivateMessage(message) {
+
+  if (!supabaseClient) {
+
+    console.error(
+      'Supabase client is not available.'
+    );
+
+    addToOfflineQueue(message);
+
+    return;
+  }
+
+  try {
+
+    const { data, error } =
+      await supabaseClient
+        .from('messages')
+        .insert({
+
+          sender_username:
+            message.sender_username,
+
+          receiver_username:
+            message.receiver_username,
+
+          content:
+            message.raw_content
+
+        })
+        .select('*')
+        .single();
+
+    if (error) {
+
+      console.error(
+        'PRIVATE MESSAGE INSERT ERROR:',
+        error
+      );
+
+      addToOfflineQueue(message);
+
+      markMessagePending(
+        message.client_id,
+        true
+      );
+
+      renderMessages();
+
+      alert(
+        'Could not save message:\n\n' +
+        error.message
+      );
+
+      return;
+    }
+
+    markMessagePending(
+      message.client_id,
+      false
+    );
+
+    removeFromOfflineQueue(
+      message.client_id
+    );
+
+    renderMessages();
+
+    await fetchPrivateMessages();
+
+  } catch (error) {
+
+    console.error(
+      'Could not save private chat:',
+      error
+    );
+
+    addToOfflineQueue(message);
+
+    markMessagePending(
+      message.client_id,
+      true
+    );
+
+    renderMessages();
+
+    alert(
+      'Could not save private message:\n\n' +
+      (error.message || error)
+    );
+  }
+}
+
+
+/* =========================================================
+   FETCH PRIVATE MESSAGES
+   ========================================================= */
+
+async function fetchPrivateMessages() {
+
+  if (!supabaseClient) return;
+
+  const loading =
+    document.getElementById('loading-message');
+
+  loading.classList.remove('hidden');
+
+  try {
+
+    const sentPromise =
+      supabaseClient
+        .from('messages')
+        .select('*')
+        .eq(
+          'sender_username',
+          currentUser.username
+        )
+        .eq(
+          'receiver_username',
+          targetUsername
+        )
+        .order(
+          'created_at',
+          { ascending: true }
+        );
+
+    const receivedPromise =
+      supabaseClient
+        .from('messages')
+        .select('*')
+        .eq(
+          'sender_username',
+          targetUsername
+        )
+        .eq(
+          'receiver_username',
+          currentUser.username
+        )
+        .order(
+          'created_at',
+          { ascending: true }
+        );
+
+    const [
+      sentResult,
+      receivedResult
+    ] = await Promise.all([
+      sentPromise,
+      receivedPromise
+    ]);
+
+    if (sentResult.error) {
+      throw sentResult.error;
+    }
+
+    if (receivedResult.error) {
+      throw receivedResult.error;
+    }
+
+    const databaseRows = [
+      ...(sentResult.data || []),
+      ...(receivedResult.data || [])
+    ];
+
+    databaseRows.sort((a, b) => {
+
+      return new Date(a.created_at || 0) -
+             new Date(b.created_at || 0);
+    });
+
+    const databaseMessages =
+      databaseRows.map(normalizeDatabaseMessage);
+
+    const databaseClientIds =
+      new Set(
+        databaseMessages
+          .map(m => m.client_id)
+          .filter(Boolean)
+      );
+
+    const pendingLocalMessages =
+      messagesCache.filter(message => {
+
+        if (!message.local_only) {
+          return false;
+        }
+
+        if (!message.is_pending) {
+          return false;
+        }
+
+        if (
+          message.client_id &&
+          databaseClientIds.has(message.client_id)
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+
+    messagesCache = [
+      ...databaseMessages,
+      ...pendingLocalMessages
+    ];
+
+    messagesCache.sort((a, b) => {
+
+      return new Date(a.created_at || 0) -
+             new Date(b.created_at || 0);
+    });
+
+    renderMessages();
+
+  } catch (error) {
+
+    console.error(
+      'Could not load private messages:',
+      error
+    );
+
+  } finally {
+
+    loading.classList.add('hidden');
+  }
+}
+
+
+/* =========================================================
+   NORMALIZE DATABASE MESSAGE
+   ========================================================= */
+
+function normalizeDatabaseMessage(row) {
+
+  let envelope = null;
+
+  try {
+
+    if (
+      typeof row.content === 'string' &&
+      row.content.trim().startsWith('{')
+    ) {
+
+      const parsed =
+        JSON.parse(row.content);
+
+      if (
+        parsed &&
+        parsed.__chatlite_private === true
+      ) {
+
+        envelope = parsed;
+      }
+    }
+
+  } catch (error) {
+
+    envelope = null;
+  }
+
+  if (!envelope) {
+
+    return {
+
+      ...row,
+
+      local_only: false,
+
+      client_id: null,
+
+      content: row.content || '',
+
+      raw_content: row.content || '',
+
+      type: 'text',
+
+      fileName: null,
+
+      mimeType: null,
+
+      reply_to_sender: null,
+
+      reply_to_message: null,
+
+      is_pending: false
+    };
+  }
+
+  return {
+
+    ...row,
+
+    local_only: false,
+
+    client_id:
+      envelope.client_id || null,
+
+    content:
+      envelope.content || '',
+
+    raw_content:
+      row.content,
+
+    type:
+      envelope.type || 'text',
+
+    fileName:
+      envelope.fileName || null,
+
+    mimeType:
+      envelope.mimeType || null,
+
+    reply_to_sender:
+      envelope.reply_to_sender || null,
+
+    reply_to_message:
+      envelope.reply_to_message || null,
+
+    is_pending: false
+  };
+}
+
+
+/* =========================================================
+   PENDING STATE
+   ========================================================= */
+
+function markMessagePending(
+  clientId,
+  pending
+) {
+
+  const message =
+    messagesCache.find(
+      m => m.client_id === clientId
+    );
+
+  if (message) {
+    message.is_pending = pending;
+  }
+}
+
+
+/* =========================================================
+   OFFLINE QUEUE
+   ========================================================= */
+
+const OFFLINE_QUEUE_KEY =
+  'chatlite_private_send_queue_v1_' +
+  (currentUser?.username || 'unknown') +
+  '_' +
+  (targetUsername || 'unknown');
+
+function getOfflineQueue() {
+
+  try {
+
+    const value =
+      localStorage.getItem(
+        OFFLINE_QUEUE_KEY
+      );
+
+    if (!value) return [];
+
+    const queue =
+      JSON.parse(value);
+
+    return Array.isArray(queue)
+      ? queue
+      : [];
+
+  } catch (error) {
+
+    console.warn(
+      'Offline queue unavailable:',
+      error
+    );
+
+    return [];
+  }
+}
+
+function saveOfflineQueue(queue) {
+
+  const safeQueue =
+    queue.filter(message => {
+
+      return message.type === 'text';
+    });
+
+  try {
+
+    localStorage.setItem(
+      OFFLINE_QUEUE_KEY,
+      JSON.stringify(safeQueue)
+    );
+
+  } catch (error) {
+
+    console.warn(
+      'Could not save offline queue:',
+      error
+    );
+  }
+}
+
+function addToOfflineQueue(message) {
+
+  const queue =
+    getOfflineQueue();
+
+  if (
+    queue.some(
+      item =>
+        item.client_id === message.client_id
+    )
+  ) {
+    return;
+  }
+
+  if (message.type !== 'text') {
+
+    console.warn(
+      'Media message could not be queued locally. ' +
+      'Please keep the chat online when sending media.'
+    );
+
+    return;
+  }
+
+  queue.push({
+
+    client_id:
+      message.client_id,
+
+    sender_username:
+      message.sender_username,
+
+    receiver_username:
+      message.receiver_username,
+
+    raw_content:
+      message.raw_content,
+
+    type:
+      'text',
+
+    content:
+      message.content,
+
+    fileName: null,
+
+    mimeType: null,
+
+    reply_to_sender:
+      message.reply_to_sender,
+
+    reply_to_message:
+      message.reply_to_message,
+
+    created_at:
+      message.created_at,
+
+    is_pending: true,
+
+    local_only: true
+  });
+
+  saveOfflineQueue(queue);
+}
+
+function removeFromOfflineQueue(clientId) {
+
+  const queue =
+    getOfflineQueue();
+
+  const filtered =
+    queue.filter(
+      item =>
+        item.client_id !== clientId
+    );
+
+  saveOfflineQueue(filtered);
+}
+
+async function sendOfflineQueue() {
+
+  if (!navigator.onLine) return;
+
+  const queue =
+    getOfflineQueue();
+
+  if (!queue.length) return;
+
+  for (const message of queue) {
+
+    try {
+
+      const { error } =
+        await supabaseClient
+          .from('messages')
+          .insert({
+
+            sender_username:
+              message.sender_username,
+
+            receiver_username:
+              message.receiver_username,
+
+            content:
+              message.raw_content
+          });
+
+      if (error) {
+
+        console.error(
+          'Offline message failed:',
+          error
+        );
+
+        continue;
+      }
+
+      removeFromOfflineQueue(
+        message.client_id
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Offline queue error:',
+        error
+      );
     }
   }
 
-  /* =========================================
-     VERY SMALL PHONES
-     ========================================= */
+  await fetchPrivateMessages();
+}
 
-  @media (max-width: 380px) {
 
-    #message-form {
-      gap: 5px;
+/* =========================================================
+   RENDER
+   ========================================================= */
+
+function renderMessages() {
+
+  const container =
+    document.getElementById('messages');
+
+  const search =
+    (
+      document.getElementById('search-input')?.value ||
+      ''
+    ).trim().toLowerCase();
+
+  container.innerHTML = '';
+
+  const filtered =
+    messagesCache.filter(message => {
+
+      if (
+        deletedForMe.has(
+          getMessageKey(message)
+        )
+      ) {
+        return false;
+      }
+
+      if (!search) return true;
+
+      return getDisplayText(message)
+        .toLowerCase()
+        .includes(search);
+    });
+
+  if (!filtered.length) {
+
+    const empty =
+      document.createElement('div');
+
+    empty.className =
+      'text-center text-slate-400 text-sm py-10';
+
+    empty.textContent =
+      search
+        ? 'No matching messages'
+        : 'No messages yet';
+
+    container.appendChild(empty);
+
+    return;
+  }
+
+  filtered.forEach(message => {
+
+    appendMessageToDOM(
+      message,
+      container
+    );
+  });
+
+  requestAnimationFrame(() => {
+
+    container.scrollTop =
+      container.scrollHeight;
+  });
+}
+
+
+/* =========================================================
+   APPEND MESSAGE
+   ========================================================= */
+
+function appendMessageToDOM(
+  message,
+  container
+) {
+
+  const isMine =
+    message.sender_username ===
+    currentUser.username;
+
+  const wrapper =
+    document.createElement('div');
+
+  wrapper.className =
+    'flex ' +
+    (isMine
+      ? 'justify-end'
+      : 'justify-start');
+
+  const bubble =
+    document.createElement('div');
+
+  bubble.className =
+    'message-bubble max-w-[82%] rounded-2xl px-3 py-2 ' +
+    (
+      isMine
+        ? 'bg-indigo-600 text-white rounded-br-md'
+        : 'bg-white border text-slate-800 rounded-bl-md'
+    );
+
+  let longPressTimer = null;
+
+  bubble.addEventListener(
+    'pointerdown',
+    () => {
+
+      longPressTimer =
+        setTimeout(() => {
+
+          openMessageOptions(message);
+
+        }, 600);
+    }
+  );
+
+  bubble.addEventListener(
+    'pointerup',
+    () => {
+
+      clearTimeout(longPressTimer);
+    }
+  );
+
+  bubble.addEventListener(
+    'pointerleave',
+    () => {
+
+      clearTimeout(longPressTimer);
+    }
+  );
+
+  let startX = 0;
+
+  bubble.addEventListener(
+    'touchstart',
+    event => {
+
+      startX =
+        event.touches[0].clientX;
+
+    },
+    { passive: true }
+  );
+
+  bubble.addEventListener(
+    'touchend',
+    event => {
+
+      const endX =
+        event.changedTouches[0].clientX;
+
+      if (
+        endX - startX > 70
+      ) {
+
+        setReply(message);
+      }
+
+    },
+    { passive: true }
+  );
+
+  if (
+    message.reply_to_message
+  ) {
+
+    const quote =
+      document.createElement('div');
+
+    quote.className =
+      'reply-quote rounded-lg px-2 py-1 mb-2';
+
+    const quoteName =
+      document.createElement('div');
+
+    quoteName.className =
+      'text-xs font-semibold';
+
+    quoteName.textContent =
+      message.reply_to_sender ===
+      currentUser.username
+        ? 'You'
+        : targetName;
+
+    const quoteText =
+      document.createElement('div');
+
+    quoteText.className =
+      'text-xs opacity-80 truncate';
+
+    quoteText.textContent =
+      message.reply_to_message;
+
+    quote.appendChild(quoteName);
+
+    quote.appendChild(quoteText);
+
+    bubble.appendChild(quote);
+  }
+
+  if (message.type === 'image') {
+
+    const img =
+      document.createElement('img');
+
+    img.src =
+      message.content;
+
+    img.className =
+      'message-image';
+
+    img.loading = 'lazy';
+
+    bubble.appendChild(img);
+
+  } else if (message.type === 'video') {
+
+    const video =
+      document.createElement('video');
+
+    video.src =
+      message.content;
+
+    video.controls = true;
+
+    video.className =
+      'message-video';
+
+    bubble.appendChild(video);
+
+  } else if (message.type === 'audio') {
+
+    const audio =
+      document.createElement('audio');
+
+    audio.src =
+      message.content;
+
+    audio.controls = true;
+
+    audio.className =
+      'message-audio';
+
+    bubble.appendChild(audio);
+
+  } else if (message.type === 'file') {
+
+    const link =
+      document.createElement('a');
+
+    link.href =
+      message.content;
+
+    link.download =
+      message.fileName ||
+      'download';
+
+    link.className =
+      'flex items-center gap-2 underline';
+
+    link.innerHTML =
+      '📎 ' +
+      escapeHtml(
+        message.fileName ||
+        'File'
+      );
+
+    bubble.appendChild(link);
+
+  } else {
+
+    const text =
+      document.createElement('div');
+
+    text.textContent =
+      message.content;
+
+    bubble.appendChild(text);
+  }
+
+  const footer =
+    document.createElement('div');
+
+  footer.className =
+    'flex items-center justify-end gap-1 mt-1';
+
+  const time =
+    document.createElement('span');
+
+  time.className =
+    'text-[10px] ' +
+    (
+      isMine
+        ? 'text-white/70'
+        : 'text-slate-400'
+    );
+
+  time.textContent =
+    formatTime(message.created_at);
+
+  footer.appendChild(time);
+
+  if (isMine) {
+
+    const status =
+      document.createElement('span');
+
+    status.className =
+      'text-[11px]';
+
+    status.textContent =
+      message.is_pending
+        ? '🕒'
+        : '✓✓';
+
+    footer.appendChild(status);
+  }
+
+  bubble.appendChild(footer);
+
+  wrapper.appendChild(bubble);
+
+  container.appendChild(wrapper);
+}
+
+
+/* =========================================================
+   DISPLAY TEXT
+   ========================================================= */
+
+function getDisplayText(message) {
+
+  if (!message) return '';
+
+  if (message.type === 'text') {
+    return message.content || '';
+  }
+
+  if (message.type === 'image') {
+    return '📷 Photo';
+  }
+
+  if (message.type === 'video') {
+    return '🎥 Video';
+  }
+
+  if (message.type === 'audio') {
+    return '🎙️ Voice note';
+  }
+
+  if (message.type === 'file') {
+    return '📎 ' +
+      (message.fileName || 'File');
+  }
+
+  return message.content || '';
+}
+
+
+/* =========================================================
+   TIME
+   ========================================================= */
+
+function formatTime(dateString) {
+
+  if (!dateString) return '';
+
+  const date =
+    new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleTimeString(
+    [],
+    {
+      hour: '2-digit',
+      minute: '2-digit'
+    }
+  );
+}
+
+
+/* =========================================================
+   MESSAGE OPTIONS
+   ========================================================= */
+
+function openMessageOptions(message) {
+
+  selectedMessage =
+    message;
+
+  document
+    .getElementById('options-preview')
+    .textContent =
+      getDisplayText(message);
+
+  const deleteEveryone =
+    document.getElementById(
+      'delete-everyone-button'
+    );
+
+  if (
+    message.sender_username ===
+      currentUser.username &&
+    message.id
+  ) {
+
+    deleteEveryone.classList.remove(
+      'hidden'
+    );
+
+  } else {
+
+    deleteEveryone.classList.add(
+      'hidden'
+    );
+  }
+
+  document
+    .getElementById(
+      'message-options-overlay'
+    )
+    .classList.remove('hidden');
+}
+
+function closeMessageOptions() {
+
+  document
+    .getElementById(
+      'message-options-overlay'
+    )
+    .classList.add('hidden');
+
+  selectedMessage = null;
+}
+
+function replyToSelected() {
+
+  if (!selectedMessage) return;
+
+  const message =
+    selectedMessage;
+
+  closeMessageOptions();
+
+  setReply(message);
+}
+
+async function copySelected() {
+
+  if (!selectedMessage) return;
+
+  const text =
+    getDisplayText(selectedMessage);
+
+  try {
+
+    await navigator.clipboard.writeText(
+      text
+    );
+
+  } catch (error) {
+
+    console.warn(
+      'Clipboard failed:',
+      error
+    );
+
+    prompt(
+      'Copy message:',
+      text
+    );
+  }
+
+  closeMessageOptions();
+}
+
+function forwardSelected() {
+
+  if (!selectedMessage) return;
+
+  alert(
+    'Forwarding can be connected to your contacts list next.'
+  );
+
+  closeMessageOptions();
+}
+
+
+/* =========================================================
+   DELETE FOR ME
+   ========================================================= */
+
+function loadDeletedForMe() {
+
+  const key =
+    'chatlite_private_deleted_' +
+    (currentUser?.username || 'unknown') +
+    '_' +
+    (targetUsername || 'unknown');
+
+  try {
+
+    const value =
+      localStorage.getItem(key);
+
+    if (!value) {
+      return new Set();
     }
 
-    #message-form button {
-      width: 38px;
-      height: 38px;
-      min-width: 38px;
+    return new Set(
+      JSON.parse(value)
+    );
+
+  } catch (error) {
+
+    return new Set();
+  }
+}
+
+function saveDeletedForMe() {
+
+  const key =
+    'chatlite_private_deleted_' +
+    (currentUser?.username || 'unknown') +
+    '_' +
+    (targetUsername || 'unknown');
+
+  try {
+
+    localStorage.setItem(
+      key,
+      JSON.stringify(
+        Array.from(deletedForMe)
+      )
+    );
+
+  } catch (error) {
+
+    console.warn(
+      'Could not save deleted-message list:',
+      error
+    );
+  }
+}
+
+function getMessageKey(message) {
+
+  return String(
+    message.id ||
+    message.client_id ||
+    (
+      message.created_at +
+      '_' +
+      message.sender_username
+    )
+  );
+}
+
+function deleteSelectedForMe() {
+
+  if (!selectedMessage) return;
+
+  const message =
+    selectedMessage;
+
+  closeMessageOptions();
+
+  deletedForMe.add(
+    getMessageKey(message)
+  );
+
+  saveDeletedForMe();
+
+  renderMessages();
+}
+
+
+/* =========================================================
+   DELETE FOR EVERYONE
+   ========================================================= */
+
+async function deleteSelectedForEveryone() {
+
+  if (!selectedMessage) return;
+
+  const message =
+    selectedMessage;
+
+  closeMessageOptions();
+
+  if (
+    message.sender_username !==
+    currentUser.username
+  ) {
+    return;
+  }
+
+  if (!message.id) {
+
+    alert(
+      'This message does not have a database ID, so it cannot be deleted for everyone.'
+    );
+
+    return;
+  }
+
+  const deletedEnvelope = {
+
+    __chatlite_private: true,
+
+    client_id:
+      message.client_id || null,
+
+    type: 'text',
+
+    content:
+      'This message was deleted.',
+
+    fileName: null,
+
+    mimeType: null,
+
+    reply_to_sender: null,
+
+    reply_to_message: null,
+
+    deleted: true
+  };
+
+  try {
+
+    const { error } =
+      await supabaseClient
+        .from('messages')
+        .update({
+
+          content:
+            JSON.stringify(
+              deletedEnvelope
+            )
+
+        })
+        .eq(
+          'id',
+          message.id
+        );
+
+    if (error) {
+
+      console.error(
+        'Delete for everyone failed:',
+        error
+      );
+
+      alert(
+        'Could not delete message:\n\n' +
+        error.message
+      );
+
+      return;
     }
 
-    #message-input {
-      padding-left: 12px;
-      padding-right: 12px;
-    }
+    await fetchPrivateMessages();
 
-    #attachment-menu button {
-      height: 58px;
+  } catch (error) {
+
+    console.error(
+      'Delete for everyone error:',
+      error
+    );
+
+    alert(
+      'Could not delete message:\n\n' +
+      (error.message || error)
+    );
+  }
+}
+
+
+/* =========================================================
+   UNDO
+   ========================================================= */
+
+function showUndo(message) {
+
+  undoTargetMessage =
+    message;
+
+  const banner =
+    document.getElementById(
+      'undo-banner'
+    );
+
+  banner.classList.remove('hidden');
+
+  clearTimeout(
+    pendingDeleteTimer
+  );
+
+  pendingDeleteTimer =
+    setTimeout(() => {
+
+      banner.classList.add(
+        'hidden'
+      );
+
+      undoTargetMessage = null;
+
+    }, 10000);
+}
+
+function undoDelete() {
+
+  if (!undoTargetMessage) return;
+
+  deletedForMe.delete(
+    getMessageKey(
+      undoTargetMessage
+    )
+  );
+
+  saveDeletedForMe();
+
+  undoTargetMessage = null;
+
+  clearTimeout(
+    pendingDeleteTimer
+  );
+
+  document
+    .getElementById('undo-banner')
+    .classList.add('hidden');
+
+  renderMessages();
+}
+
+
+/* =========================================================
+   REALTIME
+   ========================================================= */
+
+function subscribeToPrivateMessages() {
+
+  if (!supabaseClient) return;
+
+  if (messageSubscription) {
+
+    try {
+
+      supabaseClient.removeChannel(
+        messageSubscription
+      );
+
+    } catch (error) {}
+  }
+
+  messageSubscription =
+    supabaseClient
+      .channel(
+        'chatlite-private-' +
+        currentUser.username +
+        '-' +
+        targetUsername
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        payload => {
+
+          const row =
+            payload.new ||
+            payload.old;
+
+          if (!row) return;
+
+          const belongsToChat =
+            (
+              row.sender_username ===
+                currentUser.username &&
+              row.receiver_username ===
+                targetUsername
+            ) ||
+            (
+              row.sender_username ===
+                targetUsername &&
+              row.receiver_username ===
+                currentUser.username
+            );
+
+          if (!belongsToChat) return;
+
+          fetchPrivateMessages();
+        }
+      )
+      .subscribe();
+}
+
+
+/* =========================================================
+   GALLERY
+   ========================================================= */
+
+function openMediaGallery() {
+
+  const media =
+    messagesCache.filter(message => {
+
+      return (
+        message.type === 'image' ||
+        message.type === 'video'
+      );
+    });
+
+  if (!media.length) {
+
+    alert('No photos or videos in this chat.');
+
+    return;
+  }
+
+  const gallery =
+    document.getElementById(
+      'media-gallery'
+    );
+
+  if (!gallery) return;
+
+  gallery.innerHTML = '';
+
+  media.forEach(message => {
+
+    if (message.type === 'image') {
+
+      const img =
+        document.createElement('img');
+
+      img.src =
+        message.content;
+
+      gallery.appendChild(img);
+
+    } else {
+
+      const video =
+        document.createElement('video');
+
+      video.src =
+        message.content;
+
+      video.controls = true;
+
+      gallery.appendChild(video);
+    }
+  });
+}
+
+
+/* =========================================================
+   ESCAPE HELPER
+   ========================================================= */
+
+function escapeHtml(value) {
+
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+
+/* =========================================================
+   CLEANUP
+   ========================================================= */
+
+window.addEventListener(
+  'beforeunload',
+  () => {
+
+    clearInterval(
+      recordingTimerInterval
+    );
+
+    if (
+      messageSubscription &&
+      supabaseClient
+    ) {
+
+      try {
+
+        supabaseClient.removeChannel(
+          messageSubscription
+        );
+
+      } catch (error) {}
     }
   }
-</style>
+);
+  </script></body>
+</html>
