@@ -7,189 +7,475 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body class="bg-slate-950 text-slate-100 h-[100dvh] flex flex-col font-sans overflow-hidden m-0">
 
     <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
-        <!-- Header (Fixed & Non-scrolling) -->
+
+        <!-- HEADER -->
         <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
             <div class="flex items-center gap-2.5 overflow-hidden">
-                <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">&larr;</button>
-                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden" id="active-chat-avatar">U</div>
+
+                <button
+                    onclick="window.location.href='chatlist.html'"
+                    class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">
+                    &larr;
+                </button>
+
+                <div
+                    class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden"
+                    id="active-chat-avatar">
+                    U
+                </div>
+
                 <div class="overflow-hidden">
-                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Username</h3>
-                    <span class="text-[9px] text-slate-400 truncate block" id="active-chat-gender">Gender</span>
+                    <h3 class="font-bold text-xs truncate" id="active-chat-name">
+                        Username
+                    </h3>
+
+                    <span
+                        class="text-[9px] text-slate-400 truncate block"
+                        id="active-chat-gender">
+                        Gender
+                    </span>
                 </div>
             </div>
-            <!-- Header Quick Action Buttons -->
+
             <div class="flex items-center gap-1 flex-shrink-0">
-                <button onclick="toggleSearchBox()" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Search Keywords">🔍</button>
-                <button onclick="openMediaGallery('file')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Files">📁</button>
-                <button onclick="openMediaGallery('image')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Images">🖼️</button>
-                <button onclick="openMediaGallery('video')" class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer" title="Videos">🎬</button>
+
+                <button
+                    onclick="toggleSearchBox()"
+                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                    title="Search Keywords">
+                    🔍
+                </button>
+
+                <button
+                    onclick="openMediaGallery('file')"
+                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                    title="Files">
+                    📁
+                </button>
+
+                <button
+                    onclick="openMediaGallery('image')"
+                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                    title="Images">
+                    🖼️
+                </button>
+
+                <button
+                    onclick="openMediaGallery('video')"
+                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                    title="Videos">
+                    🎬
+                </button>
+
             </div>
         </div>
 
-        <!-- Hidden Search Bar Slide-down -->
-        <div id="search-container" class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
-            <input type="text" id="search-keyword-input" placeholder="Search keywords in chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
-            <button onclick="toggleSearchBox()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
+        <!-- SEARCH -->
+        <div
+            id="search-container"
+            class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
+
+            <input
+                type="text"
+                id="search-keyword-input"
+                placeholder="Search keywords in chat..."
+                oninput="filterMessages(this.value)"
+                class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
+
+            <button
+                onclick="toggleSearchBox()"
+                class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+                Close
+            </button>
+
         </div>
 
-        <!-- Messages Area (Scrollable independently underneath the fixed header) -->
-        <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
-            <!-- Messages load here -->
+        <!-- MESSAGES -->
+        <div
+            id="chat-messages"
+            class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
         </div>
 
-        <!-- Multi-Select Action Footer Bar (Hidden by default) -->
-        <div id="multi-select-bar" class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 items-center justify-between">
-            <span id="selected-count-text" class="text-xs font-semibold text-indigo-300">0 selected</span>
+        <!-- MULTI SELECT -->
+        <div
+            id="multi-select-bar"
+            class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 items-center justify-between">
+
+            <span
+                id="selected-count-text"
+                class="text-xs font-semibold text-indigo-300">
+                0 selected
+            </span>
+
             <div class="flex items-center gap-1.5">
-                <button type="button" onclick="handleMultiSelectAction('everyone')" class="px-2.5 py-1.5 bg-red-600/70 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg cursor-pointer">Delete for everyone</button>
-                <button type="button" onclick="handleMultiSelectAction('me')" class="px-2.5 py-1.5 bg-red-900/70 hover:bg-red-900 text-white text-[11px] font-bold rounded-lg cursor-pointer">Only me</button>
-                <button type="button" onclick="handleMultiSelectAction('forward')" class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg cursor-pointer">Forward</button>
-                <button type="button" onclick="exitMultiSelectMode()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg cursor-pointer">&times;</button>
+
+                <button
+                    type="button"
+                    onclick="handleMultiSelectAction('everyone')"
+                    class="px-2.5 py-1.5 bg-red-600/70 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg cursor-pointer">
+                    Delete for everyone
+                </button>
+
+                <button
+                    type="button"
+                    onclick="handleMultiSelectAction('me')"
+                    class="px-2.5 py-1.5 bg-red-900/70 hover:bg-red-900 text-white text-[11px] font-bold rounded-lg cursor-pointer">
+                    Only me
+                </button>
+
+                <button
+                    type="button"
+                    onclick="handleMultiSelectAction('forward')"
+                    class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg cursor-pointer">
+                    Forward
+                </button>
+
+                <button
+                    type="button"
+                    onclick="exitMultiSelectMode()"
+                    class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg cursor-pointer">
+                    &times;
+                </button>
+
             </div>
         </div>
 
-        <!-- Undo Notification Banner (10 Seconds Timer) -->
-        <div id="undo-banner" class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 items-center justify-between">
-            <span id="undo-text" class="text-xs text-slate-200">Message deleted.</span>
-            <button type="button" onclick="triggerUndoAction()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">Undo (<span id="undo-countdown">10</span>s)</button>
+        <!-- UNDO -->
+        <div
+            id="undo-banner"
+            class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 items-center justify-between">
+
+            <span
+                id="undo-text"
+                class="text-xs text-slate-200">
+                Message deleted.
+            </span>
+
+            <button
+                type="button"
+                onclick="triggerUndoAction()"
+                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">
+                Undo (<span id="undo-countdown">10</span>s)
+            </button>
+
         </div>
 
-        <!-- Message Options Popup Modal (Long Press Menu) -->
-        <div id="message-options-modal" class="hidden absolute inset-0 bg-slate-950/70 z-50 items-center justify-center p-4 backdrop-blur-xs">
+        <!-- MESSAGE OPTIONS -->
+        <div
+            id="message-options-modal"
+            class="hidden absolute inset-0 bg-slate-950/70 z-50 items-center justify-center p-4 backdrop-blur-xs">
+
             <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
-                <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
+
+                <div
+                    class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
+
                     <span>Message Options</span>
-                    <button onclick="closeMessageOptions()" class="text-slate-400 hover:text-white text-base cursor-pointer">&times;</button>
+
+                    <button
+                        onclick="closeMessageOptions()"
+                        class="text-slate-400 hover:text-white text-base cursor-pointer">
+                        &times;
+                    </button>
+
                 </div>
-                <div id="message-options-actions" class="flex flex-col gap-1.5">
-                    <!-- Populated dynamically based on permissions & 3-hour limit for everyone -->
+
+                <div
+                    id="message-options-actions"
+                    class="flex flex-col gap-1.5">
                 </div>
+
             </div>
         </div>
 
-        <!-- Reply Preview Bar (Shown when replying to a message) -->
-        <div id="reply-preview-bar" class="hidden p-2.5 bg-slate-900 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
+        <!-- REPLY -->
+        <div
+            id="reply-preview-bar"
+            class="hidden p-2.5 bg-slate-900 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
+
             <div class="flex flex-col border-l-2 border-indigo-500 pl-2 overflow-hidden">
-                <span class="text-[10px] font-bold text-indigo-400" id="reply-target-sender">Replying to...</span>
-                <span class="text-xs text-slate-300 truncate" id="reply-target-content">Message content...</span>
+
+                <span
+                    class="text-[10px] font-bold text-indigo-400"
+                    id="reply-target-sender">
+                    Replying to...
+                </span>
+
+                <span
+                    class="text-xs text-slate-300 truncate"
+                    id="reply-target-content">
+                    Message content...
+                </span>
+
             </div>
-            <button type="button" onclick="cancelReply()" class="text-slate-400 hover:text-white text-base px-2 cursor-pointer">&times;</button>
+
+            <button
+                type="button"
+                onclick="cancelReply()"
+                class="text-slate-400 hover:text-white text-base px-2 cursor-pointer">
+                &times;
+            </button>
+
         </div>
 
-        <!-- Media Preview Staging Bar (Shown when media/file is staged before sending) -->
-        <div id="media-preview-bar" class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
+        <!-- MEDIA PREVIEW -->
+        <div
+            id="media-preview-bar"
+            class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
+
             <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold text-indigo-400">Staged Media Preview</span>
-                <button type="button" onclick="clearStagedMedia()" class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">Discard</button>
+
+                <span class="text-xs font-semibold text-indigo-400">
+                    Staged Media Preview
+                </span>
+
+                <button
+                    type="button"
+                    onclick="clearStagedMedia()"
+                    class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">
+                    Discard
+                </button>
+
             </div>
-            <div id="preview-container" class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
-                <!-- Preview content/thumbnail -->
+
+            <div
+                id="preview-container"
+                class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
             </div>
-            <!-- Upload Progress Bar -->
+
             <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div id="upload-progress-bar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
+                <div
+                    id="upload-progress-bar"
+                    class="bg-indigo-600 h-full w-0 transition-all duration-300">
+                </div>
             </div>
-            <span class="text-[10px] text-slate-400 text-center" id="upload-status-text">Ready. Hit Send button to upload & deliver.</span>
+
+            <span
+                class="text-[10px] text-slate-400 text-center"
+                id="upload-status-text">
+                Ready. Hit Send button to upload & deliver.
+            </span>
+
         </div>
 
-        <!-- Hidden File Inputs -->
-        <input type="file" id="media-file-input" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" onchange="stageFileSelected(event)">
-        <input type="file" id="camera-photo-input" class="hidden" accept="image/*" capture="environment" onchange="stageFileSelected(event)">
-        <input type="file" id="camera-video-input" class="hidden" accept="video/*" capture="environment" onchange="stageFileSelected(event)">
+        <!-- FILE INPUTS -->
+        <input
+            type="file"
+            id="media-file-input"
+            class="hidden"
+            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+            onchange="stageFileSelected(event)">
 
-        <!-- Attachment Options Popup Menu -->
-        <div id="attachment-menu" class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
-            <button type="button" onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+        <input
+            type="file"
+            id="camera-photo-input"
+            class="hidden"
+            accept="image/*"
+            capture="environment"
+            onchange="stageFileSelected(event)">
+
+        <input
+            type="file"
+            id="camera-video-input"
+            class="hidden"
+            accept="video/*"
+            capture="environment"
+            onchange="stageFileSelected(event)">
+
+        <!-- ATTACHMENT MENU -->
+        <div
+            id="attachment-menu"
+            class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
+
+            <button
+                type="button"
+                onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();"
+                class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
                 📁 File / Document
             </button>
-            <button type="button" onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+
+            <button
+                type="button"
+                onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();"
+                class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
                 📷 Take Photo
             </button>
-            <button type="button" onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();" class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+
+            <button
+                type="button"
+                onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();"
+                class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
                 📹 Record Video Note
             </button>
+
         </div>
 
-        <!-- Media Gallery Modal Drawer -->
-        <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex-col p-4 backdrop-blur-sm">
+        <!-- MEDIA GALLERY -->
+        <div
+            id="media-gallery-modal"
+            class="hidden absolute inset-0 bg-slate-950/90 z-40 flex-col p-4 backdrop-blur-sm">
+
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                <h3 class="font-bold text-sm text-white" id="gallery-title">Chat Media</h3>
-                <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
+
+                <h3
+                    class="font-bold text-sm text-white"
+                    id="gallery-title">
+                    Chat Media
+                </h3>
+
+                <button
+                    onclick="closeMediaGallery()"
+                    class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+                    Close
+                </button>
+
             </div>
-            <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
-                <!-- Gallery items populated here -->
+
+            <div
+                id="gallery-content-grid"
+                class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
             </div>
+
         </div>
 
-        <!-- Bottom Input Bar (Fixed & Always Visible) -->
-        <form id="chat-form" onsubmit="handleFormSubmit(event)" class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
-            <button type="button" id="attach-btn" onclick="toggleAttachmentMenu()" class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0" title="Attach Media">
+        <!-- INPUT -->
+        <form
+            id="chat-form"
+            onsubmit="handleFormSubmit(event)"
+            class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
+
+            <button
+                type="button"
+                id="attach-btn"
+                onclick="toggleAttachmentMenu()"
+                class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0"
+                title="Attach Media">
                 +
             </button>
-            
-            <!-- Standard Text Input -->
-            <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
-            
-            <!-- Live Recording Indicator & Controls UI (Hidden by default) -->
-            <div id="recording-ui" class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
+
+            <input
+                type="text"
+                id="message-input"
+                placeholder="Type a message..."
+                class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
+
+            <!-- RECORDING UI -->
+            <div
+                id="recording-ui"
+                class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
+
                 <div class="flex items-center gap-2">
+
                     <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
-                    <span id="recording-timer" class="text-xs font-semibold text-red-400">0:00</span>
+
+                    <span
+                        id="recording-timer"
+                        class="text-xs font-semibold text-red-400">
+                        0:00
+                    </span>
+
                 </div>
+
                 <div class="flex items-center gap-1">
-                    <button type="button" id="pause-rec-btn" onclick="togglePauseRecording()" class="text-[11px] text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">⏸ Pause</button>
-                    <button type="button" onclick="stopRecordingOnly()" class="text-[11px] text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">⏹ Stop</button>
-                    <button type="button" onclick="cancelRecording()" class="text-[11px] text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Discard</button>
+
+                    <button
+                        type="button"
+                        id="pause-rec-btn"
+                        onclick="togglePauseRecording()"
+                        class="text-[11px] text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+                        ⏸ Pause
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="stopRecordingOnly()"
+                        class="text-[11px] text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">
+                        ⏹ Stop
+                    </button>
+
+                    <button
+                        type="button"
+                        onclick="cancelRecording()"
+                        class="text-[11px] text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+                        Discard
+                    </button>
+
                 </div>
             </div>
 
-            <button type="button" id="mic-btn" onclick="startVoiceRecording()" class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0" title="Record Voice Note">
+            <button
+                type="button"
+                id="mic-btn"
+                onclick="startVoiceRecording()"
+                class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0"
+                title="Record Voice Note">
                 🎤
             </button>
-            
-            <button type="submit" id="send-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">Send</button>
+
+            <button
+                type="submit"
+                id="send-btn"
+                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">
+                Send
+            </button>
+
         </form>
+
     </div>
 
     <script src="supabase.js"></script>
+
     <script>
         const currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
+
         const urlParams = new URLSearchParams(window.location.search);
-        const targetUsername = urlParams.get('to');
-        const targetName = urlParams.get('name');
-        const targetGender = urlParams.get('gender');
+
+        const targetUsername = (urlParams.get('to') || '').trim();
+        const targetName = (urlParams.get('name') || '').trim();
+        const targetGender = (urlParams.get('gender') || '').trim();
 
         if (!currentUser || !targetUsername) {
             window.location.href = 'chatlist.html';
         }
 
-        document.getElementById('active-chat-name').textContent = targetName || targetUsername;
-        document.getElementById('active-chat-gender').textContent = `@${targetUsername} • ${targetGender || 'Member'}`;
-        document.getElementById('active-chat-avatar').textContent = (targetName || targetUsername).charAt(0).toUpperCase();
+        document.getElementById('active-chat-name').textContent =
+            targetName || targetUsername;
 
-        const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
-        const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
+        document.getElementById('active-chat-gender').textContent =
+            `@${targetUsername} • ${targetGender || 'Member'}`;
+
+        document.getElementById('active-chat-avatar').textContent =
+            (targetName || targetUsername).charAt(0).toUpperCase();
+
+        const STORAGE_KEY =
+            `chatlite_cache_${currentUser.username}_${targetUsername}`;
+
+        const QUEUE_KEY =
+            `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
 
         let messageSubscription = null;
         let messagesCache = loadLocalCache();
+
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedBlob = null;
-        let stagedPayload = null; 
+        let stagedPayload = null;
+
         let isRecording = false;
         let isPaused = false;
+
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
+
         let replyingToMessage = null;
 
-        // Multi-select state variables
         let isMultiSelectMode = false;
         let selectedMessageIds = new Set();
 
-        // Undo & Deletion management variables
         let pendingDeleteTimer = null;
         let undoTargetMessage = null;
 
@@ -202,13 +488,17 @@
                 const data = localStorage.getItem(STORAGE_KEY);
                 return data ? JSON.parse(data) : [];
             } catch (e) {
+                console.error('Cache read error:', e);
                 return [];
             }
         }
 
         function saveLocalCache(messages) {
             messagesCache = messages;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(messages)
+            );
         }
 
         function loadOfflineQueue() {
@@ -221,7 +511,10 @@
         }
 
         function saveOfflineQueue(queue) {
-            localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+            localStorage.setItem(
+                QUEUE_KEY,
+                JSON.stringify(queue)
+            );
         }
 
         function toggleAttachmentMenu() {
@@ -230,779 +523,2310 @@
         }
 
         function toggleSearchBox() {
-            const searchBar = document.getElementById('search-container');
+            const searchBar =
+                document.getElementById('search-container');
+
             searchBar.classList.toggle('hidden');
+
             if (!searchBar.classList.contains('hidden')) {
-                document.getElementById('search-keyword-input').focus();
+                document
+                    .getElementById('search-keyword-input')
+                    .focus();
             } else {
                 filterMessages('');
             }
         }
 
+        /*
+         * FETCH MESSAGES
+         */
         async function fetchMessages() {
-            if (navigator.onLine) {
-                await flushOfflineQueue();
+
+            if (!navigator.onLine) {
+                renderMessages(messagesCache);
+                return;
             }
 
-            const { data: messages, error } = await supabaseClient
-                .from('messages')
-                .select('*')
-                .or(`and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username})`)
-                .order('created_at', { ascending: true });
+            await flushOfflineQueue();
+
+            const { data: messages, error } =
+                await supabaseClient
+                    .from('messages')
+                    .select('*')
+                    .or(
+                        `and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username})`
+                    )
+                    .order('created_at', {
+                        ascending: true
+                    });
 
             if (error) {
-                console.error('Error fetching messages:', error);
+                console.error(
+                    'Error fetching messages:',
+                    error
+                );
+
+                /*
+                 * Do NOT wipe the local conversation when
+                 * the server temporarily fails.
+                 */
+                renderMessages(messagesCache);
                 return;
             }
 
             if (messages) {
+
                 saveLocalCache(messages);
+
                 renderMessages(messagesCache);
-                markIncomingMessagesAsRead(messages);
+
+                await markIncomingMessagesAsRead(messages);
             }
         }
 
+        /*
+         * READ RECEIPTS
+         */
         async function markIncomingMessagesAsRead(messages) {
+
+            const hiddenKey =
+                `chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`;
+
             let hiddenForMe = [];
+
             try {
-                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
-            } catch(e) {}
+                hiddenForMe =
+                    JSON.parse(
+                        localStorage.getItem(hiddenKey) || '[]'
+                    );
+            } catch (e) {}
 
             const unreadIds = messages
-                .filter(m => m.receiver_username === currentUser.username && !m.is_read && !hiddenForMe.includes(m.id))
+                .filter(
+                    m =>
+                        m.receiver_username === currentUser.username &&
+                        !m.is_read &&
+                        !hiddenForMe.includes(m.id)
+                )
                 .map(m => m.id);
 
-            if (unreadIds.length > 0) {
+            if (unreadIds.length === 0) return;
+
+            const { error } =
                 await supabaseClient
                     .from('messages')
-                    .update({ is_read: true })
+                    .update({
+                        is_read: true
+                    })
                     .in('id', unreadIds);
+
+            if (error) {
+                console.warn(
+                    'Could not update read status:',
+                    error
+                );
             }
         }
 
+        /*
+         * RENDER
+         */
         function renderMessages(messages) {
-            const container = document.getElementById('chat-messages');
+
+            const container =
+                document.getElementById('chat-messages');
+
             container.innerHTML = '';
 
+            const hiddenKey =
+                `chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`;
+
             let hiddenForMe = [];
+
             try {
-                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
-            } catch(e) {}
+                hiddenForMe =
+                    JSON.parse(
+                        localStorage.getItem(hiddenKey) || '[]'
+                    );
+            } catch (e) {}
 
-            const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
+            const filtered =
+                messages.filter(
+                    m =>
+                        !hiddenForMe.includes(m.id) &&
+                        !m.is_deleted_for_everyone
+                );
 
-            const offlineQueue = loadOfflineQueue();
-            const combinedList = [...filtered, ...offlineQueue];
-            
-            combinedList.sort((a, b) => new Date(a.created_at || Date.now()) - new Date(b.created_at || Date.now()));
+            const offlineQueue =
+                loadOfflineQueue();
 
-            combinedList.forEach(msg => appendMessageToDOM(msg, false));
+            const combinedList = [
+                ...filtered,
+                ...offlineQueue
+            ];
 
-            container.scrollTop = container.scrollHeight;
+            combinedList.sort(
+                (a, b) =>
+                    new Date(
+                        a.created_at || Date.now()
+                    ) -
+                    new Date(
+                        b.created_at || Date.now()
+                    )
+            );
+
+            combinedList.forEach(
+                msg => appendMessageToDOM(msg, false)
+            );
+
+            container.scrollTop =
+                container.scrollHeight;
         }
 
+        /*
+         * SEARCH
+         */
         function filterMessages(keyword) {
-            const term = keyword.toLowerCase();
+
+            const term =
+                keyword.toLowerCase().trim();
+
             if (!term) {
                 renderMessages(messagesCache);
                 return;
             }
-            const filtered = messagesCache.filter(m => {
-                if (m.is_deleted_for_everyone) return false;
-                if ((m.message_type || 'text') === 'text' && m.content.toLowerCase().includes(term)) return true;
-                if ((m.message_type || 'text') === keyword) return true;
-                return false;
-            });
+
+            const filtered =
+                messagesCache.filter(m => {
+
+                    if (m.is_deleted_for_everyone) {
+                        return false;
+                    }
+
+                    const type =
+                        m.message_type || 'text';
+
+                    if (
+                        type === 'text' &&
+                        typeof m.content === 'string' &&
+                        m.content.toLowerCase().includes(term)
+                    ) {
+                        return true;
+                    }
+
+                    if (type === term) {
+                        return true;
+                    }
+
+                    return false;
+                });
+
             renderMessages(filtered);
         }
 
-        function appendMessageToDOM(msg, scrollToBottom = true) {
-            const container = document.getElementById('chat-messages');
-            const isMe = msg.sender_username === currentUser.username;
+        /*
+         * MESSAGE DOM
+         */
+        function appendMessageToDOM(
+            msg,
+            scrollToBottom = true
+        ) {
 
-            const wrapper = document.createElement('div');
-            wrapper.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} space-y-1 message-row relative transition-transform duration-200 select-none`;
-            if (msg.id) wrapper.setAttribute('data-id', msg.id);
+            const container =
+                document.getElementById('chat-messages');
 
-            const isSelected = msg.id && selectedMessageIds.has(msg.id);
+            const isMe =
+                msg.sender_username === currentUser.username;
 
-            const rowFlex = document.createElement('div');
-            rowFlex.className = `flex items-center gap-2 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`;
+            const wrapper =
+                document.createElement('div');
 
-            const checkboxEl = document.createElement('div');
-            checkboxEl.className = `w-5 h-5 rounded-full border border-slate-600 items-center justify-center text-xs transition-all flex-shrink-0 ${isMultiSelectMode ? 'flex' : 'hidden'} ${isSelected ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-900'}`;
-            checkboxEl.innerHTML = isSelected ? '✓' : '';
+            wrapper.className =
+                `flex flex-col ${
+                    isMe ? 'items-end' : 'items-start'
+                } space-y-1 message-row relative transition-transform duration-200 select-none`;
+
+            if (msg.id) {
+                wrapper.setAttribute(
+                    'data-id',
+                    msg.id
+                );
+            }
+
+            const isSelected =
+                msg.id &&
+                selectedMessageIds.has(msg.id);
+
+            const rowFlex =
+                document.createElement('div');
+
+            rowFlex.className =
+                `flex items-center gap-2 max-w-[85%] ${
+                    isMe
+                        ? 'flex-row-reverse'
+                        : 'flex-row'
+                }`;
+
+            const checkboxEl =
+                document.createElement('div');
+
+            checkboxEl.className =
+                `w-5 h-5 rounded-full border border-slate-600 items-center justify-center text-xs transition-all flex-shrink-0 ${
+                    isMultiSelectMode
+                        ? 'flex'
+                        : 'hidden'
+                } ${
+                    isSelected
+                        ? 'bg-indigo-600 border-indigo-500 text-white'
+                        : 'bg-slate-900'
+                }`;
+
+            checkboxEl.innerHTML =
+                isSelected ? '✓' : '';
+
             rowFlex.appendChild(checkboxEl);
 
             if (isSelected) {
-                wrapper.classList.add('bg-indigo-950/30', 'p-2', 'rounded-xl');
+                wrapper.classList.add(
+                    'bg-indigo-950/30',
+                    'p-2',
+                    'rounded-xl'
+                );
             }
 
             let pressTimer = null;
+
             const startPress = () => {
-                if (msg.is_offline_pending) return; 
+
+                if (msg.is_offline_pending) {
+                    return;
+                }
+
                 pressTimer = setTimeout(() => {
+
                     if (isMultiSelectMode) {
-                        if (msg.id) toggleMessageSelection(msg.id);
+
+                        if (msg.id) {
+                            toggleMessageSelection(
+                                msg.id
+                            );
+                        }
+
                     } else {
+
                         openMessageOptions(msg);
+
                     }
+
                 }, 600);
             };
+
             const cancelPress = () => {
-                if (pressTimer) clearTimeout(pressTimer);
+
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                }
             };
 
-            wrapper.addEventListener('touchstart', startPress);
-            wrapper.addEventListener('touchend', cancelPress);
-            wrapper.addEventListener('touchmove', cancelPress);
-            wrapper.addEventListener('mousedown', startPress);
-            wrapper.addEventListener('mouseup', cancelPress);
-            wrapper.addEventListener('mouseleave', cancelPress);
+            wrapper.addEventListener(
+                'touchstart',
+                startPress
+            );
 
-            wrapper.addEventListener('click', (e) => {
-                if (isMultiSelectMode && msg.id) {
-                    toggleMessageSelection(msg.id);
-                    e.stopPropagation();
-                }
-            });
+            wrapper.addEventListener(
+                'touchend',
+                cancelPress
+            );
 
-            wrapper.oncontextmenu = (e) => {
-                e.preventDefault();
-                if (!msg.is_offline_pending && msg.id) {
-                    if (!isMultiSelectMode) {
-                        openMessageOptions(msg);
+            wrapper.addEventListener(
+                'touchmove',
+                cancelPress
+            );
+
+            wrapper.addEventListener(
+                'mousedown',
+                startPress
+            );
+
+            wrapper.addEventListener(
+                'mouseup',
+                cancelPress
+            );
+
+            wrapper.addEventListener(
+                'mouseleave',
+                cancelPress
+            );
+
+            wrapper.addEventListener(
+                'click',
+                e => {
+
+                    if (
+                        isMultiSelectMode &&
+                        msg.id
+                    ) {
+
+                        toggleMessageSelection(
+                            msg.id
+                        );
+
+                        e.stopPropagation();
                     }
+                }
+            );
+
+            wrapper.oncontextmenu = e => {
+
+                e.preventDefault();
+
+                if (
+                    !msg.is_offline_pending &&
+                    msg.id &&
+                    !isMultiSelectMode
+                ) {
+                    openMessageOptions(msg);
                 }
             };
 
             let touchStartX = 0;
             let touchCurrentX = 0;
 
-            wrapper.addEventListener('touchstart', (e) => {
-                if (isMultiSelectMode) return;
-                touchStartX = e.touches[0].clientX;
-            }, { passive: true });
+            wrapper.addEventListener(
+                'touchstart',
+                e => {
 
-            wrapper.addEventListener('touchmove', (e) => {
-                if (isMultiSelectMode) return;
-                touchCurrentX = e.touches[0].clientX;
-                const diff = touchCurrentX - touchStartX;
-                if (diff > 0 && diff < 100) {
-                    wrapper.style.transform = `translateX(${diff}px)`;
+                    if (isMultiSelectMode) {
+                        return;
+                    }
+
+                    touchStartX =
+                        e.touches[0].clientX;
+
+                },
+                {
+                    passive: true
                 }
-            }, { passive: true });
+            );
 
-            wrapper.addEventListener('touchend', () => {
-                if (isMultiSelectMode) return;
-                const diff = touchCurrentX - touchStartX;
-                wrapper.style.transform = 'translateX(0px)';
-                if (diff > 60) {
-                    setReplyTarget(msg);
+            wrapper.addEventListener(
+                'touchmove',
+                e => {
+
+                    if (isMultiSelectMode) {
+                        return;
+                    }
+
+                    touchCurrentX =
+                        e.touches[0].clientX;
+
+                    const diff =
+                        touchCurrentX -
+                        touchStartX;
+
+                    if (
+                        diff > 0 &&
+                        diff < 100
+                    ) {
+                        wrapper.style.transform =
+                            `translateX(${diff}px)`;
+                    }
+
+                },
+                {
+                    passive: true
                 }
-                touchStartX = 0;
-                touchCurrentX = 0;
-            });
+            );
 
-            const bubble = document.createElement('div');
-            bubble.className = `flex-1 px-3 py-2 rounded-2xl text-sm ${
-                isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
-            }`;
+            wrapper.addEventListener(
+                'touchend',
+                () => {
+
+                    if (isMultiSelectMode) {
+                        return;
+                    }
+
+                    const diff =
+                        touchCurrentX -
+                        touchStartX;
+
+                    wrapper.style.transform =
+                        'translateX(0px)';
+
+                    if (diff > 60) {
+                        setReplyTarget(msg);
+                    }
+
+                    touchStartX = 0;
+                    touchCurrentX = 0;
+
+                }
+            );
+
+            const bubble =
+                document.createElement('div');
+
+            bubble.className =
+                `flex-1 px-3 py-2 rounded-2xl text-sm ${
+                    isMe
+                        ? 'bg-indigo-600 text-white rounded-br-none'
+                        : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
+                }`;
 
             if (msg.reply_to) {
-                const replySnippet = document.createElement('div');
-                replySnippet.className = `mb-1 p-1.5 rounded text-xs border-l-2 ${isMe ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100' : 'bg-slate-900/60 border-indigo-500 text-slate-300'}`;
-                replySnippet.innerHTML = `<span class="font-bold block text-[10px] opacity-90">${msg.reply_to.sender}</span><span class="truncate block">${msg.reply_to.content}</span>`;
+
+                const replySnippet =
+                    document.createElement('div');
+
+                const sender =
+                    msg.reply_to.sender || '';
+
+                const replyContent =
+                    msg.reply_to.content || '';
+
+                replySnippet.className =
+                    `mb-1 p-1.5 rounded text-xs border-l-2 ${
+                        isMe
+                            ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100'
+                            : 'bg-slate-900/60 border-indigo-500 text-slate-300'
+                    }`;
+
+                const senderSpan =
+                    document.createElement('span');
+
+                senderSpan.className =
+                    'font-bold block text-[10px] opacity-90';
+
+                senderSpan.textContent =
+                    sender;
+
+                const contentSpan =
+                    document.createElement('span');
+
+                contentSpan.className =
+                    'truncate block';
+
+                contentSpan.textContent =
+                    replyContent;
+
+                replySnippet.appendChild(senderSpan);
+                replySnippet.appendChild(contentSpan);
+
                 bubble.appendChild(replySnippet);
             }
 
-            const contentBody = document.createElement('div');
-            const type = msg.message_type || 'text';
-            
+            const contentBody =
+                document.createElement('div');
+
+            const type =
+                msg.message_type || 'text';
+
             if (type === 'image') {
-                contentBody.innerHTML = `<img src="${msg.content}" class="rounded-xl max-h-60 w-full object-cover cursor-pointer" onclick="if(!isMultiSelectMode) window.open('${msg.content}')">`;
+
+                const image =
+                    document.createElement('img');
+
+                image.src = msg.content;
+                image.className =
+                    'rounded-xl max-h-60 w-full object-cover cursor-pointer';
+
+                image.onclick = () => {
+                    if (!isMultiSelectMode) {
+                        window.open(msg.content);
+                    }
+                };
+
+                contentBody.appendChild(image);
+
             } else if (type === 'video') {
-                contentBody.innerHTML = `<video src="${msg.content}" controls class="rounded-xl max-h-60 w-full"></video>`;
+
+                const video =
+                    document.createElement('video');
+
+                video.src = msg.content;
+                video.controls = true;
+
+                video.className =
+                    'rounded-xl max-h-60 w-full';
+
+                contentBody.appendChild(video);
+
             } else if (type === 'audio') {
-                const audioId = 'audio_' + Math.random().toString(36).substring(2, 9);
+
+                const audioId =
+                    'audio_' +
+                    Math.random()
+                        .toString(36)
+                        .substring(2, 9);
+
                 contentBody.innerHTML = `
                     <div class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]" data-audio-container>
-                        <button type="button" onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)" class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">▶</button>
-                        <audio id="${audioId}" src="${msg.content}" preload="metadata"></audio>
+                        <button
+                            type="button"
+                            onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)"
+                            class="w-8 h-8 rounded-full bg-white/25 hover:bg-white/40 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">
+                            ▶
+                        </button>
+
+                        <audio
+                            id="${audioId}"
+                            src="${msg.content}"
+                            preload="metadata">
+                        </audio>
+
                         <div class="flex flex-col flex-1 gap-1">
+
                             <div class="flex justify-between items-center text-[10px] opacity-85">
-                                <span class="audio-current-time">0:00</span>
-                                <button type="button" onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)" class="bg-white/15 hover:bg-white/25 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">1x</button>
+
+                                <span class="audio-current-time">
+                                    0:00
+                                </span>
+
+                                <button
+                                    type="button"
+                                    onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)"
+                                    class="bg-white/15 hover:bg-white/25 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">
+                                    1x
+                                </button>
+
                             </div>
-                            <input type="range" value="0" max="100" step="0.1" oninput="seekAudio('${audioId}', this.value)" class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
+
+                            <input
+                                type="range"
+                                value="0"
+                                max="100"
+                                step="0.1"
+                                oninput="seekAudio('${audioId}', this.value)"
+                                class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
+
                         </div>
                     </div>
                 `;
 
                 setTimeout(() => {
-                    const audioEl = document.getElementById(audioId);
-                    if (!audioEl) return;
-                    const c = audioEl.closest('[data-audio-container]');
-                    const rangeEl = c.querySelector('.audio-range');
-                    const timeEl = c.querySelector('.audio-current-time');
 
-                    audioEl.addEventListener('loadedmetadata', () => {
-                        timeEl.textContent = formatAudioTime(audioEl.duration);
-                    });
-                    audioEl.addEventListener('timeupdate', () => {
-                        if (!audioEl.duration) return;
-                        rangeEl.value = (audioEl.currentTime / audioEl.duration) * 100;
-                        timeEl.textContent = formatAudioTime(audioEl.currentTime);
-                    });
-                    audioEl.addEventListener('ended', () => {
-                        c.querySelector('button').textContent = '▶';
-                        audioEl.currentTime = 0;
-                    });
+                    const audioEl =
+                        document.getElementById(audioId);
+
+                    if (!audioEl) {
+                        return;
+                    }
+
+                    const c =
+                        audioEl.closest(
+                            '[data-audio-container]'
+                        );
+
+                    if (!c) {
+                        return;
+                    }
+
+                    const rangeEl =
+                        c.querySelector(
+                            '.audio-range'
+                        );
+
+                    const timeEl =
+                        c.querySelector(
+                            '.audio-current-time'
+                        );
+
+                    audioEl.addEventListener(
+                        'loadedmetadata',
+                        () => {
+                            timeEl.textContent =
+                                formatAudioTime(
+                                    audioEl.duration
+                                );
+                        }
+                    );
+
+                    audioEl.addEventListener(
+                        'timeupdate',
+                        () => {
+
+                            if (!audioEl.duration) {
+                                return;
+                            }
+
+                            rangeEl.value =
+                                (
+                                    audioEl.currentTime /
+                                    audioEl.duration
+                                ) * 100;
+
+                            timeEl.textContent =
+                                formatAudioTime(
+                                    audioEl.currentTime
+                                );
+                        }
+                    );
+
+                    audioEl.addEventListener(
+                        'ended',
+                        () => {
+
+                            c.querySelector(
+                                'button'
+                            ).textContent = '▶';
+
+                            audioEl.currentTime = 0;
+                        }
+                    );
+
                 }, 50);
 
             } else if (type === 'file') {
-                contentBody.innerHTML = `<a href="${msg.content}" download="file" class="flex items-center gap-2 underline text-xs font-semibold py-1">📁 File Attachment</a>`;
+
+                const link =
+                    document.createElement('a');
+
+                link.href = msg.content;
+                link.download = 'file';
+
+                link.className =
+                    'flex items-center gap-2 underline text-xs font-semibold py-1';
+
+                link.textContent =
+                    '📁 File Attachment';
+
+                contentBody.appendChild(link);
+
             } else {
-                contentBody.textContent = msg.content || '';
+
+                contentBody.textContent =
+                    msg.content || '';
             }
-            
+
             bubble.appendChild(contentBody);
             rowFlex.appendChild(bubble);
 
-            const metaRow = document.createElement('div');
-            metaRow.className = `flex items-center gap-1 px-1 text-[10px] text-slate-400 ${isMe ? 'mr-7' : 'ml-7'}`;
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.textContent = new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const metaRow =
+                document.createElement('div');
+
+            metaRow.className =
+                `flex items-center gap-1 px-1 text-[10px] text-slate-400 ${
+                    isMe ? 'mr-7' : 'ml-7'
+                }`;
+
+            const timeSpan =
+                document.createElement('span');
+
+            timeSpan.textContent =
+                new Date(
+                    msg.created_at || Date.now()
+                ).toLocaleTimeString(
+                    [],
+                    {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }
+                );
+
             metaRow.appendChild(timeSpan);
 
             if (isMe) {
-                const tickSpan = document.createElement('span');
-                tickSpan.className = 'font-bold text-xs ';
+
+                const tickSpan =
+                    document.createElement('span');
+
+                tickSpan.className =
+                    'font-bold text-xs';
+
                 if (msg.is_offline_pending) {
-                    tickSpan.textContent = '🕒';
-                    tickSpan.title = 'Pending (Waiting for network)';
+
+                    tickSpan.textContent =
+                        '🕒';
+
+                    tickSpan.title =
+                        'Pending (Waiting for network)';
+
                 } else {
-                    tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
-                    tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+
+                    tickSpan.textContent =
+                        msg.is_read
+                            ? '✓✓'
+                            : '✓';
+
+                    tickSpan.classList.add(
+                        msg.is_read
+                            ? 'text-indigo-300'
+                            : 'text-slate-500'
+                    );
                 }
+
                 metaRow.appendChild(tickSpan);
             }
 
             wrapper.appendChild(rowFlex);
             wrapper.appendChild(metaRow);
+
             container.appendChild(wrapper);
 
             if (scrollToBottom) {
-                container.scrollTop = container.scrollHeight;
+                container.scrollTop =
+                    container.scrollHeight;
             }
         }
 
+        /*
+         * MULTI SELECT
+         */
         function enterMultiSelectMode(msg) {
+
             isMultiSelectMode = true;
+
             selectedMessageIds.clear();
+
             if (msg && msg.id) {
                 selectedMessageIds.add(msg.id);
             }
-            const bar = document.getElementById('multi-select-bar');
+
+            const bar =
+                document.getElementById(
+                    'multi-select-bar'
+                );
+
             bar.classList.remove('hidden');
             bar.classList.add('flex');
+
             updateMultiSelectUI();
+
             renderMessages(messagesCache);
         }
 
         function exitMultiSelectMode() {
+
             isMultiSelectMode = false;
+
             selectedMessageIds.clear();
-            const bar = document.getElementById('multi-select-bar');
+
+            const bar =
+                document.getElementById(
+                    'multi-select-bar'
+                );
+
             bar.classList.remove('flex');
             bar.classList.add('hidden');
+
             renderMessages(messagesCache);
         }
 
         function toggleMessageSelection(msgId) {
-            if (selectedMessageIds.has(msgId)) {
+
+            if (
+                selectedMessageIds.has(msgId)
+            ) {
                 selectedMessageIds.delete(msgId);
             } else {
                 selectedMessageIds.add(msgId);
             }
 
-            if (selectedMessageIds.size === 0) {
+            if (
+                selectedMessageIds.size === 0
+            ) {
                 exitMultiSelectMode();
                 return;
             }
 
             updateMultiSelectUI();
+
             renderMessages(messagesCache);
         }
 
         function updateMultiSelectUI() {
-            const countText = document.getElementById('selected-count-text');
-            countText.textContent = `${selectedMessageIds.size} selected`;
+
+            const countText =
+                document.getElementById(
+                    'selected-count-text'
+                );
+
+            countText.textContent =
+                `${selectedMessageIds.size} selected`;
         }
 
         function handleMultiSelectAction(actionType) {
-            if (selectedMessageIds.size === 0) return;
 
-            const selectedMsgs = messagesCache.filter(m => selectedMessageIds.has(m.id));
+            if (
+                selectedMessageIds.size === 0
+            ) {
+                return;
+            }
+
+            const selectedMsgs =
+                messagesCache.filter(
+                    m =>
+                        selectedMessageIds.has(m.id)
+                );
 
             if (actionType === 'forward') {
-                const firstMsg = selectedMsgs[0];
+
+                const firstMsg =
+                    selectedMsgs[0];
+
                 if (firstMsg) {
-                    localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: firstMsg.content, type: firstMsg.message_type || 'text' }));
-                    window.location.href = 'chatlist.html?forward=true';
+
+                    localStorage.setItem(
+                        'chatlite_forward_payload',
+                        JSON.stringify({
+                            content:
+                                firstMsg.content,
+                            type:
+                                firstMsg.message_type ||
+                                'text'
+                        })
+                    );
+
+                    window.location.href =
+                        'chatlist.html?forward=true';
                 }
+
                 exitMultiSelectMode();
                 return;
             }
 
             if (actionType === 'me') {
+
+                const key =
+                    `chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`;
+
                 let hiddenForMe = [];
+
                 try {
-                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
-                } catch(e) {}
+                    hiddenForMe =
+                        JSON.parse(
+                            localStorage.getItem(key) ||
+                            '[]'
+                        );
+                } catch (e) {}
 
                 selectedMessageIds.forEach(id => {
-                    if (!hiddenForMe.includes(id)) hiddenForMe.push(id);
+
+                    if (
+                        !hiddenForMe.includes(id)
+                    ) {
+                        hiddenForMe.push(id);
+                    }
+
                 });
-                localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+
+                localStorage.setItem(
+                    key,
+                    JSON.stringify(hiddenForMe)
+                );
 
                 exitMultiSelectMode();
+
                 renderMessages(messagesCache);
-                showUndoBanner(10, () => fetchMessages());
+
+                showUndoBanner(
+                    10,
+                    () => fetchMessages()
+                );
+
             } else if (actionType === 'everyone') {
-                const now = new Date().getTime();
+
+                const now =
+                    Date.now();
+
                 const validIds = [];
 
                 selectedMsgs.forEach(msg => {
-                    const isSender = msg.sender_username === currentUser.username;
-                    const diffHours = (now - new Date(msg.created_at).getTime()) / (1000 * 60 * 60);
-                    if (isSender && diffHours <= 3) {
-                        msg.is_deleted_for_everyone = true;
+
+                    const isSender =
+                        msg.sender_username ===
+                        currentUser.username;
+
+                    const messageTime =
+                        new Date(
+                            msg.created_at
+                        ).getTime();
+
+                    const diffHours =
+                        (
+                            now - messageTime
+                        ) /
+                        (1000 * 60 * 60);
+
+                    if (
+                        isSender &&
+                        diffHours <= 3
+                    ) {
+
+                        msg.is_deleted_for_everyone =
+                            true;
+
                         validIds.push(msg.id);
                     }
+
                 });
 
                 exitMultiSelectMode();
+
                 renderMessages(messagesCache);
 
-                showUndoBanner(10, async () => {
-                    if (validIds.length > 0) {
-                        await supabaseClient
-                            .from('messages')
-                            .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
-                            .in('id', validIds);
+                showUndoBanner(
+                    10,
+                    async () => {
+
+                        if (
+                            validIds.length > 0
+                        ) {
+
+                            const {
+                                error
+                            } =
+                                await supabaseClient
+                                    .from('messages')
+                                    .update({
+                                        is_deleted_for_everyone:
+                                            true,
+                                        content:
+                                            '[Message deleted]',
+                                        message_type:
+                                            'text'
+                                    })
+                                    .in(
+                                        'id',
+                                        validIds
+                                    );
+
+                            if (error) {
+                                console.error(
+                                    'Delete-for-everyone error:',
+                                    error
+                                );
+                            }
+                        }
+
+                        await fetchMessages();
                     }
-                    fetchMessages();
-                });
+                );
             }
         }
 
+        /*
+         * REPLY
+         */
         function setReplyTarget(msg) {
-            if (isMultiSelectMode) return;
+
+            if (isMultiSelectMode) {
+                return;
+            }
+
             replyingToMessage = msg;
-            const replyBar = document.getElementById('reply-preview-bar');
-            const senderNameEl = document.getElementById('reply-target-sender');
-            const contentEl = document.getElementById('reply-target-content');
 
-            const senderLabel = msg.sender_username === currentUser.username ? 'You' : targetName;
-            senderNameEl.textContent = `Replying to ${senderLabel}`;
-            
-            let previewText = msg.content;
-            const msgType = msg.message_type || 'text';
-            if (msgType === 'image') previewText = '[Photo Attachment]';
-            else if (msgType === 'video') previewText = '[Video Attachment]';
-            else if (msgType === 'audio') previewText = '[Voice Note]';
-            else if (msgType === 'file') previewText = '[File Attachment]';
+            const replyBar =
+                document.getElementById(
+                    'reply-preview-bar'
+                );
 
-            contentEl.textContent = previewText;
-            replyBar.classList.remove('hidden');
-            replyBar.classList.add('flex');
-            document.getElementById('message-input').focus();
+            const senderNameEl =
+                document.getElementById(
+                    'reply-target-sender'
+                );
+
+            const contentEl =
+                document.getElementById(
+                    'reply-target-content'
+                );
+
+            const senderLabel =
+                msg.sender_username ===
+                currentUser.username
+                    ? 'You'
+                    : targetName;
+
+            senderNameEl.textContent =
+                `Replying to ${senderLabel}`;
+
+            let previewText =
+                msg.content || '';
+
+            const msgType =
+                msg.message_type || 'text';
+
+            if (msgType === 'image') {
+                previewText =
+                    '[Photo Attachment]';
+            } else if (msgType === 'video') {
+                previewText =
+                    '[Video Attachment]';
+            } else if (msgType === 'audio') {
+                previewText =
+                    '[Voice Note]';
+            } else if (msgType === 'file') {
+                previewText =
+                    '[File Attachment]';
+            }
+
+            contentEl.textContent =
+                previewText;
+
+            replyBar.classList.remove(
+                'hidden'
+            );
+
+            replyBar.classList.add(
+                'flex'
+            );
+
+            document
+                .getElementById(
+                    'message-input'
+                )
+                .focus();
         }
 
         function cancelReply() {
+
             replyingToMessage = null;
-            const replyBar = document.getElementById('reply-preview-bar');
-            replyBar.classList.remove('flex');
-            replyBar.classList.add('hidden');
+
+            const replyBar =
+                document.getElementById(
+                    'reply-preview-bar'
+                );
+
+            replyBar.classList.remove(
+                'flex'
+            );
+
+            replyBar.classList.add(
+                'hidden'
+            );
         }
 
+        /*
+         * OFFLINE QUEUE
+         */
         async function flushOfflineQueue() {
-            const queue = loadOfflineQueue();
-            if (queue.length === 0) return;
+
+            if (!navigator.onLine) {
+                return;
+            }
+
+            const queue =
+                loadOfflineQueue();
+
+            if (queue.length === 0) {
+                return;
+            }
 
             const remainingQueue = [];
+
             for (const item of queue) {
-                const payload = {
-                    sender_username: item.sender_username,
-                    receiver_username: item.receiver_username,
-                    content: item.content,
-                    message_type: item.message_type || 'text',
-                    reply_to: item.reply_to || null,
-                    is_read: false,
-                    created_at: item.created_at || new Date().toISOString()
-                };
 
-                const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+                const result =
+                    await insertMessageSafely(
+                        item
+                    );
 
-                if (error) {
+                if (!result.success) {
+
                     remainingQueue.push(item);
-                } else if (data && data.length > 0) {
-                    messagesCache.push(data[0]);
+
+                } else if (
+                    result.message
+                ) {
+
+                    messagesCache.push(
+                        result.message
+                    );
                 }
             }
 
-            saveOfflineQueue(remainingQueue);
-            saveLocalCache(messagesCache);
+            saveOfflineQueue(
+                remainingQueue
+            );
+
+            saveLocalCache(
+                messagesCache
+            );
         }
 
-        window.addEventListener('online', async () => {
-            await fetchMessages();
-        });
+        window.addEventListener(
+            'online',
+            async () => {
+                await fetchMessages();
+            }
+        );
 
+        /*
+         * MESSAGE OPTIONS
+         */
         function openMessageOptions(msg) {
-            if (isMultiSelectMode) return;
-            const modal = document.getElementById('message-options-modal');
-            const actionsContainer = document.getElementById('message-options-actions');
+
+            if (isMultiSelectMode) {
+                return;
+            }
+
+            const modal =
+                document.getElementById(
+                    'message-options-modal'
+                );
+
+            const actionsContainer =
+                document.getElementById(
+                    'message-options-actions'
+                );
+
             actionsContainer.innerHTML = '';
 
-            const isSender = msg.sender_username === currentUser.username;
-            const msgTime = new Date(msg.created_at).getTime();
-            const now = new Date().getTime();
-            const diffHours = (now - msgTime) / (1000 * 60 * 60);
-            const within3Hours = diffHours <= 3;
-            const msgType = msg.message_type || 'text';
+            const isSender =
+                msg.sender_username ===
+                currentUser.username;
 
-            const selectMultipleBtn = document.createElement('button');
-            selectMultipleBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            selectMultipleBtn.textContent = '☑️ Select Multiple';
-            selectMultipleBtn.onclick = () => {
-                closeMessageOptions();
-                enterMultiSelectMode(msg);
-            };
-            actionsContainer.appendChild(selectMultipleBtn);
+            const msgTime =
+                new Date(
+                    msg.created_at
+                ).getTime();
 
-            const replyBtn = document.createElement('button');
-            replyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            replyBtn.textContent = '↩️ Reply';
-            replyBtn.onclick = () => {
-                closeMessageOptions();
-                setReplyTarget(msg);
-            };
-            actionsContainer.appendChild(replyBtn);
+            const now =
+                Date.now();
 
-            if (msgType === 'text' && msg.content) {
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-                copyBtn.textContent = '📋 Copy';
-                copyBtn.onclick = () => {
-                    navigator.clipboard.writeText(msg.content);
+            const diffHours =
+                (
+                    now - msgTime
+                ) /
+                (1000 * 60 * 60);
+
+            const within3Hours =
+                diffHours <= 3;
+
+            const msgType =
+                msg.message_type ||
+                'text';
+
+            const selectMultipleBtn =
+                document.createElement(
+                    'button'
+                );
+
+            selectMultipleBtn.className =
+                'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+            selectMultipleBtn.textContent =
+                '☑️ Select Multiple';
+
+            selectMultipleBtn.onclick =
+                () => {
+
                     closeMessageOptions();
+
+                    enterMultiSelectMode(
+                        msg
+                    );
                 };
-                actionsContainer.appendChild(copyBtn);
+
+            actionsContainer.appendChild(
+                selectMultipleBtn
+            );
+
+            const replyBtn =
+                document.createElement(
+                    'button'
+                );
+
+            replyBtn.className =
+                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+            replyBtn.textContent =
+                '↩️ Reply';
+
+            replyBtn.onclick =
+                () => {
+
+                    closeMessageOptions();
+
+                    setReplyTarget(msg);
+                };
+
+            actionsContainer.appendChild(
+                replyBtn
+            );
+
+            if (
+                msgType === 'text' &&
+                msg.content
+            ) {
+
+                const copyBtn =
+                    document.createElement(
+                        'button'
+                    );
+
+                copyBtn.className =
+                    'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+                copyBtn.textContent =
+                    '📋 Copy';
+
+                copyBtn.onclick =
+                    async () => {
+
+                        try {
+                            await navigator.clipboard.writeText(
+                                msg.content
+                            );
+                        } catch (e) {
+                            console.warn(
+                                'Clipboard failed:',
+                                e
+                            );
+                        }
+
+                        closeMessageOptions();
+                    };
+
+                actionsContainer.appendChild(
+                    copyBtn
+                );
             }
 
-            const forwardBtn = document.createElement('button');
-            forwardBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            forwardBtn.textContent = '↗️ Forward';
-            forwardBtn.onclick = () => {
-                closeMessageOptions();
-                localStorage.setItem('chatlite_forward_payload', JSON.stringify({ content: msg.content, type: msgType }));
-                window.location.href = 'chatlist.html?forward=true';
-            };
-            actionsContainer.appendChild(forwardBtn);
+            const forwardBtn =
+                document.createElement(
+                    'button'
+                );
 
-            const deleteForMeBtn = document.createElement('button');
-            deleteForMeBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-            deleteForMeBtn.textContent = '🗑️ Only me';
-            deleteForMeBtn.onclick = () => {
-                closeMessageOptions();
-                executeDeleteMessage(msg, 'me');
-            };
-            actionsContainer.appendChild(deleteForMeBtn);
+            forwardBtn.className =
+                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
 
-            if (isSender && within3Hours) {
-                const deleteForEveryoneBtn = document.createElement('button');
-                deleteForEveryoneBtn.className = 'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-                deleteForEveryoneBtn.textContent = '🗑️ Delete for everyone';
-                deleteForEveryoneBtn.onclick = () => {
+            forwardBtn.textContent =
+                '↗️ Forward';
+
+            forwardBtn.onclick =
+                () => {
+
                     closeMessageOptions();
-                    executeDeleteMessage(msg, 'everyone');
+
+                    localStorage.setItem(
+                        'chatlite_forward_payload',
+                        JSON.stringify({
+                            content:
+                                msg.content,
+                            type:
+                                msgType
+                        })
+                    );
+
+                    window.location.href =
+                        'chatlist.html?forward=true';
                 };
-                actionsContainer.appendChild(deleteForEveryoneBtn);
+
+            actionsContainer.appendChild(
+                forwardBtn
+            );
+
+            const deleteForMeBtn =
+                document.createElement(
+                    'button'
+                );
+
+            deleteForMeBtn.className =
+                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+            deleteForMeBtn.textContent =
+                '🗑️ Only me';
+
+            deleteForMeBtn.onclick =
+                () => {
+
+                    closeMessageOptions();
+
+                    executeDeleteMessage(
+                        msg,
+                        'me'
+                    );
+                };
+
+            actionsContainer.appendChild(
+                deleteForMeBtn
+            );
+
+            if (
+                isSender &&
+                within3Hours
+            ) {
+
+                const deleteForEveryoneBtn =
+                    document.createElement(
+                        'button'
+                    );
+
+                deleteForEveryoneBtn.className =
+                    'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+                deleteForEveryoneBtn.textContent =
+                    '🗑️ Delete for everyone';
+
+                deleteForEveryoneBtn.onclick =
+                    () => {
+
+                        closeMessageOptions();
+
+                        executeDeleteMessage(
+                            msg,
+                            'everyone'
+                        );
+                    };
+
+                actionsContainer.appendChild(
+                    deleteForEveryoneBtn
+                );
             }
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            modal.classList.remove(
+                'hidden'
+            );
+
+            modal.classList.add(
+                'flex'
+            );
         }
 
         function closeMessageOptions() {
-            const modal = document.getElementById('message-options-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
+
+            const modal =
+                document.getElementById(
+                    'message-options-modal'
+                );
+
+            modal.classList.remove(
+                'flex'
+            );
+
+            modal.classList.add(
+                'hidden'
+            );
         }
 
-        function executeDeleteMessage(msg, scope) {
-            undoTargetMessage = { msg, scope };
+        /*
+         * DELETE
+         */
+        function executeDeleteMessage(
+            msg,
+            scope
+        ) {
+
+            undoTargetMessage = {
+                msg,
+                scope
+            };
 
             if (scope === 'me') {
-                let hiddenForMe = [];
-                try {
-                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
-                } catch(e) {}
-                hiddenForMe.push(msg.id);
-                localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
-            } else {
-                msg.is_deleted_for_everyone = true;
-            }
-            renderMessages(messagesCache);
 
-            showUndoBanner(10, async () => {
-                if (scope === 'everyone' && msg.id) {
-                    await supabaseClient
-                        .from('messages')
-                        .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
-                        .eq('id', msg.id);
+                const key =
+                    `chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`;
+
+                let hiddenForMe = [];
+
+                try {
+                    hiddenForMe =
+                        JSON.parse(
+                            localStorage.getItem(key) ||
+                            '[]'
+                        );
+                } catch (e) {}
+
+                if (
+                    !hiddenForMe.includes(
+                        msg.id
+                    )
+                ) {
+                    hiddenForMe.push(
+                        msg.id
+                    );
                 }
-                fetchMessages();
-            });
+
+                localStorage.setItem(
+                    key,
+                    JSON.stringify(hiddenForMe)
+                );
+
+            } else {
+
+                msg.is_deleted_for_everyone =
+                    true;
+            }
+
+            renderMessages(
+                messagesCache
+            );
+
+            showUndoBanner(
+                10,
+                async () => {
+
+                    if (
+                        scope === 'everyone' &&
+                        msg.id
+                    ) {
+
+                        const {
+                            error
+                        } =
+                            await supabaseClient
+                                .from('messages')
+                                .update({
+                                    is_deleted_for_everyone:
+                                        true,
+                                    content:
+                                        '[Message deleted]',
+                                    message_type:
+                                        'text'
+                                })
+                                .eq(
+                                    'id',
+                                    msg.id
+                                );
+
+                        if (error) {
+                            console.error(
+                                'Delete error:',
+                                error
+                            );
+                        }
+                    }
+
+                    await fetchMessages();
+                }
+            );
         }
 
-        function showUndoBanner(seconds, onComplete) {
-            const banner = document.getElementById('undo-banner');
-            const countdownEl = document.getElementById('undo-countdown');
-            banner.classList.remove('hidden');
-            banner.classList.add('flex');
+        function showUndoBanner(
+            seconds,
+            onComplete
+        ) {
+
+            const banner =
+                document.getElementById(
+                    'undo-banner'
+                );
+
+            const countdownEl =
+                document.getElementById(
+                    'undo-countdown'
+                );
+
+            banner.classList.remove(
+                'hidden'
+            );
+
+            banner.classList.add(
+                'flex'
+            );
 
             let timeLeft = seconds;
-            countdownEl.textContent = timeLeft;
 
-            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
+            countdownEl.textContent =
+                timeLeft;
 
-            pendingDeleteTimer = setInterval(() => {
-                timeLeft--;
-                countdownEl.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(pendingDeleteTimer);
-                    banner.classList.remove('flex');
-                    banner.classList.add('hidden');
-                    if (onComplete) onComplete();
-                }
-            }, 1000);
+            if (pendingDeleteTimer) {
+                clearInterval(
+                    pendingDeleteTimer
+                );
+            }
+
+            pendingDeleteTimer =
+                setInterval(
+                    async () => {
+
+                        timeLeft--;
+
+                        countdownEl.textContent =
+                            timeLeft;
+
+                        if (
+                            timeLeft <= 0
+                        ) {
+
+                            clearInterval(
+                                pendingDeleteTimer
+                            );
+
+                            pendingDeleteTimer =
+                                null;
+
+                            banner.classList.remove(
+                                'flex'
+                            );
+
+                            banner.classList.add(
+                                'hidden'
+                            );
+
+                            if (onComplete) {
+                                await onComplete();
+                            }
+                        }
+
+                    },
+                    1000
+                );
         }
 
         function triggerUndoAction() {
-            if (pendingDeleteTimer) clearInterval(pendingDeleteTimer);
-            const banner = document.getElementById('undo-banner');
-            banner.classList.remove('flex');
-            banner.classList.add('hidden');
 
-            if (undoTargetMessage) {
-                const { msg, scope } = undoTargetMessage;
-                if (scope === 'me') {
-                    let hiddenForMe = [];
-                    try {
-                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
-                    } catch(e) {}
-                    hiddenForMe = hiddenForMe.filter(id => id !== msg.id);
-                    localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
-                } else {
-                    msg.is_deleted_for_everyone = false;
-                }
-                renderMessages(messagesCache);
-                undoTargetMessage = null;
+            if (pendingDeleteTimer) {
+                clearInterval(
+                    pendingDeleteTimer
+                );
+
+                pendingDeleteTimer =
+                    null;
             }
-        }
 
-        function toggleAudioPlay(audioId, btn) {
-            const audio = document.getElementById(audioId);
-            if (audio.paused) {
-                audio.play();
-                btn.textContent = '⏸';
+            const banner =
+                document.getElementById(
+                    'undo-banner'
+                );
+
+            banner.classList.remove(
+                'flex'
+            );
+
+            banner.classList.add(
+                'hidden'
+            );
+
+            if (!undoTargetMessage) {
+                return;
+            }
+
+            const {
+                msg,
+                scope
+            } = undoTargetMessage;
+
+            if (scope === 'me') {
+
+                const key =
+                    `chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`;
+
+                let hiddenForMe = [];
+
+                try {
+                    hiddenForMe =
+                        JSON.parse(
+                            localStorage.getItem(key) ||
+                            '[]'
+                        );
+                } catch (e) {}
+
+                hiddenForMe =
+                    hiddenForMe.filter(
+                        id =>
+                            id !== msg.id
+                    );
+
+                localStorage.setItem(
+                    key,
+                    JSON.stringify(
+                        hiddenForMe
+                    )
+                );
+
             } else {
+
+                msg.is_deleted_for_everyone =
+                    false;
+            }
+
+            renderMessages(
+                messagesCache
+            );
+
+            undoTargetMessage =
+                null;
+        }
+
+        /*
+         * AUDIO
+         */
+        function toggleAudioPlay(
+            audioId,
+            btn
+        ) {
+
+            const audio =
+                document.getElementById(
+                    audioId
+                );
+
+            if (!audio) return;
+
+            if (audio.paused) {
+
+                audio.play()
+                    .catch(err =>
+                        console.warn(
+                            'Audio play failed:',
+                            err
+                        )
+                    );
+
+                btn.textContent =
+                    '⏸';
+
+            } else {
+
                 audio.pause();
-                btn.textContent = '▶';
+
+                btn.textContent =
+                    '▶';
             }
         }
 
-        function seekAudio(audioId, value) {
-            const audio = document.getElementById(audioId);
-            if (!audio.duration) return;
-            audio.currentTime = (value / 100) * audio.duration;
+        function seekAudio(
+            audioId,
+            value
+        ) {
+
+            const audio =
+                document.getElementById(
+                    audioId
+                );
+
+            if (
+                !audio ||
+                !audio.duration
+            ) {
+                return;
+            }
+
+            audio.currentTime =
+                (
+                    value / 100
+                ) *
+                audio.duration;
         }
 
-        function toggleAudioSpeed(audioId, speedBtn) {
-            const audio = document.getElementById(audioId);
-            let nextRate = audio.playbackRate === 1 ? 1.5 : audio.playbackRate === 1.5 ? 2 : 1;
-            audio.playbackRate = nextRate;
-            speedBtn.textContent = nextRate + 'x';
+        function toggleAudioSpeed(
+            audioId,
+            speedBtn
+        ) {
+
+            const audio =
+                document.getElementById(
+                    audioId
+                );
+
+            if (!audio) return;
+
+            let nextRate =
+                audio.playbackRate === 1
+                    ? 1.5
+                    : audio.playbackRate === 1.5
+                        ? 2
+                        : 1;
+
+            audio.playbackRate =
+                nextRate;
+
+            speedBtn.textContent =
+                nextRate + 'x';
         }
 
-        function formatAudioTime(secs) {
-            if (isNaN(secs)) return '0:00';
-            const mins = Math.floor(secs / 60);
-            const rSecs = Math.floor(secs % 60);
-            return `${mins}:${rSecs < 10 ? '0' : ''}${rSecs}`;
+        function formatAudioTime(
+            secs
+        ) {
+
+            if (isNaN(secs)) {
+                return '0:00';
+            }
+
+            const mins =
+                Math.floor(
+                    secs / 60
+                );
+
+            const rSecs =
+                Math.floor(
+                    secs % 60
+                );
+
+            return `${mins}:${
+                rSecs < 10
+                    ? '0'
+                    : ''
+            }${rSecs}`;
         }
 
+        /*
+         * FILE STAGING
+         */
         function stageFileSelected(event) {
-            const file = event.target.files[0];
-            if (!file) return;
 
-            const reader = new FileReader();
-            const progressBar = document.getElementById('upload-progress-bar');
-            const statusText = document.getElementById('upload-status-text');
-            document.getElementById('media-preview-bar').classList.remove('hidden');
-            document.getElementById('media-preview-bar').classList.add('flex');
-            
-            progressBar.style.width = '10%';
-            statusText.textContent = 'Reading file stream...';
+            const file =
+                event.target.files[0];
 
-            reader.onprogress = (data) => {
-                if (data.lengthComputable) {
-                    const percent = Math.round((data.loaded / data.total) * 90);
-                    progressBar.style.width = percent + '%';
-                }
-            };
+            if (!file) {
+                return;
+            }
 
-            reader.onload = function(e) {
-                progressBar.style.width = '100%';
-                statusText.textContent = 'Ready! Hit the Send button to dispatch.';
+            const reader =
+                new FileReader();
 
-                let type = 'file';
-                if (file.type.startsWith('image/')) type = 'image';
-                else if (file.type.startsWith('video/')) type = 'video';
-                else if (file.type.startsWith('audio/')) type = 'audio';
+            const progressBar =
+                document.getElementById(
+                    'upload-progress-bar'
+                );
 
-                stagedPayload = {
-                    content: e.target.result,
-                    type: type
+            const statusText =
+                document.getElementById(
+                    'upload-status-text'
+                );
+
+            const previewBar =
+                document.getElementById(
+                    'media-preview-bar'
+                );
+
+            previewBar.classList.remove(
+                'hidden'
+            );
+
+            previewBar.classList.add(
+                'flex'
+            );
+
+            progressBar.style.width =
+                '10%';
+
+            statusText.textContent =
+                'Reading file stream...';
+
+            reader.onprogress =
+                data => {
+
+                    if (
+                        data.lengthComputable
+                    ) {
+
+                        const percent =
+                            Math.round(
+                                (
+                                    data.loaded /
+                                    data.total
+                                ) * 90
+                            );
+
+                        progressBar.style.width =
+                            percent + '%';
+                    }
                 };
 
-                const previewContainer = document.getElementById('preview-container');
-                if (type === 'image') {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" class="max-h-20 rounded object-contain">`;
-                } else if (type === 'video') {
-                    previewContainer.innerHTML = `<video src="${e.target.result}" class="max-h-20 rounded" controls></video>`;
-                } else {
-                    previewContainer.innerHTML = `<span class="font-semibold">Staged File: ${file.name}</span>`;
-                }
-            };
-            reader.readAsDataURL(file);
+            reader.onload =
+                function(e) {
+
+                    progressBar.style.width =
+                        '100%';
+
+                    statusText.textContent =
+                        'Ready! Hit the Send button to dispatch.';
+
+                    let type = 'file';
+
+                    if (
+                        file.type.startsWith(
+                            'image/'
+                        )
+                    ) {
+                        type = 'image';
+                    } else if (
+                        file.type.startsWith(
+                            'video/'
+                        )
+                    ) {
+                        type = 'video';
+                    } else if (
+                        file.type.startsWith(
+                            'audio/'
+                        )
+                    ) {
+                        type = 'audio';
+                    }
+
+                    stagedPayload = {
+                        content:
+                            e.target.result,
+                        type
+                    };
+
+                    const previewContainer =
+                        document.getElementById(
+                            'preview-container'
+                        );
+
+                    previewContainer.innerHTML =
+                        '';
+
+                    if (type === 'image') {
+
+                        const img =
+                            document.createElement(
+                                'img'
+                            );
+
+                        img.src =
+                            e.target.result;
+
+                        img.className =
+                            'max-h-20 rounded object-contain';
+
+                        previewContainer.appendChild(
+                            img
+                        );
+
+                    } else if (
+                        type === 'video'
+                    ) {
+
+                        const video =
+                            document.createElement(
+                                'video'
+                            );
+
+                        video.src =
+                            e.target.result;
+
+                        video.className =
+                            'max-h-20 rounded';
+
+                        video.controls =
+                            true;
+
+                        previewContainer.appendChild(
+                            video
+                        );
+
+                    } else {
+
+                        const span =
+                            document.createElement(
+                                'span'
+                            );
+
+                        span.className =
+                            'font-semibold';
+
+                        span.textContent =
+                            `Staged File: ${file.name}`;
+
+                        previewContainer.appendChild(
+                            span
+                        );
+                    }
+                };
+
+            reader.onerror =
+                () => {
+
+                    statusText.textContent =
+                        'Could not read this file.';
+
+                    progressBar.style.width =
+                        '0%';
+                };
+
+            reader.readAsDataURL(
+                file
+            );
         }
 
         function clearStagedMedia() {
+
             stagedPayload = null;
+
             recordedBlob = null;
-            document.getElementById('media-preview-bar').classList.add('hidden');
-            document.getElementById('media-preview-bar').classList.remove('flex');
-            document.getElementById('upload-progress-bar').style.width = '0%';
-            document.getElementById('media-file-input').value = '';
-            document.getElementById('camera-photo-input').value = '';
-            document.getElementById('camera-video-input').value = '';
+
+            const bar =
+                document.getElementById(
+                    'media-preview-bar'
+                );
+
+            bar.classList.add(
+                'hidden'
+            );
+
+            bar.classList.remove(
+                'flex'
+            );
+
+            document.getElementById(
+                'upload-progress-bar'
+            ).style.width =
+                '0%';
+
+            document.getElementById(
+                'media-file-input'
+            ).value = '';
+
+            document.getElementById(
+                'camera-photo-input'
+            ).value = '';
+
+            document.getElementById(
+                'camera-video-input'
+            ).value = '';
         }
 
+        /*
+         * VOICE RECORDING
+         */
         async function startVoiceRecording() {
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+
+                const stream =
+                    await navigator.mediaDevices
+                        .getUserMedia({
+                            audio: true
+                        });
+
+                mediaRecorder =
+                    new MediaRecorder(
+                        stream
+                    );
+
                 audioChunks = [];
 
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
-                    recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                };
+                mediaRecorder.ondataavailable =
+                    e => {
+
+                        if (e.data.size > 0) {
+                            audioChunks.push(
+                                e.data
+                            );
+                        }
+                    };
+
+                mediaRecorder.onstop =
+                    () => {
+
+                        recordedBlob =
+                            new Blob(
+                                audioChunks,
+                                {
+                                    type:
+                                        'audio/webm'
+                                }
+                            );
+                    };
 
                 mediaRecorder.start();
+
                 isRecording = true;
                 isPaused = false;
+
                 recordedBlob = null;
 
-                document.getElementById('message-input').classList.add('hidden');
-                document.getElementById('recording-ui').classList.remove('hidden');
-                document.getElementById('recording-ui').classList.add('flex');
-                document.getElementById('mic-btn').classList.add('hidden');
+                document
+                    .getElementById(
+                        'message-input'
+                    )
+                    .classList.add(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'recording-ui'
+                    )
+                    .classList.remove(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'recording-ui'
+                    )
+                    .classList.add(
+                        'flex'
+                    );
+
+                document
+                    .getElementById(
+                        'mic-btn'
+                    )
+                    .classList.add(
+                        'hidden'
+                    );
 
                 recordingSeconds = 0;
-                document.getElementById('recording-timer').textContent = '0:00';
-                recordingTimerInterval = setInterval(() => {
-                    if (!isPaused) {
-                        recordingSeconds++;
-                        const m = Math.floor(recordingSeconds / 60);
-                        const s = recordingSeconds % 60;
-                        document.getElementById('recording-timer').textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
-                    }
-                }, 1000);
+
+                document
+                    .getElementById(
+                        'recording-timer'
+                    )
+                    .textContent =
+                    '0:00';
+
+                recordingTimerInterval =
+                    setInterval(
+                        () => {
+
+                            if (!isPaused) {
+
+                                recordingSeconds++;
+
+                                const m =
+                                    Math.floor(
+                                        recordingSeconds /
+                                        60
+                                    );
+
+                                const s =
+                                    recordingSeconds %
+                                    60;
+
+                                document
+                                    .getElementById(
+                                        'recording-timer'
+                                    )
+                                    .textContent =
+                                    `${m}:${
+                                        s < 10
+                                            ? '0'
+                                            : ''
+                                    }${s}`;
+                            }
+
+                        },
+                        1000
+                    );
+
             } catch (err) {
-                alert('Microphone access denied or unavailable.');
+
+                console.error(
+                    'Microphone error:',
+                    err
+                );
+
+                alert(
+                    'Microphone access denied or unavailable.'
+                );
             }
         }
 
         function togglePauseRecording() {
-            if (!mediaRecorder) return;
-            const btn = document.getElementById('pause-rec-btn');
+
+            if (!mediaRecorder) {
+                return;
+            }
+
+            const btn =
+                document.getElementById(
+                    'pause-rec-btn'
+                );
+
             if (!isPaused) {
+
                 mediaRecorder.pause();
+
                 isPaused = true;
-                btn.textContent = '▶ Resume';
+
+                btn.textContent =
+                    '▶ Resume';
+
             } else {
+
                 mediaRecorder.resume();
+
                 isPaused = false;
-                btn.textContent = '⏸ Pause';
+
+                btn.textContent =
+                    '⏸ Pause';
             }
         }
 
         function stopRecordingOnly() {
-            if (mediaRecorder && (isRecording || isPaused)) {
-                if (mediaRecorder.state !== 'inactive') {
+
+            if (
+                mediaRecorder &&
+                (
+                    isRecording ||
+                    isPaused
+                )
+            ) {
+
+                if (
+                    mediaRecorder.state !==
+                    'inactive'
+                ) {
                     mediaRecorder.stop();
                 }
+
                 isRecording = false;
                 isPaused = false;
-                clearInterval(recordingTimerInterval);
-                
+
+                clearInterval(
+                    recordingTimerInterval
+                );
+
                 if (mediaRecorder.stream) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                    mediaRecorder.stream
+                        .getTracks()
+                        .forEach(
+                            track =>
+                                track.stop()
+                        );
                 }
 
-                document.getElementById('recording-ui').classList.add('hidden');
-                document.getElementById('recording-ui').classList.remove('flex');
-                document.getElementById('message-input').classList.remove('hidden');
-                document.getElementById('mic-btn').classList.remove('hidden');
+                document
+                    .getElementById(
+                        'recording-ui'
+                    )
+                    .classList.add(
+                        'hidden'
+                    );
 
-                document.getElementById('media-preview-bar').classList.remove('hidden');
-                document.getElementById('media-preview-bar').classList.add('flex');
-                document.getElementById('preview-container').innerHTML = `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
-                document.getElementById('upload-progress-bar').style.width = '100%';
-                document.getElementById('upload-status-text').textContent = 'Hit the Send button to dispatch voice note.';
+                document
+                    .getElementById(
+                        'recording-ui'
+                    )
+                    .classList.remove(
+                        'flex'
+                    );
+
+                document
+                    .getElementById(
+                        'message-input'
+                    )
+                    .classList.remove(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'mic-btn'
+                    )
+                    .classList.remove(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'media-preview-bar'
+                    )
+                    .classList.remove(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'media-preview-bar'
+                    )
+                    .classList.add(
+                        'flex'
+                    );
+
+                document
+                    .getElementById(
+                        'preview-container'
+                    )
+                    .innerHTML =
+                    `<span class="text-indigo-400 font-bold text-xs">
+                        Voice Note Recorded (${recordingSeconds}s). Ready to Send.
+                    </span>`;
+
+                document
+                    .getElementById(
+                        'upload-progress-bar'
+                    )
+                    .style.width =
+                    '100%';
+
+                document
+                    .getElementById(
+                        'upload-status-text'
+                    )
+                    .textContent =
+                    'Hit the Send button to dispatch voice note.';
             }
         }
 
         function cancelRecording() {
-            if (mediaRecorder && (isRecording || isPaused)) {
-                if (mediaRecorder.state !== 'inactive') {
+
+            if (
+                mediaRecorder &&
+                (
+                    isRecording ||
+                    isPaused
+                )
+            ) {
+
+                if (
+                    mediaRecorder.state !==
+                    'inactive'
+                ) {
                     mediaRecorder.stop();
                 }
+
                 if (mediaRecorder.stream) {
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                    mediaRecorder.stream
+                        .getTracks()
+                        .forEach(
+                            track =>
+                                track.stop()
+                        );
                 }
             }
+
             resetRecordingUI();
+
             clearStagedMedia();
         }
 
         function resetRecordingUI() {
-            clearInterval(recordingTimerInterval);
+
+            clearInterval(
+                recordingTimerInterval
+            );
+
             isRecording = false;
             isPaused = false;
-            document.getElementById('recording-ui').classList.add('hidden');
-            document.getElementById('recording-ui').classList.remove('flex');
-            document.getElementById('message-input').classList.remove('hidden');
-            document.getElementById('mic-btn').classList.remove('hidden');
+
+            document
+                .getElementById(
+                    'recording-ui'
+                )
+                .classList.add(
+                    'hidden'
+                );
+
+            document
+                .getElementById(
+                    'recording-ui'
+                )
+                .classList.remove(
+                    'flex'
+                );
+
+            document
+                .getElementById(
+                    'message-input'
+                )
+                .classList.remove(
+                    'hidden'
+                );
+
+            document
+                .getElementById(
+                    'mic-btn'
+                )
+                .classList.remove(
+                    'hidden'
+                );
         }
 
+        /*
+         * FORM SUBMIT
+         */
         async function handleFormSubmit(e) {
+
             e.preventDefault();
 
             if (isRecording) {
@@ -1011,150 +2835,664 @@
             }
 
             let replyMeta = null;
+
             if (replyingToMessage) {
-                const repType = replyingToMessage.message_type || 'text';
+
+                const repType =
+                    replyingToMessage.message_type ||
+                    'text';
+
                 replyMeta = {
-                    sender: replyingToMessage.sender_username === currentUser.username ? 'You' : targetName,
-                    content: repType === 'text' ? replyingToMessage.content : `[${repType}]`
+                    sender:
+                        replyingToMessage.sender_username ===
+                        currentUser.username
+                            ? 'You'
+                            : targetName,
+
+                    content:
+                        repType === 'text'
+                            ? replyingToMessage.content
+                            : `[${repType}]`
                 };
             }
 
             if (recordedBlob) {
-                const blobToSend = recordedBlob;
+
+                const blobToSend =
+                    recordedBlob;
+
                 recordedBlob = null;
-                const reader = new FileReader();
-                reader.readAsDataURL(blobToSend);
-                reader.onloadend = async () => {
-                    await sendPayloadToSupabase(reader.result, 'audio', replyMeta);
-                    resetRecordingUI();
-                    clearStagedMedia();
-                    cancelReply();
-                };
+
+                const reader =
+                    new FileReader();
+
+                reader.readAsDataURL(
+                    blobToSend
+                );
+
+                reader.onloadend =
+                    async () => {
+
+                        await sendPayloadToSupabase(
+                            reader.result,
+                            'audio',
+                            replyMeta
+                        );
+
+                        resetRecordingUI();
+
+                        clearStagedMedia();
+
+                        cancelReply();
+                    };
+
                 return;
             }
 
             if (stagedPayload) {
-                const payloadToSend = stagedPayload;
+
+                const payloadToSend =
+                    stagedPayload;
+
                 stagedPayload = null;
-                await sendPayloadToSupabase(payloadToSend.content, payloadToSend.type, replyMeta);
+
+                await sendPayloadToSupabase(
+                    payloadToSend.content,
+                    payloadToSend.type,
+                    replyMeta
+                );
+
                 clearStagedMedia();
+
                 cancelReply();
+
                 return;
             }
 
-            const input = document.getElementById('message-input');
-            const content = input.value.trim();
-            if (!content) return;
+            const input =
+                document.getElementById(
+                    'message-input'
+                );
+
+            const content =
+                input.value.trim();
+
+            if (!content) {
+                return;
+            }
 
             input.value = '';
-            await sendPayloadToSupabase(content, 'text', replyMeta);
+
+            await sendPayloadToSupabase(
+                content,
+                'text',
+                replyMeta
+            );
+
             cancelReply();
         }
 
-        async function sendPayloadToSupabase(content, type, replyMeta = null) {
-            const payload = {
-                sender_username: currentUser.username,
-                receiver_username: targetUsername,
-                content: content,
-                message_type: type || 'text',
-                reply_to: replyMeta,
-                is_read: false,
-                created_at: new Date().toISOString()
+        /*
+         * SAFE DATABASE INSERT
+         *
+         * The important change:
+         * - We do not use .select() on the INSERT.
+         * - We don't automatically treat a 400 as "offline".
+         * - We first attempt the normal messages schema.
+         * - If optional fields are rejected, we retry
+         *   using the core message fields.
+         */
+        async function insertMessageSafely(item) {
+
+            const fullPayload = {
+                sender_username:
+                    item.sender_username,
+
+                receiver_username:
+                    item.receiver_username,
+
+                content:
+                    item.content,
+
+                message_type:
+                    item.message_type || 'text',
+
+                reply_to:
+                    item.reply_to || null,
+
+                is_read:
+                    item.is_read === true,
+
+                created_at:
+                    item.created_at ||
+                    new Date().toISOString()
             };
 
-            if (navigator.onLine) {
-                const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+            /*
+             * FIRST ATTEMPT
+             */
+            let result =
+                await supabaseClient
+                    .from('messages')
+                    .insert([
+                        fullPayload
+                    ]);
 
-                if (!error && data && data.length > 0) {
-                    messagesCache.push(data[0]);
-                    saveLocalCache(messagesCache);
-                    renderMessages(messagesCache);
-                    return; 
-                }
-                
-                console.warn('Direct send failed or encountered error, caching into offline queue:', error);
+            if (!result.error) {
+
+                /*
+                 * Fetch the conversation again instead
+                 * of depending on INSERT...SELECT.
+                 */
+                await fetchMessages();
+
+                const latest =
+                    messagesCache
+                        .filter(
+                            m =>
+                                m.sender_username ===
+                                    item.sender_username &&
+                                m.receiver_username ===
+                                    item.receiver_username &&
+                                m.content ===
+                                    item.content
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(
+                                    b.created_at || 0
+                                ) -
+                                new Date(
+                                    a.created_at || 0
+                                )
+                        )[0];
+
+                return {
+                    success: true,
+                    message: latest || {
+                        ...fullPayload,
+                        is_offline_pending:
+                            false
+                    }
+                };
             }
 
-            const offlineQueue = loadOfflineQueue();
-            const pendingItem = { ...payload, is_offline_pending: true };
-            offlineQueue.push(pendingItem);
-            saveOfflineQueue(offlineQueue);
-            renderMessages(messagesCache);
+            console.warn(
+                'Normal message insert failed:',
+                result.error
+            );
+
+            /*
+             * FALLBACK
+             *
+             * If one of the optional fields is the
+             * problem, try only the core fields that
+             * are required to deliver a message.
+             */
+            const corePayload = {
+                sender_username:
+                    item.sender_username,
+
+                receiver_username:
+                    item.receiver_username,
+
+                content:
+                    item.content
+            };
+
+            const fallbackResult =
+                await supabaseClient
+                    .from('messages')
+                    .insert([
+                        corePayload
+                    ]);
+
+            if (!fallbackResult.error) {
+
+                await fetchMessages();
+
+                const latest =
+                    messagesCache
+                        .filter(
+                            m =>
+                                m.sender_username ===
+                                    item.sender_username &&
+                                m.receiver_username ===
+                                    item.receiver_username &&
+                                m.content ===
+                                    item.content
+                        )
+                        .sort(
+                            (a, b) =>
+                                new Date(
+                                    b.created_at || 0
+                                ) -
+                                new Date(
+                                    a.created_at || 0
+                                )
+                        )[0];
+
+                return {
+                    success: true,
+                    message: latest || {
+                        ...corePayload,
+                        message_type:
+                            'text',
+                        is_read:
+                            false,
+                        created_at:
+                            new Date().toISOString(),
+                        is_offline_pending:
+                            false
+                    }
+                };
+            }
+
+            console.error(
+                'MESSAGE INSERT FAILED:',
+                fallbackResult.error
+            );
+
+            return {
+                success: false,
+                error:
+                    fallbackResult.error
+            };
         }
 
-        function openMediaGallery(typeFilter) {
-            const modal = document.getElementById('media-gallery-modal');
-            const grid = document.getElementById('gallery-content-grid');
-            const title = document.getElementById('gallery-title');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            grid.innerHTML = '';
-            title.textContent = `${typeFilter.toUpperCase()} Gallery`;
+        /*
+         * SEND
+         */
+        async function sendPayloadToSupabase(
+            content,
+            type,
+            replyMeta = null
+        ) {
 
-            const matching = messagesCache.filter(m => {
-                if (m.is_deleted_for_everyone) return false;
-                const mType = m.message_type || 'text';
-                if (typeFilter === 'image' && mType === 'image') return true;
-                if (typeFilter === 'video' && mType === 'video') return true;
-                if (typeFilter === 'file' && (mType === 'file' || mType === 'audio')) return true;
-                return false;
-            });
+            const payload = {
+                sender_username:
+                    currentUser.username,
 
-            if (matching.length === 0) {
-                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
+                receiver_username:
+                    targetUsername,
+
+                content:
+                    content,
+
+                message_type:
+                    type || 'text',
+
+                reply_to:
+                    replyMeta || null,
+
+                is_read:
+                    false,
+
+                created_at:
+                    new Date().toISOString()
+            };
+
+            /*
+             * TRUE OFFLINE CONDITION
+             */
+            if (!navigator.onLine) {
+
+                const offlineQueue =
+                    loadOfflineQueue();
+
+                offlineQueue.push({
+                    ...payload,
+                    is_offline_pending:
+                        true
+                });
+
+                saveOfflineQueue(
+                    offlineQueue
+                );
+
+                renderMessages(
+                    messagesCache
+                );
+
                 return;
             }
 
-            matching.forEach(m => {
-                const card = document.createElement('div');
-                card.className = 'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
-                const mType = m.message_type || 'text';
-                if (mType === 'image') {
-                    card.innerHTML = `<img src="${m.content}" class="h-24 w-full object-cover rounded cursor-pointer" onclick="window.open('${m.content}')">`;
-                } else if (mType === 'video') {
-                    card.innerHTML = `<video src="${m.content}" class="h-24 w-full rounded object-cover" controls></video>`;
-                } else {
-                    card.innerHTML = `<a href="${m.content}" download class="text-xs text-indigo-400 underline font-semibold py-4">Download ${mType}</a>`;
+            /*
+             * ONLINE:
+             * Try to actually deliver the message.
+             */
+            const result =
+                await insertMessageSafely(
+                    payload
+                );
+
+            if (result.success) {
+
+                /*
+                 * fetchMessages() has already
+                 * refreshed the cache.
+                 */
+                renderMessages(
+                    messagesCache
+                );
+
+                return;
+            }
+
+            /*
+             * IMPORTANT:
+             *
+             * A database error is NOT the same
+             * thing as being offline.
+             *
+             * Therefore we do not put it into
+             * the offline queue automatically.
+             */
+            console.error(
+                'Message could not be delivered:',
+                result.error
+            );
+
+            alert(
+                'The message could not be delivered. Please try again.'
+            );
+        }
+
+        /*
+         * MEDIA GALLERY
+         */
+        function openMediaGallery(
+            typeFilter
+        ) {
+
+            const modal =
+                document.getElementById(
+                    'media-gallery-modal'
+                );
+
+            const grid =
+                document.getElementById(
+                    'gallery-content-grid'
+                );
+
+            const title =
+                document.getElementById(
+                    'gallery-title'
+                );
+
+            modal.classList.remove(
+                'hidden'
+            );
+
+            modal.classList.add(
+                'flex'
+            );
+
+            grid.innerHTML = '';
+
+            title.textContent =
+                `${typeFilter.toUpperCase()} Gallery`;
+
+            const matching =
+                messagesCache.filter(
+                    m => {
+
+                        if (
+                            m.is_deleted_for_everyone
+                        ) {
+                            return false;
+                        }
+
+                        const mType =
+                            m.message_type ||
+                            'text';
+
+                        if (
+                            typeFilter === 'image' &&
+                            mType === 'image'
+                        ) {
+                            return true;
+                        }
+
+                        if (
+                            typeFilter === 'video' &&
+                            mType === 'video'
+                        ) {
+                            return true;
+                        }
+
+                        if (
+                            typeFilter === 'file' &&
+                            (
+                                mType === 'file' ||
+                                mType === 'audio'
+                            )
+                        ) {
+                            return true;
+                        }
+
+                        return false;
+                    }
+                );
+
+            if (
+                matching.length === 0
+            ) {
+
+                grid.innerHTML =
+                    `<span class="text-xs text-slate-500 col-span-2 text-center py-6">
+                        No ${typeFilter}s found in this chat.
+                    </span>`;
+
+                return;
+            }
+
+            matching.forEach(
+                m => {
+
+                    const card =
+                        document.createElement(
+                            'div'
+                        );
+
+                    card.className =
+                        'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
+
+                    const mType =
+                        m.message_type ||
+                        'text';
+
+                    if (
+                        mType === 'image'
+                    ) {
+
+                        const image =
+                            document.createElement(
+                                'img'
+                            );
+
+                        image.src =
+                            m.content;
+
+                        image.className =
+                            'h-24 w-full object-cover rounded cursor-pointer';
+
+                        image.onclick =
+                            () =>
+                                window.open(
+                                    m.content
+                                );
+
+                        card.appendChild(
+                            image
+                        );
+
+                    } else if (
+                        mType === 'video'
+                    ) {
+
+                        const video =
+                            document.createElement(
+                                'video'
+                            );
+
+                        video.src =
+                            m.content;
+
+                        video.className =
+                            'h-24 w-full rounded object-cover';
+
+                        video.controls =
+                            true;
+
+                        card.appendChild(
+                            video
+                        );
+
+                    } else {
+
+                        const link =
+                            document.createElement(
+                                'a'
+                            );
+
+                        link.href =
+                            m.content;
+
+                        link.download =
+                            '';
+
+                        link.className =
+                            'text-xs text-indigo-400 underline font-semibold py-4';
+
+                        link.textContent =
+                            `Download ${mType}`;
+
+                        card.appendChild(
+                            link
+                        );
+                    }
+
+                    grid.appendChild(
+                        card
+                    );
                 }
-                grid.appendChild(card);
-            });
+            );
         }
 
         function closeMediaGallery() {
-            const modal = document.getElementById('media-gallery-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
+
+            const modal =
+                document.getElementById(
+                    'media-gallery-modal'
+                );
+
+            modal.classList.remove(
+                'flex'
+            );
+
+            modal.classList.add(
+                'hidden'
+            );
         }
 
+        /*
+         * REALTIME
+         */
         function subscribeToMessages() {
+
             if (messageSubscription) {
-                supabaseClient.removeChannel(messageSubscription);
+
+                supabaseClient.removeChannel(
+                    messageSubscription
+                );
+
+                messageSubscription =
+                    null;
             }
 
-            messageSubscription = supabaseClient
-                .channel('public:messages')
-                .on(
-                    'postgres_changes',
-                    {
-                        event: 'INSERT',
-                        schema: 'public',
-                        table: 'messages'
-                    },
-                    payload => {
-                        const newMsg = payload.new;
-                        if (
-                            (newMsg.sender_username === targetUsername && newMsg.receiver_username === currentUser.username) ||
-                            (newMsg.sender_username === currentUser.username && newMsg.receiver_username === targetUsername)
-                        ) {
-                            fetchMessages();
+            messageSubscription =
+                supabaseClient
+                    .channel(
+                        `private-chat-${currentUser.username}-${targetUsername}`
+                    )
+                    .on(
+                        'postgres_changes',
+                        {
+                            event:
+                                'INSERT',
+
+                            schema:
+                                'public',
+
+                            table:
+                                'messages'
+                        },
+                        payload => {
+
+                            const newMsg =
+                                payload.new;
+
+                            const belongsToConversation =
+                                (
+                                    newMsg.sender_username ===
+                                        targetUsername &&
+                                    newMsg.receiver_username ===
+                                        currentUser.username
+                                ) ||
+                                (
+                                    newMsg.sender_username ===
+                                        currentUser.username &&
+                                    newMsg.receiver_username ===
+                                        targetUsername
+                                );
+
+                            if (
+                                belongsToConversation
+                            ) {
+                                fetchMessages();
+                            }
                         }
-                    }
-                )
-                .subscribe();
+                    )
+                    .subscribe(
+                        status => {
+
+                            console.log(
+                                'Messages realtime status:',
+                                status
+                            );
+                        }
+                    );
         }
 
+        /*
+         * INITIAL LOAD
+         */
         fetchMessages();
+
         subscribeToMessages();
+
+        /*
+         * CLEANUP
+         */
+        window.addEventListener(
+            'beforeunload',
+            () => {
+
+                if (
+                    messageSubscription
+                ) {
+
+                    supabaseClient.removeChannel(
+                        messageSubscription
+                    );
+
+                    messageSubscription =
+                        null;
+                }
+            }
+        );
     </script>
+
 </body>
 </html>
