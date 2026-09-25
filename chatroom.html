@@ -1,1254 +1,1663 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Lite - Private Conversation</title>
+    <title>Chat Lite - Private Conversation</title><script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+</head><body class="bg-slate-950 text-slate-100 h-[100dvh] flex flex-col font-sans overflow-hidden m-0"><div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
 
-<body class="bg-slate-950 text-slate-100 h-[100dvh] flex flex-col font-sans overflow-hidden m-0">
+    <!-- Header -->
+    <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
 
-    <div class="flex-1 flex flex-col w-full max-w-md mx-auto relative shadow-2xl bg-slate-900 border-x border-slate-800 h-full overflow-hidden">
+        <div class="flex items-center gap-2.5 overflow-hidden">
 
-        <!-- Header -->
-        <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
+            <button
+                onclick="window.location.href='chatlist.html'"
+                class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">
+                &larr;
+            </button>
 
-            <div class="flex items-center gap-2.5 overflow-hidden">
-
-                <button
-                    onclick="window.location.href='chatlist.html'"
-                    class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">
-                    &larr;
-                </button>
-
-                <div
-                    class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden"
-                    id="active-chat-avatar">
-                    U
-                </div>
-
-                <div class="overflow-hidden">
-                    <h3
-                        class="font-bold text-xs truncate"
-                        id="active-chat-name">
-                        Private Chat
-                    </h3>
-
-                    <span
-                        class="text-[9px] text-slate-400 truncate block"
-                        id="active-chat-members">
-                        Loading...
-                    </span>
-                </div>
-
+            <div
+                class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden"
+                id="active-chat-avatar">
+                U
             </div>
 
-            <!-- Header Quick Action Buttons -->
-            <div class="flex items-center gap-1 flex-shrink-0">
+            <div class="overflow-hidden">
+                <h3
+                    class="font-bold text-xs truncate"
+                    id="active-chat-name">
+                    Private Chat
+                </h3>
 
-                <button
-                    onclick="toggleSearchBox()"
-                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
-                    title="Search Keywords">
-                    🔍
-                </button>
-
-                <button
-                    onclick="openMediaGallery('file')"
-                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
-                    title="Files">
-                    📁
-                </button>
-
-                <button
-                    onclick="openMediaGallery('image')"
-                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
-                    title="Images">
-                    🖼️
-                </button>
-
-                <button
-                    onclick="openMediaGallery('video')"
-                    class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
-                    title="Videos">
-                    🎬
-                </button>
-
+                <span
+                    class="text-[9px] text-slate-400 truncate block"
+                    id="active-chat-members">
+                    Loading...
+                </span>
             </div>
+
         </div>
 
-        <!-- Search Bar -->
-        <div
-            id="search-container"
-            class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
-
-            <input
-                type="text"
-                id="search-keyword-input"
-                placeholder="Search keywords in private chat..."
-                oninput="filterMessages(this.value)"
-                class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
+        <!-- Header Quick Action Buttons -->
+        <div class="flex items-center gap-1 flex-shrink-0">
 
             <button
                 onclick="toggleSearchBox()"
-                class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
-                Close
+                class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                title="Search Keywords">
+                🔍
             </button>
+
+            <button
+                onclick="openMediaGallery('file')"
+                class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                title="Files">
+                📁
+            </button>
+
+            <button
+                onclick="openMediaGallery('image')"
+                class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                title="Images">
+                🖼️
+            </button>
+
+            <button
+                onclick="openMediaGallery('video')"
+                class="p-1.5 text-slate-400 hover:text-white text-xs bg-slate-800/60 rounded-lg cursor-pointer"
+                title="Videos">
+                🎬
+            </button>
+
         </div>
+    </div>
 
-        <!-- Messages -->
-        <div
-            id="chat-messages"
-            class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
-        </div>
+    <!-- Search Bar -->
+    <div
+        id="search-container"
+        class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
 
-        <!-- Multi-Select Bar -->
-        <div
-            id="multi-select-bar"
-            class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 flex items-center justify-between">
+        <input
+            type="text"
+            id="search-keyword-input"
+            placeholder="Search keywords in private chat..."
+            oninput="filterMessages(this.value)"
+            class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
 
-            <span
-                id="selected-count-text"
-                class="text-xs font-semibold text-indigo-300">
-                0 selected
-            </span>
+        <button
+            onclick="toggleSearchBox()"
+            class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+            Close
+        </button>
+    </div>
 
-            <div class="flex items-center gap-1.5">
+    <!-- Messages -->
+    <div
+        id="chat-messages"
+        class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-950 flex flex-col">
+    </div>
 
-                <button
-                    type="button"
-                    onclick="handleMultiSelectAction('everyone')"
-                    class="px-2.5 py-1.5 bg-red-600/70 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg cursor-pointer">
-                    Delete for everyone
-                </button>
+    <!-- Multi-Select Bar -->
+    <div
+        id="multi-select-bar"
+        class="hidden absolute bottom-0 left-0 right-0 bg-slate-900 border-t border-indigo-500/50 p-3 shadow-2xl z-40 flex items-center justify-between">
 
-                <button
-                    type="button"
-                    onclick="handleMultiSelectAction('me')"
-                    class="px-2.5 py-1.5 bg-red-900/70 hover:bg-red-900 text-white text-[11px] font-bold rounded-lg cursor-pointer">
-                    Only me
-                </button>
+        <span
+            id="selected-count-text"
+            class="text-xs font-semibold text-indigo-300">
+            0 selected
+        </span>
 
-                <button
-                    type="button"
-                    onclick="handleMultiSelectAction('forward')"
-                    class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg cursor-pointer">
-                    Forward
-                </button>
-
-                <button
-                    type="button"
-                    onclick="exitMultiSelectMode()"
-                    class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg cursor-pointer">
-                    &times;
-                </button>
-
-            </div>
-        </div>
-
-        <!-- Undo Banner -->
-        <div
-            id="undo-banner"
-            class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
-
-            <span
-                id="undo-text"
-                class="text-xs text-slate-200">
-                Message deleted.
-            </span>
+        <div class="flex items-center gap-1.5">
 
             <button
                 type="button"
-                onclick="triggerUndoAction()"
-                class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">
-                Undo (<span id="undo-countdown">10</span>s)
+                onclick="handleMultiSelectAction('everyone')"
+                class="px-2.5 py-1.5 bg-red-600/70 hover:bg-red-600 text-white text-[11px] font-bold rounded-lg cursor-pointer">
+                Delete for everyone
             </button>
-        </div>
-
-        <!-- Message Options -->
-        <div
-            id="message-options-modal"
-            class="hidden absolute inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
-
-                <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
-
-                    <span>Message Options</span>
-
-                    <button
-                        onclick="closeMessageOptions()"
-                        class="text-slate-400 hover:text-white text-base cursor-pointer">
-                        &times;
-                    </button>
-
-                </div>
-
-                <div
-                    id="message-options-actions"
-                    class="flex flex-col gap-1.5">
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Reply Preview -->
-        <div
-            id="reply-preview-bar"
-            class="hidden p-2.5 bg-slate-900 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
-
-            <div class="flex flex-col border-l-2 border-indigo-500 pl-2 overflow-hidden">
-
-                <span
-                    class="text-[10px] font-bold text-indigo-400"
-                    id="reply-target-sender">
-                    Replying to...
-                </span>
-
-                <span
-                    class="text-xs text-slate-300 truncate"
-                    id="reply-target-content">
-                    Message content...
-                </span>
-
-            </div>
 
             <button
                 type="button"
-                onclick="cancelReply()"
-                class="text-slate-400 hover:text-white text-base px-2 cursor-pointer">
+                onclick="handleMultiSelectAction('me')"
+                class="px-2.5 py-1.5 bg-red-900/70 hover:bg-red-900 text-white text-[11px] font-bold rounded-lg cursor-pointer">
+                Only me
+            </button>
+
+            <button
+                type="button"
+                onclick="handleMultiSelectAction('forward')"
+                class="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg cursor-pointer">
+                Forward
+            </button>
+
+            <button
+                type="button"
+                onclick="exitMultiSelectMode()"
+                class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg cursor-pointer">
                 &times;
             </button>
 
         </div>
+    </div>
 
-        <!-- Media Preview -->
-        <div
-            id="media-preview-bar"
-            class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
+    <!-- Undo Banner -->
+    <div
+        id="undo-banner"
+        class="hidden absolute bottom-20 left-4 right-4 bg-slate-800 border border-indigo-500/50 rounded-xl p-3 shadow-2xl z-50 flex items-center justify-between">
 
-            <div class="flex items-center justify-between">
+        <span
+            id="undo-text"
+            class="text-xs text-slate-200">
+            Message deleted.
+        </span>
 
-                <span class="text-xs font-semibold text-indigo-400">
-                    Staged Media Preview
-                </span>
+        <button
+            type="button"
+            onclick="triggerUndoAction()"
+            class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg cursor-pointer">
+            Undo (<span id="undo-countdown">10</span>s)
+        </button>
+    </div>
+
+    <!-- Message Options -->
+    <div
+        id="message-options-modal"
+        class="hidden absolute inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xs p-3 shadow-2xl flex flex-col gap-2">
+
+            <div class="text-xs font-bold text-slate-400 pb-2 border-b border-slate-800 flex justify-between items-center">
+
+                <span>Message Options</span>
 
                 <button
-                    type="button"
-                    onclick="clearStagedMedia()"
-                    class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">
-                    Discard
+                    onclick="closeMessageOptions()"
+                    class="text-slate-400 hover:text-white text-base cursor-pointer">
+                    &times;
                 </button>
 
             </div>
 
             <div
-                id="preview-container"
-                class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
+                id="message-options-actions"
+                class="flex flex-col gap-1.5">
             </div>
 
-            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div
-                    id="upload-progress-bar"
-                    class="bg-indigo-600 h-full w-0 transition-all duration-300">
-                </div>
-            </div>
+        </div>
+    </div>
+
+    <!-- Reply Preview -->
+    <div
+        id="reply-preview-bar"
+        class="hidden p-2.5 bg-slate-900 border-t border-slate-800 items-center justify-between z-20 flex-shrink-0">
+
+        <div class="flex flex-col border-l-2 border-indigo-500 pl-2 overflow-hidden">
 
             <span
-                class="text-[10px] text-slate-400 text-center"
-                id="upload-status-text">
-                Ready. Hit Send button to upload & deliver.
+                class="text-[10px] font-bold text-indigo-400"
+                id="reply-target-sender">
+                Replying to...
+            </span>
+
+            <span
+                class="text-xs text-slate-300 truncate"
+                id="reply-target-content">
+                Message content...
             </span>
 
         </div>
 
-        <!-- File Inputs -->
-        <input
-            type="file"
-            id="media-file-input"
-            class="hidden"
-            accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
-            onchange="stageFileSelected(event)">
-
-        <input
-            type="file"
-            id="camera-photo-input"
-            class="hidden"
-            accept="image/*"
-            capture="environment"
-            onchange="stageFileSelected(event)">
-
-        <input
-            type="file"
-            id="camera-video-input"
-            class="hidden"
-            accept="video/*"
-            capture="environment"
-            onchange="stageFileSelected(event)">
-
-        <!-- Attachment Menu -->
-        <div
-            id="attachment-menu"
-            class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
-
-            <button
-                type="button"
-                onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();"
-                class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📁 File / Document
-            </button>
-
-            <button
-                type="button"
-                onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();"
-                class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📷 Take Photo
-            </button>
-
-            <button
-                type="button"
-                onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();"
-                class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
-                📹 Record Video Note
-            </button>
-
-        </div>
-
-        <!-- Media Gallery -->
-        <div
-            id="media-gallery-modal"
-            class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
-
-            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-
-                <h3
-                    class="font-bold text-sm text-white"
-                    id="gallery-title">
-                    Chat Media
-                </h3>
-
-                <button
-                    onclick="closeMediaGallery()"
-                    class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">
-                    Close
-                </button>
-
-            </div>
-
-            <div
-                id="gallery-content-grid"
-                class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
-            </div>
-
-        </div>
-
-        <!-- Bottom Input -->
-        <form
-            id="chat-form"
-            onsubmit="handleFormSubmit(event)"
-            class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
-
-            <button
-                type="button"
-                id="attach-btn"
-                onclick="toggleAttachmentMenu()"
-                class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0"
-                title="Attach Media">
-                +
-            </button>
-
-            <input
-                type="text"
-                id="message-input"
-                placeholder="Type a message..."
-                class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
-
-            <!-- Recording UI -->
-            <div
-                id="recording-ui"
-                class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
-
-                <div class="flex items-center gap-2">
-
-                    <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
-
-                    <span
-                        id="recording-timer"
-                        class="text-xs font-semibold text-red-400">
-                        0:00
-                    </span>
-
-                </div>
-
-                <div class="flex items-center gap-1">
-
-                    <button
-                        type="button"
-                        id="pause-rec-btn"
-                        onclick="togglePauseRecording()"
-                        class="text-[11px] text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
-                        ⏸ Pause
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="stopRecordingOnly()"
-                        class="text-[11px] text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">
-                        ⏹ Stop
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="cancelRecording()"
-                        class="text-[11px] text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
-                        Discard
-                    </button>
-
-                </div>
-            </div>
-
-            <button
-                type="button"
-                id="mic-btn"
-                onclick="startVoiceRecording()"
-                class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0"
-                title="Record Voice Note">
-                🎤
-            </button>
-
-            <button
-                type="submit"
-                id="send-btn"
-                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">
-                Send
-            </button>
-
-        </form>
+        <button
+            type="button"
+            onclick="cancelReply()"
+            class="text-slate-400 hover:text-white text-base px-2 cursor-pointer">
+            &times;
+        </button>
 
     </div>
 
-    <!--
-        IMPORTANT:
-        app.js is loaded AFTER Supabase CDN.
-        We intentionally do NOT load supabase.js here because
-        app.js already creates the global supabaseClient.
-    -->
-    <script src="app.js"></script>
+    <!-- Media Preview -->
+    <div
+        id="media-preview-bar"
+        class="hidden p-2.5 bg-slate-950 border-t border-slate-800 flex-col gap-1.5 z-20 flex-shrink-0">
 
-    <script>
+        <div class="flex items-center justify-between">
 
-        /* ============================================================
-           CHAT LITE PRIVATE CHATROOM
-           Uses:
-           public.private_messages
-           
-           Table columns:
-           id
-           sender_username
-           receiver_username
-           content
+            <span class="text-xs font-semibold text-indigo-400">
+                Staged Media Preview
+            </span>
 
-           Extra message information is stored INSIDE content so
-           no database/schema changes are required.
-        ============================================================ */
+            <button
+                type="button"
+                onclick="clearStagedMedia()"
+                class="text-[11px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">
+                Discard
+            </button>
 
-        const PRIVATE_MESSAGE_PREFIX = '__CHATLITE_PRIVATE_V1__';
+        </div>
 
-        /*
-         * app.js already declares:
-         * let currentUser = null;
-         * let activeChatUser = null;
-         * let messageSubscription = null;
-         *
-         * We use those variables instead of redeclaring them.
-         */
+        <div
+            id="preview-container"
+            class="max-h-24 overflow-hidden rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 text-xs text-slate-300">
+        </div>
 
-        try {
-            const storedUser = JSON.parse(
-                localStorage.getItem('chatlite_user') || 'null'
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+            <div
+                id="upload-progress-bar"
+                class="bg-indigo-600 h-full w-0 transition-all duration-300">
+            </div>
+        </div>
+
+        <span
+            class="text-[10px] text-slate-400 text-center"
+            id="upload-status-text">
+            Ready. Hit Send button to upload & deliver.
+        </span>
+
+    </div>
+
+    <!-- File Inputs -->
+    <input
+        type="file"
+        id="media-file-input"
+        class="hidden"
+        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+        onchange="stageFileSelected(event)">
+
+    <input
+        type="file"
+        id="camera-photo-input"
+        class="hidden"
+        accept="image/*"
+        capture="environment"
+        onchange="stageFileSelected(event)">
+
+    <input
+        type="file"
+        id="camera-video-input"
+        class="hidden"
+        accept="video/*"
+        capture="environment"
+        onchange="stageFileSelected(event)">
+
+    <!-- Attachment Menu -->
+    <div
+        id="attachment-menu"
+        class="hidden absolute bottom-16 left-3 bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 backdrop-blur-md">
+
+        <button
+            type="button"
+            onclick="document.getElementById('media-file-input').click(); toggleAttachmentMenu();"
+            class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+            📁 File / Document
+        </button>
+
+        <button
+            type="button"
+            onclick="document.getElementById('camera-photo-input').click(); toggleAttachmentMenu();"
+            class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+            📷 Take Photo
+        </button>
+
+        <button
+            type="button"
+            onclick="document.getElementById('camera-video-input').click(); toggleAttachmentMenu();"
+            class="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-700/80 rounded-xl transition-all cursor-pointer">
+            📹 Record Video Note
+        </button>
+
+    </div>
+
+    <!-- Media Gallery -->
+    <div
+        id="media-gallery-modal"
+        class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
+
+        <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+
+            <h3
+                class="font-bold text-sm text-white"
+                id="gallery-title">
+                Chat Media
+            </h3>
+
+            <button
+                onclick="closeMediaGallery()"
+                class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">
+                Close
+            </button>
+
+        </div>
+
+        <div
+            id="gallery-content-grid"
+            class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
+        </div>
+
+    </div>
+
+    <!-- Bottom Input -->
+    <form
+        id="chat-form"
+        onsubmit="handleFormSubmit(event)"
+        class="p-3 bg-slate-900 border-t border-slate-800 flex items-center gap-2 relative z-25 flex-shrink-0">
+
+        <button
+            type="button"
+            id="attach-btn"
+            onclick="toggleAttachmentMenu()"
+            class="p-2 text-slate-400 hover:text-indigo-400 transition-colors text-lg font-bold cursor-pointer flex-shrink-0"
+            title="Attach Media">
+            +
+        </button>
+
+        <input
+            type="text"
+            id="message-input"
+            placeholder="Type a message..."
+            class="flex-1 px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm text-white min-w-0">
+
+        <!-- Recording UI -->
+        <div
+            id="recording-ui"
+            class="hidden flex-1 items-center justify-between px-3 py-2 bg-slate-950 border border-red-500/50 rounded-xl min-w-0">
+
+            <div class="flex items-center gap-2">
+
+                <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse flex-shrink-0"></span>
+
+                <span
+                    id="recording-timer"
+                    class="text-xs font-semibold text-red-400">
+                    0:00
+                </span>
+
+            </div>
+
+            <div class="flex items-center gap-1">
+
+                <button
+                    type="button"
+                    id="pause-rec-btn"
+                    onclick="togglePauseRecording()"
+                    class="text-[11px] text-slate-300 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+                    ⏸ Pause
+                </button>
+
+                <button
+                    type="button"
+                    onclick="stopRecordingOnly()"
+                    class="text-[11px] text-white px-2 py-1 bg-red-600 hover:bg-red-500 rounded-lg cursor-pointer font-bold">
+                    ⏹ Stop
+                </button>
+
+                <button
+                    type="button"
+                    onclick="cancelRecording()"
+                    class="text-[11px] text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">
+                    Discard
+                </button>
+
+            </div>
+        </div>
+
+        <button
+            type="button"
+            id="mic-btn"
+            onclick="startVoiceRecording()"
+            class="p-2 text-slate-400 hover:text-red-400 transition-colors cursor-pointer flex-shrink-0"
+            title="Record Voice Note">
+            🎤
+        </button>
+
+        <button
+            type="submit"
+            id="send-btn"
+            class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl text-sm transition-all cursor-pointer text-white flex-shrink-0">
+            Send
+        </button>
+
+    </form>
+
+</div>
+
+<!--
+    app.js remains connected.
+    We intentionally do NOT load supabase.js here.
+
+    This page creates its own uniquely named Supabase client
+    so it does not depend on app.js exposing its internal
+    "supabaseClient" variable.
+-->
+<script src="app.js"></script>
+
+<script>
+
+    /* ============================================================
+       CHAT LITE PRIVATE CHATROOM
+       Uses:
+       public.private_messages
+
+       Table columns:
+       id
+       sender_username
+       receiver_username
+       content
+
+       Extra message information is stored INSIDE content so
+       no database/schema changes are required.
+    ============================================================ */
+
+    const CHATROOM_SUPABASE_URL =
+        'https://qclfxoyxnihuttlemzmi.supabase.co';
+
+    const CHATROOM_SUPABASE_ANON_KEY =
+        'sb_publishable_-jLY8uajMI_u_mxQHHUAsA_Q5d5FWVG';
+
+    /*
+     * IMPORTANT:
+     * This is deliberately NOT called "supabaseClient".
+     * app.js already has its own variable with that name.
+     */
+    let chatroomSupabaseClient = null;
+
+    try {
+
+        if (
+            !window.supabase ||
+            typeof window.supabase.createClient !== 'function'
+        ) {
+
+            throw new Error(
+                'Supabase JavaScript library was not loaded.'
             );
-
-            if (storedUser) {
-                currentUser = storedUser;
-            }
-        } catch (error) {
-            console.error('Could not restore Chat Lite user:', error);
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
+        chatroomSupabaseClient =
+            window.supabase.createClient(
+                CHATROOM_SUPABASE_URL,
+                CHATROOM_SUPABASE_ANON_KEY
+            );
 
-        const targetUsername = (
+        console.log(
+            'Chatroom Supabase client initialized successfully.'
+        );
+
+    } catch (error) {
+
+        console.error(
+            'Chatroom Supabase initialization error:',
+            error
+        );
+
+        alert(
+            'Unable to initialize Supabase for this chat.'
+        );
+    }
+
+
+    const PRIVATE_MESSAGE_PREFIX =
+        '__CHATLITE_PRIVATE_V1__';
+
+
+    /*
+     * app.js already declares:
+     *
+     * let currentUser = null;
+     * let activeChatUser = null;
+     * let messageSubscription = null;
+     *
+     * We use those variables instead of redeclaring them.
+     */
+
+
+    try {
+
+        const storedUser =
+            JSON.parse(
+                localStorage.getItem(
+                    'chatlite_user'
+                ) || 'null'
+            );
+
+        if (storedUser) {
+            currentUser = storedUser;
+        }
+
+    } catch (error) {
+
+        console.error(
+            'Could not restore Chat Lite user:',
+            error
+        );
+    }
+
+
+    const urlParams =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    const targetUsername =
+        (
             urlParams.get('to') ||
             ''
-        ).trim().toLowerCase();
+        )
+            .trim()
+            .toLowerCase();
 
-        const targetName = (
+
+    const targetName =
+        (
             urlParams.get('name') ||
             targetUsername ||
             'Private Chat'
-        ).trim();
+        )
+            .trim();
 
-        const targetGender = (
+
+    const targetGender =
+        (
             urlParams.get('gender') ||
             ''
-        ).trim();
+        )
+            .trim();
 
-        /*
-         * The private chat must have:
-         * current user
-         * recipient username
-         */
-        if (!currentUser || !targetUsername) {
-            window.location.href = 'chatlist.html';
-        }
 
-        /*
-         * Make sure app.js's active chat state points to this
-         * private conversation.
-         */
-        activeChatUser = {
-            username: targetUsername,
-            name: targetName,
-            gender: targetGender
+    /*
+     * The private chat must have:
+     * current user
+     * recipient username
+     */
+    if (
+        !currentUser ||
+        !targetUsername
+    ) {
+
+        window.location.href =
+            'chatlist.html';
+    }
+
+
+    /*
+     * Make sure app.js's active chat state points to this
+     * private conversation.
+     */
+    activeChatUser = {
+        username:
+            targetUsername,
+
+        name:
+            targetName,
+
+        gender:
+            targetGender
+    };
+
+
+    /* ============================================================
+       PAGE STATE
+    ============================================================ */
+
+    let messagesCache = [];
+
+    let mediaRecorder = null;
+
+    let audioChunks = [];
+
+    let recordedBlob = null;
+
+    let stagedPayload = null;
+
+    let isRecording = false;
+
+    let isPaused = false;
+
+    let recordingTimerInterval = null;
+
+    let recordingSeconds = 0;
+
+    let replyingToMessage = null;
+
+    let isMultiSelectMode = false;
+
+    let selectedMessageIds = new Set();
+
+    let pendingDeleteTimer = null;
+
+    let undoTargetMessage = null;
+
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+
+    document
+        .getElementById(
+            'active-chat-name'
+        )
+        .textContent =
+        targetName;
+
+
+    document
+        .getElementById(
+            'active-chat-avatar'
+        )
+        .textContent =
+        targetName
+            .charAt(0)
+            .toUpperCase();
+
+
+    document
+        .getElementById(
+            'active-chat-members'
+        )
+        .textContent =
+        targetGender
+            ? `@${targetUsername} • ${targetGender}`
+            : `@${targetUsername}`;
+
+
+    /* ============================================================
+       PRIVATE MESSAGE ENCODING
+    ============================================================ */
+
+    function makeStoredContent(
+        content,
+        type = 'text',
+        replyMeta = null,
+        createdAt = new Date().toISOString(),
+        deleted = false
+    ) {
+
+        const payload = {
+
+            type:
+                type || 'text',
+
+            content:
+                content || '',
+
+            reply_to:
+                replyMeta || null,
+
+            created_at:
+                createdAt,
+
+            is_deleted_for_everyone:
+                deleted
         };
 
-        /* ============================================================
-           PAGE STATE
-        ============================================================ */
-
-        let messagesCache = [];
-
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let recordedBlob = null;
-
-        let stagedPayload = null;
-
-        let isRecording = false;
-        let isPaused = false;
-        let recordingTimerInterval = null;
-        let recordingSeconds = 0;
-
-        let replyingToMessage = null;
-
-        let isMultiSelectMode = false;
-        let selectedMessageIds = new Set();
-
-        let pendingDeleteTimer = null;
-        let undoTargetMessage = null;
+        return (
+            PRIVATE_MESSAGE_PREFIX +
+            JSON.stringify(payload)
+        );
+    }
 
 
-        /* ============================================================
-           HEADER
-        ============================================================ */
+    function decodePrivateMessage(row) {
 
-        document.getElementById('active-chat-name').textContent = targetName;
-
-        document.getElementById('active-chat-avatar').textContent =
-            targetName.charAt(0).toUpperCase();
-
-        document.getElementById('active-chat-members').textContent =
-            targetGender
-                ? `@${targetUsername} • ${targetGender}`
-                : `@${targetUsername}`;
-
-
-        /* ============================================================
-           PRIVATE MESSAGE ENCODING
-        ============================================================ */
-
-        function makeStoredContent(
-            content,
-            type = 'text',
-            replyMeta = null,
-            createdAt = new Date().toISOString(),
-            deleted = false
-        ) {
-
-            const payload = {
-                type: type || 'text',
-                content: content || '',
-                reply_to: replyMeta || null,
-                created_at: createdAt,
-                is_deleted_for_everyone: deleted
-            };
-
-            return PRIVATE_MESSAGE_PREFIX + JSON.stringify(payload);
+        if (!row) {
+            return null;
         }
 
 
-        function decodePrivateMessage(row) {
+        const rawContent =
+            typeof row.content === 'string'
+                ? row.content
+                : '';
 
-            if (!row) return null;
 
-            const rawContent =
-                typeof row.content === 'string'
-                    ? row.content
-                    : '';
+        /*
+         * Normal text rows created before this private-message
+         * format are still supported.
+         */
+        if (
+            !rawContent.startsWith(
+                PRIVATE_MESSAGE_PREFIX
+            )
+        ) {
 
-            /*
-             * Normal text rows that were created before this
-             * private-message format are still supported.
-             */
-            if (!rawContent.startsWith(PRIVATE_MESSAGE_PREFIX)) {
+            return {
 
-                return {
-                    ...row,
-                    content: rawContent,
-                    message_type: 'text',
-                    reply_to: null,
-                    created_at: null,
-                    is_deleted_for_everyone: false
-                };
-            }
+                ...row,
 
-            try {
+                content:
+                    rawContent,
 
-                const json = JSON.parse(
+                message_type:
+                    'text',
+
+                reply_to:
+                    null,
+
+                created_at:
+                    null,
+
+                is_deleted_for_everyone:
+                    false
+            };
+        }
+
+
+        try {
+
+            const json =
+                JSON.parse(
                     rawContent.substring(
                         PRIVATE_MESSAGE_PREFIX.length
                     )
                 );
 
-                return {
-                    ...row,
 
-                    content:
-                        json.content !== undefined
-                            ? json.content
-                            : '',
+            return {
 
-                    message_type:
-                        json.type ||
-                        json.message_type ||
-                        'text',
+                ...row,
 
-                    reply_to:
-                        json.reply_to ||
-                        json.reply ||
-                        null,
+                content:
+                    json.content !== undefined
+                        ? json.content
+                        : '',
 
-                    created_at:
-                        json.created_at ||
-                        json.timestamp ||
-                        null,
+                message_type:
+                    json.type ||
+                    json.message_type ||
+                    'text',
 
-                    is_deleted_for_everyone:
-                        json.is_deleted_for_everyone === true ||
-                        json.deleted === true
-                };
+                reply_to:
+                    json.reply_to ||
+                    json.reply ||
+                    null,
 
-            } catch (error) {
+                created_at:
+                    json.created_at ||
+                    json.timestamp ||
+                    null,
 
-                console.error(
-                    'Could not decode private message:',
-                    error
-                );
+                is_deleted_for_everyone:
+                    json.is_deleted_for_everyone === true ||
+                    json.deleted === true
+            };
 
-                return {
-                    ...row,
-                    content: rawContent,
-                    message_type: 'text',
-                    reply_to: null,
-                    created_at: null,
-                    is_deleted_for_everyone: false
-                };
-            }
-        }
+        } catch (error) {
 
-
-        /* ============================================================
-           LOCAL "DELETE FOR ME" STORAGE
-        ============================================================ */
-
-        function getDeletedForMe() {
-
-            try {
-
-                return JSON.parse(
-                    localStorage.getItem(
-                        `chatlite_private_deleted_for_me_${currentUser.username}_${targetUsername}`
-                    ) || '[]'
-                );
-
-            } catch (error) {
-
-                return [];
-            }
-        }
-
-
-        function setDeletedForMe(ids) {
-
-            localStorage.setItem(
-                `chatlite_private_deleted_for_me_${currentUser.username}_${targetUsername}`,
-                JSON.stringify(ids)
+            console.error(
+                'Could not decode private message:',
+                error
             );
+
+
+            return {
+
+                ...row,
+
+                content:
+                    rawContent,
+
+                message_type:
+                    'text',
+
+                reply_to:
+                    null,
+
+                created_at:
+                    null,
+
+                is_deleted_for_everyone:
+                    false
+            };
+        }
+    }
+
+
+    /* ============================================================
+       LOCAL "DELETE FOR ME" STORAGE
+    ============================================================ */
+
+    function getDeletedForMe() {
+
+        try {
+
+            return JSON.parse(
+                localStorage.getItem(
+                    `chatlite_private_deleted_for_me_${currentUser.username}_${targetUsername}`
+                ) || '[]'
+            );
+
+        } catch (error) {
+
+            return [];
+        }
+    }
+
+
+    function setDeletedForMe(ids) {
+
+        localStorage.setItem(
+            `chatlite_private_deleted_for_me_${currentUser.username}_${targetUsername}`,
+            JSON.stringify(ids)
+        );
+    }
+
+
+    /* ============================================================
+       LOAD PRIVATE MESSAGES
+    ============================================================ */
+
+    async function fetchMessages() {
+
+        if (
+            !currentUser ||
+            !targetUsername ||
+            !chatroomSupabaseClient
+        ) {
+            return;
         }
 
 
-        /* ============================================================
-           LOAD PRIVATE MESSAGES
-        ============================================================ */
+        const me =
+            currentUser.username;
 
-        async function fetchMessages() {
 
-            if (
-                !currentUser ||
-                !targetUsername ||
-                typeof supabaseClient === 'undefined'
-            ) {
-                return;
-            }
-
-            const me = currentUser.username;
-
-            const sentPromise = supabaseClient
+        const sentPromise =
+            chatroomSupabaseClient
                 .from('private_messages')
                 .select('*')
-                .eq('sender_username', me)
-                .eq('receiver_username', targetUsername);
+                .eq(
+                    'sender_username',
+                    me
+                )
+                .eq(
+                    'receiver_username',
+                    targetUsername
+                );
 
-            const receivedPromise = supabaseClient
+
+        const receivedPromise =
+            chatroomSupabaseClient
                 .from('private_messages')
                 .select('*')
-                .eq('sender_username', targetUsername)
-                .eq('receiver_username', me);
+                .eq(
+                    'sender_username',
+                    targetUsername
+                )
+                .eq(
+                    'receiver_username',
+                    me
+                );
 
-            const [
-                sentResult,
-                receivedResult
-            ] = await Promise.all([
+
+        const [
+            sentResult,
+            receivedResult
+        ] =
+            await Promise.all([
                 sentPromise,
                 receivedPromise
             ]);
 
-            if (sentResult.error) {
+
+        if (sentResult.error) {
+
+            console.error(
+                'Error fetching sent private messages:',
+                sentResult.error
+            );
+
+            if (
+                sentResult.error.code ===
+                    'PGRST205' ||
+                sentResult.error.message?.includes(
+                    'private_messages'
+                )
+            ) {
 
                 console.error(
-                    'Error fetching sent private messages:',
-                    sentResult.error
-                );
-
-                if (
-                    sentResult.error.code === 'PGRST205' ||
-                    sentResult.error.message?.includes('private_messages')
-                ) {
-                    console.error(
-                        'Supabase Data API cannot currently see private_messages.'
-                    );
-                }
-
-            }
-
-            if (receivedResult.error) {
-
-                console.error(
-                    'Error fetching received private messages:',
-                    receivedResult.error
+                    'Supabase Data API cannot currently see private_messages.'
                 );
             }
-
-            const sentRows =
-                sentResult.data || [];
-
-            const receivedRows =
-                receivedResult.data || [];
-
-            const combined = [
-                ...sentRows,
-                ...receivedRows
-            ];
-
-            /*
-             * Remove duplicates.
-             */
-            const uniqueRows = [];
-            const seenIds = new Set();
-
-            for (const row of combined) {
-
-                if (!row.id || !seenIds.has(row.id)) {
-
-                    if (row.id) {
-                        seenIds.add(row.id);
-                    }
-
-                    uniqueRows.push(row);
-                }
-            }
-
-            messagesCache = uniqueRows
-                .map(decodePrivateMessage)
-                .filter(Boolean);
-
-            /*
-             * New messages have created_at stored inside content.
-             * Older messages without a timestamp stay in their
-             * database-returned order.
-             */
-            messagesCache.sort((a, b) => {
-
-                if (a.created_at && b.created_at) {
-
-                    return new Date(a.created_at).getTime() -
-                           new Date(b.created_at).getTime();
-                }
-
-                if (a.created_at) return -1;
-                if (b.created_at) return 1;
-
-                return 0;
-            });
-
-            renderMessages(messagesCache);
         }
 
 
-        /* ============================================================
-           RENDER
-        ============================================================ */
+        if (receivedResult.error) {
 
-        function renderMessages(messages) {
+            console.error(
+                'Error fetching received private messages:',
+                receivedResult.error
+            );
+        }
 
-            const container =
-                document.getElementById('chat-messages');
 
-            container.innerHTML = '';
+        const sentRows =
+            sentResult.data || [];
 
-            const hiddenForMe =
-                getDeletedForMe();
 
-            const filtered =
-                messages.filter(message => {
+        const receivedRows =
+            receivedResult.data || [];
+
+
+        const combined = [
+            ...sentRows,
+            ...receivedRows
+        ];
+
+
+        /*
+         * Remove duplicates.
+         */
+        const uniqueRows = [];
+
+        const seenIds =
+            new Set();
+
+
+        for (
+            const row of combined
+        ) {
+
+            if (
+                !row.id ||
+                !seenIds.has(row.id)
+            ) {
+
+                if (row.id) {
+                    seenIds.add(row.id);
+                }
+
+                uniqueRows.push(row);
+            }
+        }
+
+
+        messagesCache =
+            uniqueRows
+                .map(
+                    decodePrivateMessage
+                )
+                .filter(Boolean);
+
+
+        /*
+         * New messages have created_at stored inside content.
+         * Older messages without a timestamp stay in their
+         * database-returned order.
+         */
+        messagesCache.sort(
+            (a, b) => {
+
+                if (
+                    a.created_at &&
+                    b.created_at
+                ) {
+
+                    return (
+                        new Date(
+                            a.created_at
+                        ).getTime() -
+                        new Date(
+                            b.created_at
+                        ).getTime()
+                    );
+                }
+
+
+                if (a.created_at) {
+                    return -1;
+                }
+
+
+                if (b.created_at) {
+                    return 1;
+                }
+
+
+                return 0;
+            }
+        );
+
+
+        renderMessages(
+            messagesCache
+        );
+    }
+
+
+    /* ============================================================
+       RENDER
+    ============================================================ */
+
+    function renderMessages(messages) {
+
+        const container =
+            document.getElementById(
+                'chat-messages'
+            );
+
+
+        container.innerHTML =
+            '';
+
+
+        const hiddenForMe =
+            getDeletedForMe();
+
+
+        const filtered =
+            messages.filter(
+                message => {
 
                     if (
                         message.id &&
-                        hiddenForMe.includes(message.id)
+                        hiddenForMe.includes(
+                            message.id
+                        )
                     ) {
+
                         return false;
                     }
+
 
                     if (
                         message.is_deleted_for_everyone
                     ) {
+
                         return false;
                     }
 
-                    return true;
-                });
 
-            filtered.forEach(message => {
+                    return true;
+                }
+            );
+
+
+        filtered.forEach(
+            message => {
+
                 appendMessageToDOM(
                     message,
                     false
                 );
-            });
+            }
+        );
 
-            container.scrollTop =
-                container.scrollHeight;
+
+        container.scrollTop =
+            container.scrollHeight;
+    }
+
+
+    /* ============================================================
+       SEARCH
+    ============================================================ */
+
+    function toggleSearchBox() {
+
+        const searchBar =
+            document.getElementById(
+                'search-container'
+            );
+
+
+        searchBar.classList.toggle(
+            'hidden'
+        );
+
+
+        if (
+            !searchBar.classList.contains(
+                'hidden'
+            )
+        ) {
+
+            document
+                .getElementById(
+                    'search-keyword-input'
+                )
+                .focus();
+
+        } else {
+
+            filterMessages('');
+        }
+    }
+
+
+    function filterMessages(keyword) {
+
+        const term =
+            (
+                keyword ||
+                ''
+            )
+                .toLowerCase()
+                .trim();
+
+
+        if (!term) {
+
+            renderMessages(
+                messagesCache
+            );
+
+            return;
         }
 
 
-        /* ============================================================
-           SEARCH
-        ============================================================ */
-
-        function toggleSearchBox() {
-
-            const searchBar =
-                document.getElementById(
-                    'search-container'
-                );
-
-            searchBar.classList.toggle('hidden');
-
-            if (!searchBar.classList.contains('hidden')) {
-
-                document
-                    .getElementById('search-keyword-input')
-                    .focus();
-
-            } else {
-
-                filterMessages('');
-            }
-        }
-
-
-        function filterMessages(keyword) {
-
-            const term =
-                (keyword || '').toLowerCase().trim();
-
-            if (!term) {
-
-                renderMessages(messagesCache);
-                return;
-            }
-
-            const filtered =
-                messagesCache.filter(message => {
+        const filtered =
+            messagesCache.filter(
+                message => {
 
                     if (
                         message.is_deleted_for_everyone
                     ) {
+
                         return false;
                     }
 
+
                     const type =
-                        message.message_type || 'text';
+                        message.message_type ||
+                        'text';
+
 
                     const content =
-                        String(message.content || '')
+                        String(
+                            message.content ||
+                            ''
+                        )
                             .toLowerCase();
 
+
                     const sender =
-                        String(message.sender_username || '')
+                        String(
+                            message.sender_username ||
+                            ''
+                        )
                             .toLowerCase();
+
 
                     return (
                         content.includes(term) ||
                         sender.includes(term) ||
                         type.toLowerCase() === term
                     );
-                });
+                }
+            );
 
-            renderMessages(filtered);
+
+        renderMessages(
+            filtered
+        );
+    }
+
+
+    /* ============================================================
+       APPEND MESSAGE
+    ============================================================ */
+
+    function appendMessageToDOM(
+        msg,
+        scrollToBottom = true
+    ) {
+
+        const container =
+            document.getElementById(
+                'chat-messages'
+            );
+
+
+        const isMe =
+            msg.sender_username ===
+            currentUser.username;
+
+
+        const wrapper =
+            document.createElement(
+                'div'
+            );
+
+
+        wrapper.className =
+            `flex flex-col ${
+                isMe
+                    ? 'items-end'
+                    : 'items-start'
+            } space-y-1 message-row relative transition-transform duration-200 select-none`;
+
+
+        if (msg.id) {
+
+            wrapper.setAttribute(
+                'data-id',
+                msg.id
+            );
         }
 
 
-        /* ============================================================
-           APPEND MESSAGE
-        ============================================================ */
-
-        function appendMessageToDOM(
-            msg,
-            scrollToBottom = true
-        ) {
-
-            const container =
-                document.getElementById('chat-messages');
-
-            const isMe =
-                msg.sender_username === currentUser.username;
-
-            const wrapper =
-                document.createElement('div');
-
-            wrapper.className =
-                `flex flex-col ${
-                    isMe
-                        ? 'items-end'
-                        : 'items-start'
-                } space-y-1 message-row relative transition-transform duration-200 select-none`;
-
-            if (msg.id) {
-                wrapper.setAttribute(
-                    'data-id',
-                    msg.id
-                );
-            }
-
-            const isSelected =
-                msg.id &&
-                selectedMessageIds.has(msg.id);
-
-            const rowFlex =
-                document.createElement('div');
-
-            rowFlex.className =
-                `flex items-center gap-2 max-w-[85%] ${
-                    isMe
-                        ? 'flex-row-reverse'
-                        : 'flex-row'
-                }`;
-
-            const checkboxEl =
-                document.createElement('div');
-
-            checkboxEl.className =
-                `w-5 h-5 rounded-full border border-slate-600 flex items-center justify-center text-xs transition-all flex-shrink-0 ${
-                    isMultiSelectMode
-                        ? 'flex'
-                        : 'hidden'
-                } ${
-                    isSelected
-                        ? 'bg-indigo-600 border-indigo-500 text-white'
-                        : 'bg-slate-900'
-                }`;
-
-            checkboxEl.innerHTML =
-                isSelected ? '✓' : '';
-
-            rowFlex.appendChild(
-                checkboxEl
+        const isSelected =
+            msg.id &&
+            selectedMessageIds.has(
+                msg.id
             );
 
-            if (isSelected) {
 
-                wrapper.classList.add(
-                    'bg-indigo-950/30',
-                    'p-2',
-                    'rounded-xl'
-                );
-            }
+        const rowFlex =
+            document.createElement(
+                'div'
+            );
 
-            let pressTimer = null;
 
-            const startPress = () => {
+        rowFlex.className =
+            `flex items-center gap-2 max-w-[85%] ${
+                isMe
+                    ? 'flex-row-reverse'
+                    : 'flex-row'
+            }`;
+
+
+        const checkboxEl =
+            document.createElement(
+                'div'
+            );
+
+
+        checkboxEl.className =
+            `w-5 h-5 rounded-full border border-slate-600 flex items-center justify-center text-xs transition-all flex-shrink-0 ${
+                isMultiSelectMode
+                    ? 'flex'
+                    : 'hidden'
+            } ${
+                isSelected
+                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    : 'bg-slate-900'
+            }`;
+
+
+        checkboxEl.innerHTML =
+            isSelected
+                ? '✓'
+                : '';
+
+
+        rowFlex.appendChild(
+            checkboxEl
+        );
+
+
+        if (isSelected) {
+
+            wrapper.classList.add(
+                'bg-indigo-950/30',
+                'p-2',
+                'rounded-xl'
+            );
+        }
+
+
+        let pressTimer =
+            null;
+
+
+        const startPress =
+            () => {
 
                 pressTimer =
-                    setTimeout(() => {
+                    setTimeout(
+                        () => {
 
-                        if (isMultiSelectMode) {
+                            if (
+                                isMultiSelectMode
+                            ) {
 
-                            if (msg.id) {
-                                toggleMessageSelection(
-                                    msg.id
+                                if (msg.id) {
+
+                                    toggleMessageSelection(
+                                        msg.id
+                                    );
+                                }
+
+                            } else {
+
+                                openMessageOptions(
+                                    msg
                                 );
                             }
 
-                        } else {
-
-                            openMessageOptions(msg);
-                        }
-
-                    }, 600);
+                        },
+                        600
+                    );
             };
 
-            const cancelPress = () => {
+
+        const cancelPress =
+            () => {
 
                 if (pressTimer) {
-                    clearTimeout(pressTimer);
+
+                    clearTimeout(
+                        pressTimer
+                    );
                 }
             };
 
-            wrapper.addEventListener(
-                'touchstart',
-                startPress
-            );
 
-            wrapper.addEventListener(
-                'touchend',
-                cancelPress
-            );
+        wrapper.addEventListener(
+            'touchstart',
+            startPress
+        );
 
-            wrapper.addEventListener(
-                'touchmove',
-                cancelPress
-            );
 
-            wrapper.addEventListener(
-                'mousedown',
-                startPress
-            );
+        wrapper.addEventListener(
+            'touchend',
+            cancelPress
+        );
 
-            wrapper.addEventListener(
-                'mouseup',
-                cancelPress
-            );
 
-            wrapper.addEventListener(
-                'mouseleave',
-                cancelPress
-            );
+        wrapper.addEventListener(
+            'touchmove',
+            cancelPress
+        );
 
-            wrapper.addEventListener(
-                'click',
-                event => {
 
-                    if (
-                        isMultiSelectMode &&
+        wrapper.addEventListener(
+            'mousedown',
+            startPress
+        );
+
+
+        wrapper.addEventListener(
+            'mouseup',
+            cancelPress
+        );
+
+
+        wrapper.addEventListener(
+            'mouseleave',
+            cancelPress
+        );
+
+
+        wrapper.addEventListener(
+            'click',
+            event => {
+
+                if (
+                    isMultiSelectMode &&
+                    msg.id
+                ) {
+
+                    toggleMessageSelection(
                         msg.id
-                    ) {
+                    );
 
-                        toggleMessageSelection(
-                            msg.id
-                        );
-
-                        event.stopPropagation();
-                    }
+                    event.stopPropagation();
                 }
-            );
+            }
+        );
 
-            wrapper.oncontextmenu = event => {
+
+        wrapper.oncontextmenu =
+            event => {
 
                 event.preventDefault();
 
-                if (msg.id && !isMultiSelectMode) {
-                    openMessageOptions(msg);
+                if (
+                    msg.id &&
+                    !isMultiSelectMode
+                ) {
+
+                    openMessageOptions(
+                        msg
+                    );
                 }
             };
 
-            /* Swipe-to-reply */
 
-            let touchStartX = 0;
-            let touchCurrentX = 0;
+        /* Swipe-to-reply */
 
-            wrapper.addEventListener(
-                'touchstart',
-                event => {
+        let touchStartX =
+            0;
 
-                    if (isMultiSelectMode) {
-                        return;
-                    }
+        let touchCurrentX =
+            0;
 
-                    touchStartX =
-                        event.touches[0].clientX;
-                },
-                { passive: true }
-            );
 
-            wrapper.addEventListener(
-                'touchmove',
-                event => {
+        wrapper.addEventListener(
+            'touchstart',
+            event => {
 
-                    if (isMultiSelectMode) {
-                        return;
-                    }
+                if (
+                    isMultiSelectMode
+                ) {
+                    return;
+                }
 
-                    touchCurrentX =
-                        event.touches[0].clientX;
+                touchStartX =
+                    event.touches[0]
+                        .clientX;
+            },
+            {
+                passive: true
+            }
+        );
 
-                    const diff =
-                        touchCurrentX -
-                        touchStartX;
 
-                    if (
-                        diff > 0 &&
-                        diff < 100
-                    ) {
+        wrapper.addEventListener(
+            'touchmove',
+            event => {
 
-                        wrapper.style.transform =
-                            `translateX(${diff}px)`;
-                    }
-                },
-                { passive: true }
-            );
+                if (
+                    isMultiSelectMode
+                ) {
+                    return;
+                }
 
-            wrapper.addEventListener(
-                'touchend',
-                () => {
+                touchCurrentX =
+                    event.touches[0]
+                        .clientX;
 
-                    if (isMultiSelectMode) {
-                        return;
-                    }
 
-                    const diff =
-                        touchCurrentX -
-                        touchStartX;
+                const diff =
+                    touchCurrentX -
+                    touchStartX;
+
+
+                if (
+                    diff > 0 &&
+                    diff < 100
+                ) {
 
                     wrapper.style.transform =
-                        'translateX(0px)';
-
-                    if (diff > 60) {
-                        setReplyTarget(msg);
-                    }
-
-                    touchStartX = 0;
-                    touchCurrentX = 0;
+                        `translateX(${diff}px)`;
                 }
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        wrapper.addEventListener(
+            'touchend',
+            () => {
+
+                if (
+                    isMultiSelectMode
+                ) {
+                    return;
+                }
+
+
+                const diff =
+                    touchCurrentX -
+                    touchStartX;
+
+
+                wrapper.style.transform =
+                    'translateX(0px)';
+
+
+                if (diff > 60) {
+
+                    setReplyTarget(
+                        msg
+                    );
+                }
+
+
+                touchStartX =
+                    0;
+
+                touchCurrentX =
+                    0;
+            }
+        );
+
+
+        /* Message bubble */
+
+        const bubble =
+            document.createElement(
+                'div'
             );
 
-            /* Message bubble */
 
-            const bubble =
-                document.createElement('div');
+        bubble.className =
+            `flex-1 px-3 py-2 rounded-2xl text-sm ${
+                isMe
+                    ? 'bg-indigo-600 text-white rounded-br-none'
+                    : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
+            }`;
 
-            bubble.className =
-                `flex-1 px-3 py-2 rounded-2xl text-sm ${
+
+        if (!isMe) {
+
+            const senderLabelEl =
+                document.createElement(
+                    'span'
+                );
+
+
+            senderLabelEl.className =
+                'text-[10px] font-bold text-indigo-400 block mb-0.5';
+
+
+            senderLabelEl.textContent =
+                `@${msg.sender_username}`;
+
+
+            bubble.appendChild(
+                senderLabelEl
+            );
+        }
+
+
+        /* Reply */
+
+        if (msg.reply_to) {
+
+            const replySnippet =
+                document.createElement(
+                    'div'
+                );
+
+
+            replySnippet.className =
+                `mb-1 p-1.5 rounded text-xs border-l-2 ${
                     isMe
-                        ? 'bg-indigo-600 text-white rounded-br-none'
-                        : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
+                        ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100'
+                        : 'bg-slate-900/60 border-indigo-500 text-slate-300'
                 }`;
 
-            if (!isMe) {
 
-                const senderLabelEl =
-                    document.createElement('span');
-
-                senderLabelEl.className =
-                    'text-[10px] font-bold text-indigo-400 block mb-0.5';
-
-                senderLabelEl.textContent =
-                    `@${msg.sender_username}`;
-
-                bubble.appendChild(
-                    senderLabelEl
-                );
-            }
-
-            /* Reply */
-
-            if (msg.reply_to) {
-
-                const replySnippet =
-                    document.createElement('div');
-
-                replySnippet.className =
-                    `mb-1 p-1.5 rounded text-xs border-l-2 ${
-                        isMe
-                            ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100'
-                            : 'bg-slate-900/60 border-indigo-500 text-slate-300'
-                    }`;
-
-                const replySender =
-                    document.createElement('span');
-
-                replySender.className =
-                    'font-bold block text-[10px] opacity-90';
-
-                replySender.textContent =
-                    msg.reply_to.sender || '';
-
-                const replyContent =
-                    document.createElement('span');
-
-                replyContent.className =
-                    'truncate block';
-
-                replyContent.textContent =
-                    msg.reply_to.content || '';
-
-                replySnippet.appendChild(
-                    replySender
+            const replySender =
+                document.createElement(
+                    'span'
                 );
 
-                replySnippet.appendChild(
-                    replyContent
+
+            replySender.className =
+                'font-bold block text-[10px] opacity-90';
+
+
+            replySender.textContent =
+                msg.reply_to.sender ||
+                '';
+
+
+            const replyContent =
+                document.createElement(
+                    'span'
                 );
 
-                bubble.appendChild(
-                    replySnippet
+
+            replyContent.className =
+                'truncate block';
+
+
+            replyContent.textContent =
+                msg.reply_to.content ||
+                '';
+
+
+            replySnippet.appendChild(
+                replySender
+            );
+
+
+            replySnippet.appendChild(
+                replyContent
+            );
+
+
+            bubble.appendChild(
+                replySnippet
+            );
+        }
+
+
+        /* Content */
+
+        const contentBody =
+            document.createElement(
+                'div'
+            );
+
+
+        const type =
+            msg.message_type ||
+            'text';
+
+
+        if (type === 'image') {
+
+            const image =
+                document.createElement(
+                    'img'
                 );
-            }
 
-            /* Content */
 
-            const contentBody =
-                document.createElement('div');
+            image.src =
+                msg.content;
 
-            const type =
-                msg.message_type || 'text';
 
-            if (type === 'image') {
+            image.className =
+                'rounded-xl max-h-60 w-full object-cover cursor-pointer';
 
-                const image =
-                    document.createElement('img');
 
-                image.src =
-                    msg.content;
+            image.onclick =
+                () => {
 
-                image.className =
-                    'rounded-xl max-h-60 w-full object-cover cursor-pointer';
+                    if (
+                        !isMultiSelectMode
+                    ) {
 
-                image.onclick = () => {
-
-                    if (!isMultiSelectMode) {
                         window.open(
                             msg.content,
                             '_blank'
@@ -1256,107 +1665,129 @@
                     }
                 };
 
-                contentBody.appendChild(image);
 
-            } else if (type === 'video') {
+            contentBody.appendChild(
+                image
+            );
 
-                const video =
-                    document.createElement('video');
+        } else if (type === 'video') {
 
-                video.src =
-                    msg.content;
+            const video =
+                document.createElement(
+                    'video'
+                );
 
-                video.controls = true;
 
-                video.className =
-                    'rounded-xl max-h-60 w-full';
+            video.src =
+                msg.content;
 
-                contentBody.appendChild(video);
 
-            } else if (type === 'audio') {
+            video.controls =
+                true;
 
-                const audioId =
-                    'audio_' +
-                    Math.random()
-                        .toString(36)
-                        .substring(2, 9);
 
-                contentBody.innerHTML = `
-                    <div
-                        class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]"
-                        data-audio-container>
+            video.className =
+                'rounded-xl max-h-60 w-full';
 
-                        <button
-                            type="button"
-                            onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)"
-                            class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">
-                            ▶
-                        </button>
 
-                        <audio
-                            id="${audioId}"
-                            src="${msg.content}"
-                            preload="metadata">
-                        </audio>
+            contentBody.appendChild(
+                video
+            );
 
-                        <div class="flex flex-col flex-1 gap-1">
+        } else if (type === 'audio') {
 
-                            <div class="flex justify-between items-center text-[10px] opacity-80">
+            const audioId =
+                'audio_' +
+                Math.random()
+                    .toString(36)
+                    .substring(2, 9);
 
-                                <span class="audio-current-time">
-                                    0:00
-                                </span>
 
-                                <button
-                                    type="button"
-                                    onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)"
-                                    class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">
-                                    1x
-                                </button>
+            contentBody.innerHTML =
+                `
+                <div
+                    class="flex items-center gap-2.5 py-1 px-1 min-w-[220px]"
+                    data-audio-container>
 
-                            </div>
+                    <button
+                        type="button"
+                        onclick="if(!isMultiSelectMode) toggleAudioPlay('${audioId}', this)"
+                        class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs font-bold transition-all flex-shrink-0 cursor-pointer">
+                        ▶
+                    </button>
 
-                            <input
-                                type="range"
-                                value="0"
-                                max="100"
-                                step="0.1"
-                                oninput="seekAudio('${audioId}', this.value)"
-                                class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
+                    <audio
+                        id="${audioId}"
+                        src="${msg.content}"
+                        preload="metadata">
+                    </audio>
+
+                    <div class="flex flex-col flex-1 gap-1">
+
+                        <div class="flex justify-between items-center text-[10px] opacity-80">
+
+                            <span class="audio-current-time">
+                                0:00
+                            </span>
+
+                            <button
+                                type="button"
+                                onclick="if(!isMultiSelectMode) toggleAudioSpeed('${audioId}', this)"
+                                class="bg-white/10 hover:bg-white/20 px-1.5 py-0.5 rounded font-mono text-[9px] cursor-pointer">
+                                1x
+                            </button>
 
                         </div>
-                    </div>
-                `;
 
-                setTimeout(() => {
+                        <input
+                            type="range"
+                            value="0"
+                            max="100"
+                            step="0.1"
+                            oninput="seekAudio('${audioId}', this.value)"
+                            class="audio-range w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white">
+
+                    </div>
+                </div>
+            `;
+
+
+            setTimeout(
+                () => {
 
                     const audioEl =
                         document.getElementById(
                             audioId
                         );
 
+
                     if (!audioEl) {
                         return;
                     }
+
 
                     const c =
                         audioEl.closest(
                             '[data-audio-container]'
                         );
 
+
                     if (!c) {
                         return;
                     }
+
 
                     const rangeEl =
                         c.querySelector(
                             '.audio-range'
                         );
 
+
                     const timeEl =
                         c.querySelector(
                             '.audio-current-time'
                         );
+
 
                     audioEl.addEventListener(
                         'loadedmetadata',
@@ -1369,19 +1800,24 @@
                         }
                     );
 
+
                     audioEl.addEventListener(
                         'timeupdate',
                         () => {
 
-                            if (!audioEl.duration) {
+                            if (
+                                !audioEl.duration
+                            ) {
                                 return;
                             }
+
 
                             rangeEl.value =
                                 (
                                     audioEl.currentTime /
                                     audioEl.duration
                                 ) * 100;
+
 
                             timeEl.textContent =
                                 formatAudioTime(
@@ -1390,860 +1826,506 @@
                         }
                     );
 
+
                     audioEl.addEventListener(
                         'ended',
                         () => {
 
                             c.querySelector(
                                 'button'
-                            ).textContent = '▶';
+                            ).textContent =
+                                '▶';
 
-                            audioEl.currentTime = 0;
+
+                            audioEl.currentTime =
+                                0;
                         }
                     );
 
-                }, 50);
-
-            } else if (type === 'file') {
-
-                const link =
-                    document.createElement('a');
-
-                link.href =
-                    msg.content;
-
-                link.download =
-                    'file';
-
-                link.className =
-                    'flex items-center gap-2 underline text-xs font-semibold py-1';
-
-                link.textContent =
-                    '📁 File Attachment';
-
-                contentBody.appendChild(
-                    link
-                );
-
-            } else {
-
-                contentBody.textContent =
-                    msg.content || '';
-            }
-
-            bubble.appendChild(
-                contentBody
+                },
+                50
             );
 
-            rowFlex.appendChild(
-                bubble
-            );
+        } else if (type === 'file') {
 
-            /* Timestamp */
-
-            const metaRow =
-                document.createElement('div');
-
-            metaRow.className =
-                `flex items-center gap-1 px-1 text-[10px] text-slate-400 ${
-                    isMe
-                        ? 'mr-7'
-                        : 'ml-7'
-                }`;
-
-            const timeSpan =
-                document.createElement('span');
-
-            if (msg.created_at) {
-
-                const date =
-                    new Date(
-                        msg.created_at
-                    );
-
-                if (!isNaN(date.getTime())) {
-
-                    timeSpan.textContent =
-                        date.toLocaleTimeString(
-                            [],
-                            {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            }
-                        );
-                }
-            }
-
-            if (!timeSpan.textContent) {
-                timeSpan.textContent = '';
-            }
-
-            metaRow.appendChild(
-                timeSpan
-            );
-
-            if (isMe) {
-
-                const tickSpan =
-                    document.createElement('span');
-
-                tickSpan.className =
-                    'font-bold text-xs text-slate-500';
-
-                tickSpan.textContent =
-                    '✓';
-
-                metaRow.appendChild(
-                    tickSpan
-                );
-            }
-
-            wrapper.appendChild(
-                rowFlex
-            );
-
-            wrapper.appendChild(
-                metaRow
-            );
-
-            container.appendChild(
-                wrapper
-            );
-
-            if (scrollToBottom) {
-                container.scrollTop =
-                    container.scrollHeight;
-            }
-        }
-
-
-        /* ============================================================
-           MULTI SELECT
-        ============================================================ */
-
-        function enterMultiSelectMode(msg) {
-
-            isMultiSelectMode = true;
-
-            selectedMessageIds.clear();
-
-            if (msg && msg.id) {
-                selectedMessageIds.add(
-                    msg.id
-                );
-            }
-
-            document
-                .getElementById('multi-select-bar')
-                .classList.remove('hidden');
-
-            document
-                .getElementById('multi-select-bar')
-                .classList.add('flex');
-
-            updateMultiSelectUI();
-
-            renderMessages(
-                messagesCache
-            );
-        }
-
-
-        function exitMultiSelectMode() {
-
-            isMultiSelectMode = false;
-
-            selectedMessageIds.clear();
-
-            document
-                .getElementById('multi-select-bar')
-                .classList.remove('flex');
-
-            document
-                .getElementById('multi-select-bar')
-                .classList.add('hidden');
-
-            renderMessages(
-                messagesCache
-            );
-        }
-
-
-        function toggleMessageSelection(msgId) {
-
-            if (
-                selectedMessageIds.has(msgId)
-            ) {
-
-                selectedMessageIds.delete(
-                    msgId
+            const link =
+                document.createElement(
+                    'a'
                 );
 
-            } else {
 
-                selectedMessageIds.add(
-                    msgId
-                );
-            }
-
-            if (
-                selectedMessageIds.size === 0
-            ) {
-
-                exitMultiSelectMode();
-                return;
-            }
-
-            updateMultiSelectUI();
-
-            renderMessages(
-                messagesCache
-            );
-        }
-
-
-        function updateMultiSelectUI() {
-
-            const countText =
-                document.getElementById(
-                    'selected-count-text'
-                );
-
-            countText.textContent =
-                `${selectedMessageIds.size} selected`;
-        }
-
-
-        /* ============================================================
-           MULTI SELECT ACTIONS
-        ============================================================ */
-
-        async function handleMultiSelectAction(
-            actionType
-        ) {
-
-            if (
-                selectedMessageIds.size === 0
-            ) {
-                return;
-            }
-
-            const selectedMsgs =
-                messagesCache.filter(
-                    message =>
-                        selectedMessageIds.has(
-                            message.id
-                        )
-                );
-
-            if (actionType === 'forward') {
-
-                const firstMsg =
-                    selectedMsgs[0];
-
-                if (firstMsg) {
-
-                    localStorage.setItem(
-                        'chatlite_forward_payload',
-                        JSON.stringify({
-                            content:
-                                firstMsg.content,
-                            type:
-                                firstMsg.message_type ||
-                                'text'
-                        })
-                    );
-
-                    window.location.href =
-                        'chatlist.html?forward=true';
-                }
-
-                exitMultiSelectMode();
-
-                return;
-            }
-
-            if (actionType === 'me') {
-
-                const hiddenForMe =
-                    getDeletedForMe();
-
-                selectedMessageIds.forEach(
-                    id => {
-
-                        if (
-                            !hiddenForMe.includes(id)
-                        ) {
-
-                            hiddenForMe.push(id);
-                        }
-                    }
-                );
-
-                setDeletedForMe(
-                    hiddenForMe
-                );
-
-                exitMultiSelectMode();
-
-                renderMessages(
-                    messagesCache
-                );
-
-                showUndoBanner(
-                    10,
-                    () => fetchMessages()
-                );
-
-                return;
-            }
-
-            if (actionType === 'everyone') {
-
-                const now =
-                    Date.now();
-
-                const validMessages =
-                    selectedMsgs.filter(
-                        msg => {
-
-                            if (
-                                msg.sender_username !==
-                                currentUser.username
-                            ) {
-                                return false;
-                            }
-
-                            if (!msg.created_at) {
-                                return false;
-                            }
-
-                            const messageTime =
-                                new Date(
-                                    msg.created_at
-                                ).getTime();
-
-                            const diffHours =
-                                (
-                                    now -
-                                    messageTime
-                                ) /
-                                (1000 * 60 * 60);
-
-                            return (
-                                diffHours >= 0 &&
-                                diffHours <= 3
-                            );
-                        }
-                    );
-
-                validMessages.forEach(
-                    msg => {
-
-                        msg.is_deleted_for_everyone =
-                            true;
-                    }
-                );
-
-                exitMultiSelectMode();
-
-                renderMessages(
-                    messagesCache
-                );
-
-                showUndoBanner(
-                    10,
-                    async () => {
-
-                        for (
-                            const msg of validMessages
-                        ) {
-
-                            await permanentlyDeleteForEveryone(
-                                msg
-                            );
-                        }
-
-                        await fetchMessages();
-                    }
-                );
-            }
-        }
-
-
-        /* ============================================================
-           REPLY
-        ============================================================ */
-
-        function setReplyTarget(msg) {
-
-            if (isMultiSelectMode) {
-                return;
-            }
-
-            replyingToMessage =
-                msg;
-
-            const replyBar =
-                document.getElementById(
-                    'reply-preview-bar'
-                );
-
-            const senderNameEl =
-                document.getElementById(
-                    'reply-target-sender'
-                );
-
-            const contentEl =
-                document.getElementById(
-                    'reply-target-content'
-                );
-
-            const senderLabel =
-                msg.sender_username ===
-                currentUser.username
-                    ? 'You'
-                    : `@${msg.sender_username}`;
-
-            senderNameEl.textContent =
-                `Replying to ${senderLabel}`;
-
-            let previewText =
+            link.href =
                 msg.content;
 
-            const msgType =
-                msg.message_type || 'text';
 
-            if (msgType === 'image') {
-                previewText =
-                    '[Photo Attachment]';
-            } else if (msgType === 'video') {
-                previewText =
-                    '[Video Attachment]';
-            } else if (msgType === 'audio') {
-                previewText =
-                    '[Voice Note]';
-            } else if (msgType === 'file') {
-                previewText =
-                    '[File Attachment]';
-            }
+            link.download =
+                'file';
 
-            contentEl.textContent =
-                previewText;
 
-            replyBar.classList.remove(
-                'hidden'
+            link.className =
+                'flex items-center gap-2 underline text-xs font-semibold py-1';
+
+
+            link.textContent =
+                '📁 File Attachment';
+
+
+            contentBody.appendChild(
+                link
             );
 
-            replyBar.classList.add(
-                'flex'
+        } else {
+
+            contentBody.textContent =
+                msg.content || '';
+        }
+
+
+        bubble.appendChild(
+            contentBody
+        );
+
+
+        rowFlex.appendChild(
+            bubble
+        );
+
+
+        /* Timestamp */
+
+        const metaRow =
+            document.createElement(
+                'div'
             );
 
-            document
-                .getElementById(
-                    'message-input'
+
+        metaRow.className =
+            `flex items-center gap-1 px-1 text-[10px] text-slate-400 ${
+                isMe
+                    ? 'mr-7'
+                    : 'ml-7'
+            }`;
+
+
+        const timeSpan =
+            document.createElement(
+                'span'
+            );
+
+
+        if (msg.created_at) {
+
+            const date =
+                new Date(
+                    msg.created_at
+                );
+
+
+            if (
+                !isNaN(
+                    date.getTime()
                 )
-                .focus();
-        }
-
-
-        function cancelReply() {
-
-            replyingToMessage = null;
-
-            const replyBar =
-                document.getElementById(
-                    'reply-preview-bar'
-                );
-
-            replyBar.classList.remove(
-                'flex'
-            );
-
-            replyBar.classList.add(
-                'hidden'
-            );
-        }
-
-
-        /* ============================================================
-           MESSAGE OPTIONS
-        ============================================================ */
-
-        function openMessageOptions(msg) {
-
-            if (isMultiSelectMode) {
-                return;
-            }
-
-            const modal =
-                document.getElementById(
-                    'message-options-modal'
-                );
-
-            const actionsContainer =
-                document.getElementById(
-                    'message-options-actions'
-                );
-
-            actionsContainer.innerHTML =
-                '';
-
-            const isSender =
-                msg.sender_username ===
-                currentUser.username;
-
-            let within3Hours = false;
-
-            if (msg.created_at) {
-
-                const msgTime =
-                    new Date(
-                        msg.created_at
-                    ).getTime();
-
-                const now =
-                    Date.now();
-
-                const diffHours =
-                    (
-                        now -
-                        msgTime
-                    ) /
-                    (1000 * 60 * 60);
-
-                within3Hours =
-                    diffHours >= 0 &&
-                    diffHours <= 3;
-            }
-
-            const msgType =
-                msg.message_type ||
-                'text';
-
-            /* Select multiple */
-
-            const selectMultipleBtn =
-                document.createElement(
-                    'button'
-                );
-
-            selectMultipleBtn.className =
-                'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-
-            selectMultipleBtn.textContent =
-                '☑️ Select Multiple';
-
-            selectMultipleBtn.onclick =
-                () => {
-
-                    closeMessageOptions();
-
-                    enterMultiSelectMode(
-                        msg
-                    );
-                };
-
-            actionsContainer.appendChild(
-                selectMultipleBtn
-            );
-
-            /* Reply */
-
-            const replyBtn =
-                document.createElement(
-                    'button'
-                );
-
-            replyBtn.className =
-                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-
-            replyBtn.textContent =
-                '↩️ Reply';
-
-            replyBtn.onclick =
-                () => {
-
-                    closeMessageOptions();
-
-                    setReplyTarget(
-                        msg
-                    );
-                };
-
-            actionsContainer.appendChild(
-                replyBtn
-            );
-
-            /* Copy */
-
-            if (
-                msgType === 'text' &&
-                msg.content
             ) {
 
-                const copyBtn =
-                    document.createElement(
-                        'button'
-                    );
+                timeSpan.textContent =
+                    date.toLocaleTimeString(
+                        [],
+                        {
+                            hour:
+                                '2-digit',
 
-                copyBtn.className =
-                    'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-
-                copyBtn.textContent =
-                    '📋 Copy';
-
-                copyBtn.onclick =
-                    async () => {
-
-                        try {
-                            await navigator.clipboard.writeText(
-                                msg.content
-                            );
-                        } catch (error) {
-                            console.error(
-                                'Copy failed:',
-                                error
-                            );
+                            minute:
+                                '2-digit'
                         }
-
-                        closeMessageOptions();
-                    };
-
-                actionsContainer.appendChild(
-                    copyBtn
-                );
+                    );
             }
+        }
 
-            /* Forward */
 
-            const forwardBtn =
+        if (
+            !timeSpan.textContent
+        ) {
+
+            timeSpan.textContent =
+                '';
+        }
+
+
+        metaRow.appendChild(
+            timeSpan
+        );
+
+
+        if (isMe) {
+
+            const tickSpan =
                 document.createElement(
-                    'button'
+                    'span'
                 );
 
-            forwardBtn.className =
-                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
 
-            forwardBtn.textContent =
-                '↗️ Forward';
+            tickSpan.className =
+                'font-bold text-xs text-slate-500';
 
-            forwardBtn.onclick =
-                () => {
 
-                    closeMessageOptions();
+            tickSpan.textContent =
+                '✓';
 
-                    localStorage.setItem(
-                        'chatlite_forward_payload',
-                        JSON.stringify({
-                            content:
-                                msg.content,
-                            type:
-                                msgType
-                        })
-                    );
 
-                    window.location.href =
-                        'chatlist.html?forward=true';
-                };
-
-            actionsContainer.appendChild(
-                forwardBtn
+            metaRow.appendChild(
+                tickSpan
             );
+        }
 
-            /* Delete for me */
 
-            const deleteForMeBtn =
-                document.createElement(
-                    'button'
-                );
+        wrapper.appendChild(
+            rowFlex
+        );
 
-            deleteForMeBtn.className =
-                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
 
-            deleteForMeBtn.textContent =
-                '🗑️ Only me';
+        wrapper.appendChild(
+            metaRow
+        );
 
-            deleteForMeBtn.onclick =
-                () => {
 
-                    closeMessageOptions();
+        container.appendChild(
+            wrapper
+        );
 
-                    executeDeleteMessage(
-                        msg,
-                        'me'
-                    );
-                };
 
-            actionsContainer.appendChild(
-                deleteForMeBtn
+        if (scrollToBottom) {
+
+            container.scrollTop =
+                container.scrollHeight;
+        }
+    }
+
+
+    /* ============================================================
+       MULTI SELECT
+    ============================================================ */
+
+    function enterMultiSelectMode(msg) {
+
+        isMultiSelectMode =
+            true;
+
+
+        selectedMessageIds.clear();
+
+
+        if (
+            msg &&
+            msg.id
+        ) {
+
+            selectedMessageIds.add(
+                msg.id
             );
+        }
 
-            /* Delete for everyone */
 
-            if (
-                isSender &&
-                within3Hours
-            ) {
-
-                const deleteForEveryoneBtn =
-                    document.createElement(
-                        'button'
-                    );
-
-                deleteForEveryoneBtn.className =
-                    'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
-
-                deleteForEveryoneBtn.textContent =
-                    '🗑️ Delete for everyone';
-
-                deleteForEveryoneBtn.onclick =
-                    () => {
-
-                        closeMessageOptions();
-
-                        executeDeleteMessage(
-                            msg,
-                            'everyone'
-                        );
-                    };
-
-                actionsContainer.appendChild(
-                    deleteForEveryoneBtn
-                );
-            }
-
-            modal.classList.remove(
+        document
+            .getElementById(
+                'multi-select-bar'
+            )
+            .classList.remove(
                 'hidden'
             );
 
-            modal.classList.add(
-                'flex'
-            );
-        }
 
-
-        function closeMessageOptions() {
-
-            const modal =
-                document.getElementById(
-                    'message-options-modal'
-                );
-
-            modal.classList.remove(
+        document
+            .getElementById(
+                'multi-select-bar'
+            )
+            .classList.add(
                 'flex'
             );
 
-            modal.classList.add(
+
+        updateMultiSelectUI();
+
+
+        renderMessages(
+            messagesCache
+        );
+    }
+
+
+    function exitMultiSelectMode() {
+
+        isMultiSelectMode =
+            false;
+
+
+        selectedMessageIds.clear();
+
+
+        document
+            .getElementById(
+                'multi-select-bar'
+            )
+            .classList.remove(
+                'flex'
+            );
+
+
+        document
+            .getElementById(
+                'multi-select-bar'
+            )
+            .classList.add(
                 'hidden'
             );
+
+
+        renderMessages(
+            messagesCache
+        );
+    }
+
+
+    function toggleMessageSelection(
+        msgId
+    ) {
+
+        if (
+            selectedMessageIds.has(
+                msgId
+            )
+        ) {
+
+            selectedMessageIds.delete(
+                msgId
+            );
+
+        } else {
+
+            selectedMessageIds.add(
+                msgId
+            );
         }
 
 
-        /* ============================================================
-           DELETE FOR EVERYONE
-        ============================================================ */
-
-        async function permanentlyDeleteForEveryone(
-            msg
+        if (
+            selectedMessageIds.size ===
+            0
         ) {
 
-            if (!msg || !msg.id) {
-                return;
-            }
+            exitMultiSelectMode();
 
-            const deletedContent =
-                makeStoredContent(
-                    '[Message deleted]',
-                    'text',
-                    null,
-                    msg.created_at ||
-                        new Date().toISOString(),
-                    true
-                );
-
-            const { error } =
-                await supabaseClient
-                    .from('private_messages')
-                    .update({
-                        content:
-                            deletedContent
-                    })
-                    .eq(
-                        'id',
-                        msg.id
-                    );
-
-            if (error) {
-
-                console.error(
-                    'Delete for everyone failed:',
-                    error
-                );
-
-                alert(
-                    'Could not delete message for everyone: ' +
-                    error.message
-                );
-
-                return false;
-            }
-
-            return true;
+            return;
         }
 
 
-        /* ============================================================
-           DELETE MESSAGE
-        ============================================================ */
+        updateMultiSelectUI();
 
-        function executeDeleteMessage(
-            msg,
-            scope
+
+        renderMessages(
+            messagesCache
+        );
+    }
+
+
+    function updateMultiSelectUI() {
+
+        const countText =
+            document.getElementById(
+                'selected-count-text'
+            );
+
+
+        countText.textContent =
+            `${selectedMessageIds.size} selected`;
+    }
+
+
+    /* ============================================================
+       MULTI SELECT ACTIONS
+    ============================================================ */
+
+    async function handleMultiSelectAction(
+        actionType
+    ) {
+
+        if (
+            selectedMessageIds.size ===
+            0
         ) {
 
-            undoTargetMessage = {
-                msg,
-                scope
-            };
+            return;
+        }
 
-            if (scope === 'me') {
 
-                const hiddenForMe =
-                    getDeletedForMe();
-
-                if (
-                    !hiddenForMe.includes(
-                        msg.id
+        const selectedMsgs =
+            messagesCache.filter(
+                message =>
+                    selectedMessageIds.has(
+                        message.id
                     )
-                ) {
+            );
 
-                    hiddenForMe.push(
-                        msg.id
-                    );
-                }
 
-                setDeletedForMe(
-                    hiddenForMe
+        if (
+            actionType ===
+            'forward'
+        ) {
+
+            const firstMsg =
+                selectedMsgs[0];
+
+
+            if (firstMsg) {
+
+                localStorage.setItem(
+                    'chatlite_forward_payload',
+                    JSON.stringify({
+                        content:
+                            firstMsg.content,
+
+                        type:
+                            firstMsg.message_type ||
+                            'text'
+                    })
                 );
 
-            } else {
 
-                msg.is_deleted_for_everyone =
-                    true;
+                window.location.href =
+                    'chatlist.html?forward=true';
             }
+
+
+            exitMultiSelectMode();
+
+            return;
+        }
+
+
+        if (
+            actionType ===
+            'me'
+        ) {
+
+            const hiddenForMe =
+                getDeletedForMe();
+
+
+            selectedMessageIds.forEach(
+                id => {
+
+                    if (
+                        !hiddenForMe.includes(
+                            id
+                        )
+                    ) {
+
+                        hiddenForMe.push(
+                            id
+                        );
+                    }
+                }
+            );
+
+
+            setDeletedForMe(
+                hiddenForMe
+            );
+
+
+            exitMultiSelectMode();
+
 
             renderMessages(
                 messagesCache
             );
+
+
+            showUndoBanner(
+                10,
+                () =>
+                    fetchMessages()
+            );
+
+
+            return;
+        }
+
+
+        if (
+            actionType ===
+            'everyone'
+        ) {
+
+            const now =
+                Date.now();
+
+
+            const validMessages =
+                selectedMsgs.filter(
+                    msg => {
+
+                        if (
+                            msg.sender_username !==
+                            currentUser.username
+                        ) {
+
+                            return false;
+                        }
+
+
+                        if (
+                            !msg.created_at
+                        ) {
+
+                            return false;
+                        }
+
+
+                        const messageTime =
+                            new Date(
+                                msg.created_at
+                            ).getTime();
+
+
+                        const diffHours =
+                            (
+                                now -
+                                messageTime
+                            ) /
+                            (1000 * 60 * 60);
+
+
+                        return (
+                            diffHours >= 0 &&
+                            diffHours <= 3
+                        );
+                    }
+                );
+
+
+            validMessages.forEach(
+                msg => {
+
+                    msg.is_deleted_for_everyone =
+                        true;
+                }
+            );
+
+
+            exitMultiSelectMode();
+
+
+            renderMessages(
+                messagesCache
+            );
+
 
             showUndoBanner(
                 10,
                 async () => {
 
-                    if (
-                        scope ===
-                        'everyone'
+                    for (
+                        const msg of validMessages
                     ) {
 
                         await permanentlyDeleteForEveryone(
@@ -2251,815 +2333,1448 @@
                         );
                     }
 
+
                     await fetchMessages();
                 }
             );
         }
+    }
 
 
-        /* ============================================================
-           UNDO
-        ============================================================ */
+    /* ============================================================
+       REPLY
+    ============================================================ */
 
-        function showUndoBanner(
-            seconds,
-            onComplete
+    function setReplyTarget(msg) {
+
+        if (
+            isMultiSelectMode
         ) {
 
-            const banner =
-                document.getElementById(
-                    'undo-banner'
-                );
+            return;
+        }
 
-            const countdownEl =
-                document.getElementById(
-                    'undo-countdown'
-                );
 
-            banner.classList.remove(
-                'hidden'
+        replyingToMessage =
+            msg;
+
+
+        const replyBar =
+            document.getElementById(
+                'reply-preview-bar'
             );
 
-            banner.classList.add(
-                'flex'
+
+        const senderNameEl =
+            document.getElementById(
+                'reply-target-sender'
             );
 
-            let timeLeft =
-                seconds;
 
-            countdownEl.textContent =
-                timeLeft;
+        const contentEl =
+            document.getElementById(
+                'reply-target-content'
+            );
 
-            if (pendingDeleteTimer) {
-                clearInterval(
-                    pendingDeleteTimer
+
+        const senderLabel =
+            msg.sender_username ===
+            currentUser.username
+                ? 'You'
+                : `@${msg.sender_username}`;
+
+
+        senderNameEl.textContent =
+            `Replying to ${senderLabel}`;
+
+
+        let previewText =
+            msg.content;
+
+
+        const msgType =
+            msg.message_type ||
+            'text';
+
+
+        if (
+            msgType ===
+            'image'
+        ) {
+
+            previewText =
+                '[Photo Attachment]';
+
+        } else if (
+            msgType ===
+            'video'
+        ) {
+
+            previewText =
+                '[Video Attachment]';
+
+        } else if (
+            msgType ===
+            'audio'
+        ) {
+
+            previewText =
+                '[Voice Note]';
+
+        } else if (
+            msgType ===
+            'file'
+        ) {
+
+            previewText =
+                '[File Attachment]';
+        }
+
+
+        contentEl.textContent =
+            previewText;
+
+
+        replyBar.classList.remove(
+            'hidden'
+        );
+
+
+        replyBar.classList.add(
+            'flex'
+        );
+
+
+        document
+            .getElementById(
+                'message-input'
+            )
+            .focus();
+    }
+
+
+    function cancelReply() {
+
+        replyingToMessage =
+            null;
+
+
+        const replyBar =
+            document.getElementById(
+                'reply-preview-bar'
+            );
+
+
+        replyBar.classList.remove(
+            'flex'
+        );
+
+
+        replyBar.classList.add(
+            'hidden'
+        );
+    }
+
+
+    /* ============================================================
+       MESSAGE OPTIONS
+    ============================================================ */
+
+    function openMessageOptions(msg) {
+
+        if (
+            isMultiSelectMode
+        ) {
+
+            return;
+        }
+
+
+        const modal =
+            document.getElementById(
+                'message-options-modal'
+            );
+
+
+        const actionsContainer =
+            document.getElementById(
+                'message-options-actions'
+            );
+
+
+        actionsContainer.innerHTML =
+            '';
+
+
+        const isSender =
+            msg.sender_username ===
+            currentUser.username;
+
+
+        let within3Hours =
+            false;
+
+
+        if (
+            msg.created_at
+        ) {
+
+            const msgTime =
+                new Date(
+                    msg.created_at
+                ).getTime();
+
+
+            const now =
+                Date.now();
+
+
+            const diffHours =
+                (
+                    now -
+                    msgTime
+                ) /
+                (1000 * 60 * 60);
+
+
+            within3Hours =
+                diffHours >= 0 &&
+                diffHours <= 3;
+        }
+
+
+        const msgType =
+            msg.message_type ||
+            'text';
+
+
+        /* Select multiple */
+
+        const selectMultipleBtn =
+            document.createElement(
+                'button'
+            );
+
+
+        selectMultipleBtn.className =
+            'w-full text-left px-3 py-2 text-xs font-medium text-indigo-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+
+        selectMultipleBtn.textContent =
+            '☑️ Select Multiple';
+
+
+        selectMultipleBtn.onclick =
+            () => {
+
+                closeMessageOptions();
+
+
+                enterMultiSelectMode(
+                    msg
+                );
+            };
+
+
+        actionsContainer.appendChild(
+            selectMultipleBtn
+        );
+
+
+        /* Reply */
+
+        const replyBtn =
+            document.createElement(
+                'button'
+            );
+
+
+        replyBtn.className =
+            'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+
+        replyBtn.textContent =
+            '↩️ Reply';
+
+
+        replyBtn.onclick =
+            () => {
+
+                closeMessageOptions();
+
+
+                setReplyTarget(
+                    msg
+                );
+            };
+
+
+        actionsContainer.appendChild(
+            replyBtn
+        );
+
+
+        /* Copy */
+
+        if (
+            msgType ===
+                'text' &&
+            msg.content
+        ) {
+
+            const copyBtn =
+                document.createElement(
+                    'button'
+                );
+
+
+            copyBtn.className =
+                'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+
+            copyBtn.textContent =
+                '📋 Copy';
+
+
+            copyBtn.onclick =
+                async () => {
+
+                    try {
+
+                        await navigator
+                            .clipboard
+                            .writeText(
+                                msg.content
+                            );
+
+                    } catch (error) {
+
+                        console.error(
+                            'Copy failed:',
+                            error
+                        );
+                    }
+
+
+                    closeMessageOptions();
+                };
+
+
+            actionsContainer.appendChild(
+                copyBtn
+            );
+        }
+
+
+        /* Forward */
+
+        const forwardBtn =
+            document.createElement(
+                'button'
+            );
+
+
+        forwardBtn.className =
+            'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+
+        forwardBtn.textContent =
+            '↗️ Forward';
+
+
+        forwardBtn.onclick =
+            () => {
+
+                closeMessageOptions();
+
+
+                localStorage.setItem(
+                    'chatlite_forward_payload',
+                    JSON.stringify({
+                        content:
+                            msg.content,
+
+                        type:
+                            msgType
+                    })
+                );
+
+
+                window.location.href =
+                    'chatlist.html?forward=true';
+            };
+
+
+        actionsContainer.appendChild(
+            forwardBtn
+        );
+
+
+        /* Delete for me */
+
+        const deleteForMeBtn =
+            document.createElement(
+                'button'
+            );
+
+
+        deleteForMeBtn.className =
+            'w-full text-left px-3 py-2 text-xs font-medium text-slate-200 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+
+        deleteForMeBtn.textContent =
+            '🗑️ Only me';
+
+
+        deleteForMeBtn.onclick =
+            () => {
+
+                closeMessageOptions();
+
+
+                executeDeleteMessage(
+                    msg,
+                    'me'
+                );
+            };
+
+
+        actionsContainer.appendChild(
+            deleteForMeBtn
+        );
+
+
+        /* Delete for everyone */
+
+        if (
+            isSender &&
+            within3Hours
+        ) {
+
+            const deleteForEveryoneBtn =
+                document.createElement(
+                    'button'
+                );
+
+
+            deleteForEveryoneBtn.className =
+                'w-full text-left px-3 py-2 text-xs font-medium text-red-400 hover:bg-slate-800 rounded-xl transition-all cursor-pointer';
+
+
+            deleteForEveryoneBtn.textContent =
+                '🗑️ Delete for everyone';
+
+
+            deleteForEveryoneBtn.onclick =
+                () => {
+
+                    closeMessageOptions();
+
+
+                    executeDeleteMessage(
+                        msg,
+                        'everyone'
+                    );
+                };
+
+
+            actionsContainer.appendChild(
+                deleteForEveryoneBtn
+            );
+        }
+
+
+        modal.classList.remove(
+            'hidden'
+        );
+
+
+        modal.classList.add(
+            'flex'
+        );
+    }
+
+
+    function closeMessageOptions() {
+
+        const modal =
+            document.getElementById(
+                'message-options-modal'
+            );
+
+
+        modal.classList.remove(
+            'flex'
+        );
+
+
+        modal.classList.add(
+            'hidden'
+        );
+    }
+
+
+    /* ============================================================
+       DELETE FOR EVERYONE
+    ============================================================ */
+
+    async function permanentlyDeleteForEveryone(
+        msg
+    ) {
+
+        if (
+            !msg ||
+            !msg.id
+        ) {
+
+            return;
+        }
+
+
+        if (
+            !chatroomSupabaseClient
+        ) {
+
+            alert(
+                'Supabase client is not available.'
+            );
+
+            return false;
+        }
+
+
+        const deletedContent =
+            makeStoredContent(
+                '[Message deleted]',
+                'text',
+                null,
+                msg.created_at ||
+                    new Date().toISOString(),
+                true
+            );
+
+
+        const {
+            error
+        } =
+            await chatroomSupabaseClient
+                .from('private_messages')
+                .update({
+                    content:
+                        deletedContent
+                })
+                .eq(
+                    'id',
+                    msg.id
+                );
+
+
+        if (error) {
+
+            console.error(
+                'Delete for everyone failed:',
+                error
+            );
+
+
+            alert(
+                'Could not delete message for everyone: ' +
+                error.message
+            );
+
+
+            return false;
+        }
+
+
+        return true;
+    }
+
+
+    /* ============================================================
+       DELETE MESSAGE
+    ============================================================ */
+
+    function executeDeleteMessage(
+        msg,
+        scope
+    ) {
+
+        undoTargetMessage = {
+            msg,
+            scope
+        };
+
+
+        if (
+            scope ===
+            'me'
+        ) {
+
+            const hiddenForMe =
+                getDeletedForMe();
+
+
+            if (
+                !hiddenForMe.includes(
+                    msg.id
+                )
+            ) {
+
+                hiddenForMe.push(
+                    msg.id
                 );
             }
 
-            pendingDeleteTimer =
+
+            setDeletedForMe(
+                hiddenForMe
+            );
+
+        } else {
+
+            msg.is_deleted_for_everyone =
+                true;
+        }
+
+
+        renderMessages(
+            messagesCache
+        );
+
+
+        showUndoBanner(
+            10,
+            async () => {
+
+                if (
+                    scope ===
+                    'everyone'
+                ) {
+
+                    await permanentlyDeleteForEveryone(
+                        msg
+                    );
+                }
+
+
+                await fetchMessages();
+            }
+        );
+    }
+
+
+    /* ============================================================
+       UNDO
+    ============================================================ */
+
+    function showUndoBanner(
+        seconds,
+        onComplete
+    ) {
+
+        const banner =
+            document.getElementById(
+                'undo-banner'
+            );
+
+
+        const countdownEl =
+            document.getElementById(
+                'undo-countdown'
+            );
+
+
+        banner.classList.remove(
+            'hidden'
+        );
+
+
+        banner.classList.add(
+            'flex'
+        );
+
+
+        let timeLeft =
+            seconds;
+
+
+        countdownEl.textContent =
+            timeLeft;
+
+
+        if (
+            pendingDeleteTimer
+        ) {
+
+            clearInterval(
+                pendingDeleteTimer
+            );
+        }
+
+
+        pendingDeleteTimer =
+            setInterval(
+                () => {
+
+                    timeLeft--;
+
+
+                    countdownEl.textContent =
+                        timeLeft;
+
+
+                    if (
+                        timeLeft <=
+                        0
+                    ) {
+
+                        clearInterval(
+                            pendingDeleteTimer
+                        );
+
+
+                        banner.classList.remove(
+                            'flex'
+                        );
+
+
+                        banner.classList.add(
+                            'hidden'
+                        );
+
+
+                        if (onComplete) {
+
+                            onComplete();
+                        }
+                    }
+
+                },
+                1000
+            );
+    }
+
+
+    function triggerUndoAction() {
+
+        if (
+            pendingDeleteTimer
+        ) {
+
+            clearInterval(
+                pendingDeleteTimer
+            );
+        }
+
+
+        const banner =
+            document.getElementById(
+                'undo-banner'
+            );
+
+
+        banner.classList.remove(
+            'flex'
+        );
+
+
+        banner.classList.add(
+            'hidden'
+        );
+
+
+        if (
+            !undoTargetMessage
+        ) {
+
+            return;
+        }
+
+
+        const {
+            msg,
+            scope
+        } =
+            undoTargetMessage;
+
+
+        if (
+            scope ===
+            'me'
+        ) {
+
+            let hiddenForMe =
+                getDeletedForMe();
+
+
+            hiddenForMe =
+                hiddenForMe.filter(
+                    id =>
+                        id !==
+                        msg.id
+                );
+
+
+            setDeletedForMe(
+                hiddenForMe
+            );
+
+        } else {
+
+            msg.is_deleted_for_everyone =
+                false;
+        }
+
+
+        renderMessages(
+            messagesCache
+        );
+
+
+        undoTargetMessage =
+            null;
+    }
+
+
+    /* ============================================================
+       ATTACHMENT MENU
+    ============================================================ */
+
+    function toggleAttachmentMenu() {
+
+        const menu =
+            document.getElementById(
+                'attachment-menu'
+            );
+
+
+        menu.classList.toggle(
+            'hidden'
+        );
+    }
+
+
+    /* ============================================================
+       AUDIO
+    ============================================================ */
+
+    function toggleAudioPlay(
+        audioId,
+        btn
+    ) {
+
+        const audio =
+            document.getElementById(
+                audioId
+            );
+
+
+        if (!audio) {
+            return;
+        }
+
+
+        if (
+            audio.paused
+        ) {
+
+            audio.play();
+
+            btn.textContent =
+                '⏸';
+
+        } else {
+
+            audio.pause();
+
+            btn.textContent =
+                '▶';
+        }
+    }
+
+
+    function seekAudio(
+        audioId,
+        value
+    ) {
+
+        const audio =
+            document.getElementById(
+                audioId
+            );
+
+
+        if (
+            !audio ||
+            !audio.duration
+        ) {
+
+            return;
+        }
+
+
+        audio.currentTime =
+            (
+                value / 100
+            ) *
+            audio.duration;
+    }
+
+
+    function toggleAudioSpeed(
+        audioId,
+        speedBtn
+    ) {
+
+        const audio =
+            document.getElementById(
+                audioId
+            );
+
+
+        if (!audio) {
+            return;
+        }
+
+
+        let nextRate =
+            audio.playbackRate === 1
+                ? 1.5
+                : audio.playbackRate === 1.5
+                    ? 2
+                    : 1;
+
+
+        audio.playbackRate =
+            nextRate;
+
+
+        speedBtn.textContent =
+            nextRate + 'x';
+    }
+
+
+    function formatAudioTime(
+        secs
+    ) {
+
+        if (
+            isNaN(secs)
+        ) {
+
+            return '0:00';
+        }
+
+
+        const mins =
+            Math.floor(
+                secs / 60
+            );
+
+
+        const rSecs =
+            Math.floor(
+                secs % 60
+            );
+
+
+        return `${mins}:${
+            rSecs < 10
+                ? '0'
+                : ''
+        }${rSecs}`;
+    }
+
+
+    /* ============================================================
+       FILE STAGING
+    ============================================================ */
+
+    function stageFileSelected(
+        event
+    ) {
+
+        const file =
+            event.target.files[0];
+
+
+        if (!file) {
+            return;
+        }
+
+
+        const reader =
+            new FileReader();
+
+
+        const progressBar =
+            document.getElementById(
+                'upload-progress-bar'
+            );
+
+
+        const statusText =
+            document.getElementById(
+                'upload-status-text'
+            );
+
+
+        document
+            .getElementById(
+                'media-preview-bar'
+            )
+            .classList.remove(
+                'hidden'
+            );
+
+
+        document
+            .getElementById(
+                'media-preview-bar'
+            )
+            .classList.add(
+                'flex'
+            );
+
+
+        progressBar.style.width =
+            '10%';
+
+
+        statusText.textContent =
+            'Reading file stream...';
+
+
+        reader.onprogress =
+            eventProgress => {
+
+                if (
+                    eventProgress.lengthComputable
+                ) {
+
+                    const percent =
+                        Math.round(
+                            (
+                                eventProgress.loaded /
+                                eventProgress.total
+                            ) * 90
+                        );
+
+
+                    progressBar.style.width =
+                        percent + '%';
+                }
+            };
+
+
+        reader.onload =
+            function(eventLoad) {
+
+                progressBar.style.width =
+                    '100%';
+
+
+                statusText.textContent =
+                    'Ready! Hit the Send button to dispatch.';
+
+
+                let type =
+                    'file';
+
+
+                if (
+                    file.type.startsWith(
+                        'image/'
+                    )
+                ) {
+
+                    type =
+                        'image';
+
+                } else if (
+                    file.type.startsWith(
+                        'video/'
+                    )
+                ) {
+
+                    type =
+                        'video';
+
+                } else if (
+                    file.type.startsWith(
+                        'audio/'
+                    )
+                ) {
+
+                    type =
+                        'audio';
+                }
+
+
+                stagedPayload = {
+
+                    content:
+                        eventLoad.target.result,
+
+                    type:
+                        type
+                };
+
+
+                const previewContainer =
+                    document.getElementById(
+                        'preview-container'
+                    );
+
+
+                if (
+                    type ===
+                    'image'
+                ) {
+
+                    previewContainer.innerHTML =
+                        `<img src="${eventLoad.target.result}" class="max-h-20 rounded object-contain">`;
+
+                } else if (
+                    type ===
+                    'video'
+                ) {
+
+                    previewContainer.innerHTML =
+                        `<video src="${eventLoad.target.result}" class="max-h-20 rounded" controls></video>`;
+
+                } else {
+
+                    previewContainer.innerHTML =
+                        `<span class="font-semibold">Staged File: ${file.name}</span>`;
+                }
+            };
+
+
+        reader.readAsDataURL(
+            file
+        );
+    }
+
+
+    function clearStagedMedia() {
+
+        stagedPayload =
+            null;
+
+
+        recordedBlob =
+            null;
+
+
+        document
+            .getElementById(
+                'media-preview-bar'
+            )
+            .classList.add(
+                'hidden'
+            );
+
+
+        document
+            .getElementById(
+                'media-preview-bar'
+            )
+            .classList.remove(
+                'flex'
+            );
+
+
+        document
+            .getElementById(
+                'upload-progress-bar'
+            )
+            .style.width =
+            '0%';
+
+
+        document
+            .getElementById(
+                'media-file-input'
+            )
+            .value =
+            '';
+
+
+        document
+            .getElementById(
+                'camera-photo-input'
+            )
+            .value =
+            '';
+
+
+        document
+            .getElementById(
+                'camera-video-input'
+            )
+            .value =
+            '';
+    }
+
+
+    /* ============================================================
+       VOICE RECORDING
+    ============================================================ */
+
+    async function startVoiceRecording() {
+
+        try {
+
+            const stream =
+                await navigator
+                    .mediaDevices
+                    .getUserMedia({
+                        audio:
+                            true
+                    });
+
+
+            mediaRecorder =
+                new MediaRecorder(
+                    stream
+                );
+
+
+            audioChunks =
+                [];
+
+
+            mediaRecorder.ondataavailable =
+                event => {
+
+                    audioChunks.push(
+                        event.data
+                    );
+                };
+
+
+            mediaRecorder.onstop =
+                () => {
+
+                    recordedBlob =
+                        new Blob(
+                            audioChunks,
+                            {
+                                type:
+                                    'audio/webm'
+                            }
+                        );
+                };
+
+
+            mediaRecorder.start();
+
+
+            isRecording =
+                true;
+
+
+            isPaused =
+                false;
+
+
+            recordedBlob =
+                null;
+
+
+            document
+                .getElementById(
+                    'message-input'
+                )
+                .classList.add(
+                    'hidden'
+                );
+
+
+            document
+                .getElementById(
+                    'recording-ui'
+                )
+                .classList.remove(
+                    'hidden'
+                );
+
+
+            document
+                .getElementById(
+                    'recording-ui'
+                )
+                .classList.add(
+                    'flex'
+                );
+
+
+            document
+                .getElementById(
+                    'mic-btn'
+                )
+                .classList.add(
+                    'hidden'
+                );
+
+
+            recordingSeconds =
+                0;
+
+
+            document
+                .getElementById(
+                    'recording-timer'
+                )
+                .textContent =
+                '0:00';
+
+
+            recordingTimerInterval =
                 setInterval(
                     () => {
 
-                        timeLeft--;
-
-                        countdownEl.textContent =
-                            timeLeft;
-
                         if (
-                            timeLeft <= 0
+                            !isPaused
                         ) {
 
-                            clearInterval(
-                                pendingDeleteTimer
-                            );
+                            recordingSeconds++;
 
-                            banner.classList.remove(
-                                'flex'
-                            );
 
-                            banner.classList.add(
-                                'hidden'
-                            );
+                            const m =
+                                Math.floor(
+                                    recordingSeconds /
+                                    60
+                                );
 
-                            if (onComplete) {
-                                onComplete();
-                            }
+
+                            const s =
+                                recordingSeconds %
+                                60;
+
+
+                            document
+                                .getElementById(
+                                    'recording-timer'
+                                )
+                                .textContent =
+                                `${m}:${
+                                    s < 10
+                                        ? '0'
+                                        : ''
+                                }${s}`;
                         }
 
                     },
                     1000
                 );
-        }
 
+        } catch (error) {
 
-        function triggerUndoAction() {
-
-            if (pendingDeleteTimer) {
-
-                clearInterval(
-                    pendingDeleteTimer
-                );
-            }
-
-            const banner =
-                document.getElementById(
-                    'undo-banner'
-                );
-
-            banner.classList.remove(
-                'flex'
+            console.error(
+                'Microphone error:',
+                error
             );
 
-            banner.classList.add(
-                'hidden'
-            );
 
-            if (!undoTargetMessage) {
-                return;
-            }
-
-            const {
-                msg,
-                scope
-            } = undoTargetMessage;
-
-            if (scope === 'me') {
-
-                let hiddenForMe =
-                    getDeletedForMe();
-
-                hiddenForMe =
-                    hiddenForMe.filter(
-                        id =>
-                            id !== msg.id
-                    );
-
-                setDeletedForMe(
-                    hiddenForMe
-                );
-
-            } else {
-
-                msg.is_deleted_for_everyone =
-                    false;
-            }
-
-            renderMessages(
-                messagesCache
-            );
-
-            undoTargetMessage =
-                null;
-        }
-
-
-        /* ============================================================
-           ATTACHMENT MENU
-        ============================================================ */
-
-        function toggleAttachmentMenu() {
-
-            const menu =
-                document.getElementById(
-                    'attachment-menu'
-                );
-
-            menu.classList.toggle(
-                'hidden'
+            alert(
+                'Microphone access denied or unavailable.'
             );
         }
+    }
 
 
-        /* ============================================================
-           AUDIO
-        ============================================================ */
+    function togglePauseRecording() {
 
-        function toggleAudioPlay(
-            audioId,
-            btn
+        if (
+            !mediaRecorder
         ) {
 
-            const audio =
-                document.getElementById(
-                    audioId
-                );
-
-            if (!audio) {
-                return;
-            }
-
-            if (audio.paused) {
-
-                audio.play();
-
-                btn.textContent =
-                    '⏸';
-
-            } else {
-
-                audio.pause();
-
-                btn.textContent =
-                    '▶';
-            }
+            return;
         }
 
 
-        function seekAudio(
-            audioId,
-            value
+        const btn =
+            document.getElementById(
+                'pause-rec-btn'
+            );
+
+
+        if (
+            !isPaused
         ) {
 
-            const audio =
-                document.getElementById(
-                    audioId
-                );
+            mediaRecorder.pause();
+
+
+            isPaused =
+                true;
+
+
+            btn.textContent =
+                '▶ Resume';
+
+        } else {
+
+            mediaRecorder.resume();
+
+
+            isPaused =
+                false;
+
+
+            btn.textContent =
+                '⏸ Pause';
+        }
+    }
+
+
+    function stopRecordingOnly() {
+
+        if (
+            mediaRecorder &&
+            (
+                isRecording ||
+                isPaused
+            )
+        ) {
 
             if (
-                !audio ||
-                !audio.duration
-            ) {
-                return;
-            }
-
-            audio.currentTime =
-                (
-                    value / 100
-                ) *
-                audio.duration;
-        }
-
-
-        function toggleAudioSpeed(
-            audioId,
-            speedBtn
-        ) {
-
-            const audio =
-                document.getElementById(
-                    audioId
-                );
-
-            if (!audio) {
-                return;
-            }
-
-            let nextRate =
-                audio.playbackRate === 1
-                    ? 1.5
-                    : audio.playbackRate === 1.5
-                        ? 2
-                        : 1;
-
-            audio.playbackRate =
-                nextRate;
-
-            speedBtn.textContent =
-                nextRate + 'x';
-        }
-
-
-        function formatAudioTime(
-            secs
-        ) {
-
-            if (isNaN(secs)) {
-                return '0:00';
-            }
-
-            const mins =
-                Math.floor(
-                    secs / 60
-                );
-
-            const rSecs =
-                Math.floor(
-                    secs % 60
-                );
-
-            return `${mins}:${
-                rSecs < 10
-                    ? '0'
-                    : ''
-            }${rSecs}`;
-        }
-
-
-        /* ============================================================
-           FILE STAGING
-        ============================================================ */
-
-        function stageFileSelected(
-            event
-        ) {
-
-            const file =
-                event.target.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            const reader =
-                new FileReader();
-
-            const progressBar =
-                document.getElementById(
-                    'upload-progress-bar'
-                );
-
-            const statusText =
-                document.getElementById(
-                    'upload-status-text'
-                );
-
-            document
-                .getElementById(
-                    'media-preview-bar'
-                )
-                .classList.remove(
-                    'hidden'
-                );
-
-            document
-                .getElementById(
-                    'media-preview-bar'
-                )
-                .classList.add(
-                    'flex'
-                );
-
-            progressBar.style.width =
-                '10%';
-
-            statusText.textContent =
-                'Reading file stream...';
-
-            reader.onprogress =
-                eventProgress => {
-
-                    if (
-                        eventProgress.lengthComputable
-                    ) {
-
-                        const percent =
-                            Math.round(
-                                (
-                                    eventProgress.loaded /
-                                    eventProgress.total
-                                ) * 90
-                            );
-
-                        progressBar.style.width =
-                            percent + '%';
-                    }
-                };
-
-            reader.onload =
-                function (eventLoad) {
-
-                    progressBar.style.width =
-                        '100%';
-
-                    statusText.textContent =
-                        'Ready! Hit the Send button to dispatch.';
-
-                    let type =
-                        'file';
-
-                    if (
-                        file.type.startsWith(
-                            'image/'
-                        )
-                    ) {
-
-                        type =
-                            'image';
-
-                    } else if (
-                        file.type.startsWith(
-                            'video/'
-                        )
-                    ) {
-
-                        type =
-                            'video';
-
-                    } else if (
-                        file.type.startsWith(
-                            'audio/'
-                        )
-                    ) {
-
-                        type =
-                            'audio';
-                    }
-
-                    stagedPayload = {
-                        content:
-                            eventLoad.target.result,
-                        type:
-                            type
-                    };
-
-                    const previewContainer =
-                        document.getElementById(
-                            'preview-container'
-                        );
-
-                    if (type === 'image') {
-
-                        previewContainer.innerHTML =
-                            `<img src="${eventLoad.target.result}" class="max-h-20 rounded object-contain">`;
-
-                    } else if (type === 'video') {
-
-                        previewContainer.innerHTML =
-                            `<video src="${eventLoad.target.result}" class="max-h-20 rounded" controls></video>`;
-
-                    } else {
-
-                        previewContainer.innerHTML =
-                            `<span class="font-semibold">Staged File: ${file.name}</span>`;
-                    }
-                };
-
-            reader.readAsDataURL(
-                file
-            );
-        }
-
-
-        function clearStagedMedia() {
-
-            stagedPayload =
-                null;
-
-            recordedBlob =
-                null;
-
-            document
-                .getElementById(
-                    'media-preview-bar'
-                )
-                .classList.add(
-                    'hidden'
-                );
-
-            document
-                .getElementById(
-                    'media-preview-bar'
-                )
-                .classList.remove(
-                    'flex'
-                );
-
-            document
-                .getElementById(
-                    'upload-progress-bar'
-                )
-                .style.width =
-                '0%';
-
-            document
-                .getElementById(
-                    'media-file-input'
-                )
-                .value =
-                '';
-
-            document
-                .getElementById(
-                    'camera-photo-input'
-                )
-                .value =
-                '';
-
-            document
-                .getElementById(
-                    'camera-video-input'
-                )
-                .value =
-                '';
-        }
-
-
-        /* ============================================================
-           VOICE RECORDING
-        ============================================================ */
-
-        async function startVoiceRecording() {
-
-            try {
-
-                const stream =
-                    await navigator.mediaDevices.getUserMedia({
-                        audio: true
-                    });
-
-                mediaRecorder =
-                    new MediaRecorder(
-                        stream
-                    );
-
-                audioChunks = [];
-
-                mediaRecorder.ondataavailable =
-                    event => {
-
-                        audioChunks.push(
-                            event.data
-                        );
-                    };
-
-                mediaRecorder.onstop =
-                    () => {
-
-                        recordedBlob =
-                            new Blob(
-                                audioChunks,
-                                {
-                                    type:
-                                        'audio/webm'
-                                }
-                            );
-                    };
-
-                mediaRecorder.start();
-
-                isRecording =
-                    true;
-
-                isPaused =
-                    false;
-
-                recordedBlob =
-                    null;
-
-                document
-                    .getElementById(
-                        'message-input'
-                    )
-                    .classList.add(
-                        'hidden'
-                    );
-
-                document
-                    .getElementById(
-                        'recording-ui'
-                    )
-                    .classList.remove(
-                        'hidden'
-                    );
-
-                document
-                    .getElementById(
-                        'recording-ui'
-                    )
-                    .classList.add(
-                        'flex'
-                    );
-
-                document
-                    .getElementById(
-                        'mic-btn'
-                    )
-                    .classList.add(
-                        'hidden'
-                    );
-
-                recordingSeconds =
-                    0;
-
-                document
-                    .getElementById(
-                        'recording-timer'
-                    )
-                    .textContent =
-                    '0:00';
-
-                recordingTimerInterval =
-                    setInterval(
-                        () => {
-
-                            if (!isPaused) {
-
-                                recordingSeconds++;
-
-                                const m =
-                                    Math.floor(
-                                        recordingSeconds /
-                                        60
-                                    );
-
-                                const s =
-                                    recordingSeconds %
-                                    60;
-
-                                document
-                                    .getElementById(
-                                        'recording-timer'
-                                    )
-                                    .textContent =
-                                    `${m}:${
-                                        s < 10
-                                            ? '0'
-                                            : ''
-                                    }${s}`;
-                            }
-
-                        },
-                        1000
-                    );
-
-            } catch (error) {
-
-                console.error(
-                    'Microphone error:',
-                    error
-                );
-
-                alert(
-                    'Microphone access denied or unavailable.'
-                );
-            }
-        }
-
-
-        function togglePauseRecording() {
-
-            if (!mediaRecorder) {
-                return;
-            }
-
-            const btn =
-                document.getElementById(
-                    'pause-rec-btn'
-                );
-
-            if (!isPaused) {
-
-                mediaRecorder.pause();
-
-                isPaused =
-                    true;
-
-                btn.textContent =
-                    '▶ Resume';
-
-            } else {
-
-                mediaRecorder.resume();
-
-                isPaused =
-                    false;
-
-                btn.textContent =
-                    '⏸ Pause';
-            }
-        }
-
-
-        function stopRecordingOnly() {
-
-            if (
-                mediaRecorder &&
-                (
-                    isRecording ||
-                    isPaused
-                )
+                mediaRecorder.state !==
+                'inactive'
             ) {
 
-                if (
-                    mediaRecorder.state !==
-                    'inactive'
-                ) {
-
-                    mediaRecorder.stop();
-                }
-
-                isRecording =
-                    false;
-
-                isPaused =
-                    false;
-
-                clearInterval(
-                    recordingTimerInterval
-                );
-
-                if (
-                    mediaRecorder.stream
-                ) {
-
-                    mediaRecorder.stream
-                        .getTracks()
-                        .forEach(
-                            track =>
-                                track.stop()
-                        );
-                }
-
-                document
-                    .getElementById(
-                        'recording-ui'
-                    )
-                    .classList.add(
-                        'hidden'
-                    );
-
-                document
-                    .getElementById(
-                        'recording-ui'
-                    )
-                    .classList.remove(
-                        'flex'
-                    );
-
-                document
-                    .getElementById(
-                        'message-input'
-                    )
-                    .classList.remove(
-                        'hidden'
-                    );
-
-                document
-                    .getElementById(
-                        'mic-btn'
-                    )
-                    .classList.remove(
-                        'hidden'
-                    );
-
-                document
-                    .getElementById(
-                        'media-preview-bar'
-                    )
-                    .classList.remove(
-                        'hidden'
-                    );
-
-                document
-                    .getElementById(
-                        'media-preview-bar'
-                    )
-                    .classList.add(
-                        'flex'
-                    );
-
-                document
-                    .getElementById(
-                        'preview-container'
-                    )
-                    .innerHTML =
-                    `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
-
-                document
-                    .getElementById(
-                        'upload-progress-bar'
-                    )
-                    .style.width =
-                    '100%';
-
-                document
-                    .getElementById(
-                        'upload-status-text'
-                    )
-                    .textContent =
-                    'Hit the Send button to dispatch voice note.';
-            }
-        }
-
-
-        function cancelRecording() {
-
-            if (
-                mediaRecorder &&
-                (
-                    isRecording ||
-                    isPaused
-                )
-            ) {
-
-                if (
-                    mediaRecorder.state !==
-                    'inactive'
-                ) {
-
-                    mediaRecorder.stop();
-                }
-
-                if (
-                    mediaRecorder.stream
-                ) {
-
-                    mediaRecorder.stream
-                        .getTracks()
-                        .forEach(
-                            track =>
-                                track.stop()
-                        );
-                }
+                mediaRecorder.stop();
             }
 
-            resetRecordingUI();
 
-            clearStagedMedia();
-        }
+            isRecording =
+                false;
 
 
-        function resetRecordingUI() {
+            isPaused =
+                false;
+
 
             clearInterval(
                 recordingTimerInterval
             );
 
-            isRecording =
-                false;
 
-            isPaused =
-                false;
+            if (
+                mediaRecorder.stream
+            ) {
+
+                mediaRecorder.stream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+            }
+
 
             document
                 .getElementById(
@@ -3069,6 +3784,7 @@
                     'hidden'
                 );
 
+
             document
                 .getElementById(
                     'recording-ui'
@@ -3076,6 +3792,7 @@
                 .classList.remove(
                     'flex'
                 );
+
 
             document
                 .getElementById(
@@ -3084,6 +3801,7 @@
                 .classList.remove(
                     'hidden'
                 );
+
 
             document
                 .getElementById(
@@ -3092,586 +3810,850 @@
                 .classList.remove(
                     'hidden'
                 );
+
+
+            document
+                .getElementById(
+                    'media-preview-bar'
+                )
+                .classList.remove(
+                    'hidden'
+                );
+
+
+            document
+                .getElementById(
+                    'media-preview-bar'
+                )
+                .classList.add(
+                    'flex'
+                );
+
+
+            document
+                .getElementById(
+                    'preview-container'
+                )
+                .innerHTML =
+                `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
+
+
+            document
+                .getElementById(
+                    'upload-progress-bar'
+                )
+                .style.width =
+                '100%';
+
+
+            document
+                .getElementById(
+                    'upload-status-text'
+                )
+                .textContent =
+                'Hit the Send button to dispatch voice note.';
         }
+    }
 
 
-        /* ============================================================
-           SEND PRIVATE MESSAGE
-        ============================================================ */
+    function cancelRecording() {
 
-        async function sendPayloadToSupabase(
-            content,
-            type,
-            replyMeta = null
+        if (
+            mediaRecorder &&
+            (
+                isRecording ||
+                isPaused
+            )
         ) {
 
             if (
-                !currentUser ||
-                !targetUsername
+                mediaRecorder.state !==
+                'inactive'
             ) {
-                return;
+
+                mediaRecorder.stop();
             }
+
 
             if (
-                typeof supabaseClient ===
-                'undefined'
+                mediaRecorder.stream
             ) {
 
-                alert(
-                    'Supabase client is not available.'
-                );
-
-                return;
+                mediaRecorder.stream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
             }
-
-            const createdAt =
-                new Date().toISOString();
-
-            const storedContent =
-                makeStoredContent(
-                    content,
-                    type || 'text',
-                    replyMeta,
-                    createdAt,
-                    false
-                );
-
-            const payload = {
-
-                id:
-                    crypto.randomUUID(),
-
-                sender_username:
-                    currentUser.username,
-
-                receiver_username:
-                    targetUsername,
-
-                content:
-                    storedContent
-            };
-
-            const {
-                data,
-                error
-            } =
-                await supabaseClient
-                    .from('private_messages')
-                    .insert([
-                        payload
-                    ])
-                    .select();
-
-            if (error) {
-
-                console.error(
-                    'PRIVATE MESSAGE INSERT ERROR:',
-                    error
-                );
-
-                alert(
-                    'Failed to send message: ' +
-                    error.message
-                );
-
-                return;
-            }
-
-            /*
-             * Realtime will normally add the message.
-             * Fetching here also keeps the sender's screen
-             * immediately synchronized.
-             */
-            await fetchMessages();
-
-            return data;
         }
 
 
-        /* ============================================================
-           FORM SUBMIT
-        ============================================================ */
-
-        async function handleFormSubmit(e) {
-
-            e.preventDefault();
-
-            if (isRecording) {
-
-                stopRecordingOnly();
-
-                return;
-            }
-
-            let replyMeta =
-                null;
-
-            if (replyingToMessage) {
-
-                const repType =
-                    replyingToMessage.message_type ||
-                    'text';
-
-                replyMeta = {
-
-                    sender:
-                        replyingToMessage.sender_username ===
-                        currentUser.username
-                            ? 'You'
-                            : `@${replyingToMessage.sender_username}`,
-
-                    content:
-                        repType === 'text'
-                            ? replyingToMessage.content
-                            : `[${repType}]`
-                };
-            }
-
-            /* Voice note */
-
-            if (recordedBlob) {
-
-                const blobToSend =
-                    recordedBlob;
-
-                recordedBlob =
-                    null;
-
-                const reader =
-                    new FileReader();
-
-                reader.readAsDataURL(
-                    blobToSend
-                );
-
-                reader.onloadend =
-                    async () => {
-
-                        await sendPayloadToSupabase(
-                            reader.result,
-                            'audio',
-                            replyMeta
-                        );
-
-                        resetRecordingUI();
-
-                        clearStagedMedia();
-
-                        cancelReply();
-                    };
-
-                return;
-            }
-
-            /* File / image / video */
-
-            if (stagedPayload) {
-
-                const payloadToSend =
-                    stagedPayload;
-
-                stagedPayload =
-                    null;
-
-                await sendPayloadToSupabase(
-                    payloadToSend.content,
-                    payloadToSend.type,
-                    replyMeta
-                );
-
-                clearStagedMedia();
-
-                cancelReply();
-
-                return;
-            }
-
-            /* Normal text */
-
-            const input =
-                document.getElementById(
-                    'message-input'
-                );
-
-            const content =
-                input.value.trim();
-
-            if (!content) {
-                return;
-            }
-
-            input.value =
-                '';
-
-            await sendPayloadToSupabase(
-                content,
-                'text',
-                replyMeta
-            );
-
-            cancelReply();
-        }
+        resetRecordingUI();
 
 
-        /* ============================================================
-           MEDIA GALLERY
-        ============================================================ */
+        clearStagedMedia();
+    }
 
-        function openMediaGallery(
-            typeFilter
-        ) {
 
-            const modal =
-                document.getElementById(
-                    'media-gallery-modal'
-                );
+    function resetRecordingUI() {
 
-            const grid =
-                document.getElementById(
-                    'gallery-content-grid'
-                );
+        clearInterval(
+            recordingTimerInterval
+        );
 
-            const title =
-                document.getElementById(
-                    'gallery-title'
-                );
 
-            modal.classList.remove(
+        isRecording =
+            false;
+
+
+        isPaused =
+            false;
+
+
+        document
+            .getElementById(
+                'recording-ui'
+            )
+            .classList.add(
                 'hidden'
             );
 
-            grid.innerHTML =
-                '';
 
-            title.textContent =
-                `Chat ${typeFilter.toUpperCase()} Gallery`;
+        document
+            .getElementById(
+                'recording-ui'
+            )
+            .classList.remove(
+                'flex'
+            );
 
-            const matching =
-                messagesCache.filter(
-                    message => {
 
-                        if (
-                            message.is_deleted_for_everyone
-                        ) {
-                            return false;
-                        }
+        document
+            .getElementById(
+                'message-input'
+            )
+            .classList.remove(
+                'hidden'
+            );
 
-                        const messageType =
-                            message.message_type ||
-                            'text';
 
-                        if (
-                            typeFilter === 'image' &&
-                            messageType === 'image'
-                        ) {
-                            return true;
-                        }
+        document
+            .getElementById(
+                'mic-btn'
+            )
+            .classList.remove(
+                'hidden'
+            );
+    }
 
-                        if (
-                            typeFilter === 'video' &&
-                            messageType === 'video'
-                        ) {
-                            return true;
-                        }
 
-                        if (
-                            typeFilter === 'file' &&
-                            (
-                                messageType ===
-                                'file' ||
-                                messageType ===
-                                'audio'
-                            )
-                        ) {
-                            return true;
-                        }
+    /* ============================================================
+       SEND PRIVATE MESSAGE
+    ============================================================ */
+
+    async function sendPayloadToSupabase(
+        content,
+        type,
+        replyMeta = null
+    ) {
+
+        if (
+            !currentUser ||
+            !targetUsername
+        ) {
+
+            return;
+        }
+
+
+        /*
+         * IMPORTANT:
+         * Use this chatroom's own client.
+         * No dependency on app.js's supabaseClient.
+         */
+        if (
+            !chatroomSupabaseClient
+        ) {
+
+            alert(
+                'Supabase client is not available.'
+            );
+
+
+            return;
+        }
+
+
+        const createdAt =
+            new Date().toISOString();
+
+
+        const storedContent =
+            makeStoredContent(
+                content,
+                type || 'text',
+                replyMeta,
+                createdAt,
+                false
+            );
+
+
+        const payload = {
+
+            id:
+                crypto.randomUUID(),
+
+            sender_username:
+                currentUser.username,
+
+            receiver_username:
+                targetUsername,
+
+            content:
+                storedContent
+        };
+
+
+        console.log(
+            'Sending private message:',
+            {
+                sender:
+                    payload.sender_username,
+
+                receiver:
+                    payload.receiver_username,
+
+                type:
+                    type || 'text'
+            }
+        );
+
+
+        const {
+            data,
+            error
+        } =
+            await chatroomSupabaseClient
+                .from('private_messages')
+                .insert([
+                    payload
+                ])
+                .select();
+
+
+        if (error) {
+
+            console.error(
+                'PRIVATE MESSAGE INSERT ERROR:',
+                error
+            );
+
+
+            alert(
+                'Failed to send message: ' +
+                error.message
+            );
+
+
+            return;
+        }
+
+
+        console.log(
+            'Private message sent successfully:',
+            data
+        );
+
+
+        /*
+         * Realtime will normally add the message.
+         * Fetching here also keeps the sender's screen
+         * immediately synchronized.
+         */
+        await fetchMessages();
+
+
+        return data;
+    }
+
+
+    /* ============================================================
+       FORM SUBMIT
+    ============================================================ */
+
+    async function handleFormSubmit(e) {
+
+        e.preventDefault();
+
+
+        if (
+            isRecording
+        ) {
+
+            stopRecordingOnly();
+
+            return;
+        }
+
+
+        let replyMeta =
+            null;
+
+
+        if (
+            replyingToMessage
+        ) {
+
+            const repType =
+                replyingToMessage.message_type ||
+                'text';
+
+
+            replyMeta = {
+
+                sender:
+                    replyingToMessage.sender_username ===
+                    currentUser.username
+                        ? 'You'
+                        : `@${replyingToMessage.sender_username}`,
+
+                content:
+                    repType ===
+                        'text'
+                        ? replyingToMessage.content
+                        : `[${repType}]`
+            };
+        }
+
+
+        /* Voice note */
+
+        if (
+            recordedBlob
+        ) {
+
+            const blobToSend =
+                recordedBlob;
+
+
+            recordedBlob =
+                null;
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.readAsDataURL(
+                blobToSend
+            );
+
+
+            reader.onloadend =
+                async () => {
+
+                    await sendPayloadToSupabase(
+                        reader.result,
+                        'audio',
+                        replyMeta
+                    );
+
+
+                    resetRecordingUI();
+
+
+                    clearStagedMedia();
+
+
+                    cancelReply();
+                };
+
+
+            return;
+        }
+
+
+        /* File / image / video */
+
+        if (
+            stagedPayload
+        ) {
+
+            const payloadToSend =
+                stagedPayload;
+
+
+            stagedPayload =
+                null;
+
+
+            await sendPayloadToSupabase(
+                payloadToSend.content,
+                payloadToSend.type,
+                replyMeta
+            );
+
+
+            clearStagedMedia();
+
+
+            cancelReply();
+
+
+            return;
+        }
+
+
+        /* Normal text */
+
+        const input =
+            document.getElementById(
+                'message-input'
+            );
+
+
+        const content =
+            input.value.trim();
+
+
+        if (!content) {
+            return;
+        }
+
+
+        input.value =
+            '';
+
+
+        await sendPayloadToSupabase(
+            content,
+            'text',
+            replyMeta
+        );
+
+
+        cancelReply();
+    }
+
+
+    /* ============================================================
+       MEDIA GALLERY
+    ============================================================ */
+
+    function openMediaGallery(
+        typeFilter
+    ) {
+
+        const modal =
+            document.getElementById(
+                'media-gallery-modal'
+            );
+
+
+        const grid =
+            document.getElementById(
+                'gallery-content-grid'
+            );
+
+
+        const title =
+            document.getElementById(
+                'gallery-title'
+            );
+
+
+        modal.classList.remove(
+            'hidden'
+        );
+
+
+        grid.innerHTML =
+            '';
+
+
+        title.textContent =
+            `Chat ${typeFilter.toUpperCase()} Gallery`;
+
+
+        const matching =
+            messagesCache.filter(
+                message => {
+
+                    if (
+                        message.is_deleted_for_everyone
+                    ) {
 
                         return false;
                     }
-                );
 
-            if (
-                matching.length === 0
-            ) {
-
-                grid.innerHTML =
-                    `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
-
-                return;
-            }
-
-            matching.forEach(
-                message => {
-
-                    const card =
-                        document.createElement(
-                            'div'
-                        );
-
-                    card.className =
-                        'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
 
                     const messageType =
                         message.message_type ||
                         'text';
 
+
                     if (
+                        typeFilter ===
+                            'image' &&
                         messageType ===
-                        'image'
+                            'image'
                     ) {
 
-                        const image =
-                            document.createElement(
-                                'img'
-                            );
-
-                        image.src =
-                            message.content;
-
-                        image.className =
-                            'h-24 w-full object-cover rounded cursor-pointer';
-
-                        image.onclick =
-                            () => {
-
-                                window.open(
-                                    message.content,
-                                    '_blank'
-                                );
-                            };
-
-                        card.appendChild(
-                            image
-                        );
-
-                    } else if (
-                        messageType ===
-                        'video'
-                    ) {
-
-                        const video =
-                            document.createElement(
-                                'video'
-                            );
-
-                        video.src =
-                            message.content;
-
-                        video.className =
-                            'h-24 w-full rounded object-cover';
-
-                        video.controls =
-                            true;
-
-                        card.appendChild(
-                            video
-                        );
-
-                    } else {
-
-                        const link =
-                            document.createElement(
-                                'a'
-                            );
-
-                        link.href =
-                            message.content;
-
-                        link.download =
-                            '';
-
-                        link.className =
-                            'text-xs text-indigo-400 underline font-semibold py-4';
-
-                        link.textContent =
-                            `Download ${messageType}`;
-
-                        card.appendChild(
-                            link
-                        );
+                        return true;
                     }
 
-                    grid.appendChild(
-                        card
+
+                    if (
+                        typeFilter ===
+                            'video' &&
+                        messageType ===
+                            'video'
+                    ) {
+
+                        return true;
+                    }
+
+
+                    if (
+                        typeFilter ===
+                            'file' &&
+                        (
+                            messageType ===
+                                'file' ||
+                            messageType ===
+                                'audio'
+                        )
+                    ) {
+
+                        return true;
+                    }
+
+
+                    return false;
+                }
+            );
+
+
+        if (
+            matching.length ===
+            0
+        ) {
+
+            grid.innerHTML =
+                `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
+
+
+            return;
+        }
+
+
+        matching.forEach(
+            message => {
+
+                const card =
+                    document.createElement(
+                        'div'
+                    );
+
+
+                card.className =
+                    'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
+
+
+                const messageType =
+                    message.message_type ||
+                    'text';
+
+
+                if (
+                    messageType ===
+                    'image'
+                ) {
+
+                    const image =
+                        document.createElement(
+                            'img'
+                        );
+
+
+                    image.src =
+                        message.content;
+
+
+                    image.className =
+                        'h-24 w-full object-cover rounded cursor-pointer';
+
+
+                    image.onclick =
+                        () => {
+
+                            window.open(
+                                message.content,
+                                '_blank'
+                            );
+                        };
+
+
+                    card.appendChild(
+                        image
+                    );
+
+                } else if (
+                    messageType ===
+                    'video'
+                ) {
+
+                    const video =
+                        document.createElement(
+                            'video'
+                        );
+
+
+                    video.src =
+                        message.content;
+
+
+                    video.className =
+                        'h-24 w-full rounded object-cover';
+
+
+                    video.controls =
+                        true;
+
+
+                    card.appendChild(
+                        video
+                    );
+
+                } else {
+
+                    const link =
+                        document.createElement(
+                            'a'
+                        );
+
+
+                    link.href =
+                        message.content;
+
+
+                    link.download =
+                        '';
+
+
+                    link.className =
+                        'text-xs text-indigo-400 underline font-semibold py-4';
+
+
+                    link.textContent =
+                        `Download ${messageType}`;
+
+
+                    card.appendChild(
+                        link
                     );
                 }
+
+
+                grid.appendChild(
+                    card
+                );
+            }
+        );
+    }
+
+
+    function closeMediaGallery() {
+
+        document
+            .getElementById(
+                'media-gallery-modal'
+            )
+            .classList.add(
+                'hidden'
+            );
+    }
+
+
+    /* ============================================================
+       REALTIME PRIVATE CHAT
+    ============================================================ */
+
+    function subscribeToMessages() {
+
+        if (
+            !chatroomSupabaseClient
+        ) {
+
+            console.error(
+                'Cannot subscribe: chatroom Supabase client is unavailable.'
+            );
+
+            return;
+        }
+
+
+        if (
+            messageSubscription
+        ) {
+
+            chatroomSupabaseClient.removeChannel(
+                messageSubscription
             );
         }
 
 
-        function closeMediaGallery() {
-
-            document
-                .getElementById(
-                    'media-gallery-modal'
+        messageSubscription =
+            chatroomSupabaseClient
+                .channel(
+                    `private_chat_${currentUser.username}_${targetUsername}`
                 )
-                .classList.add(
-                    'hidden'
+                .on(
+                    'postgres_changes',
+                    {
+                        event:
+                            'INSERT',
+
+                        schema:
+                            'public',
+
+                        table:
+                            'private_messages'
+                    },
+                    payload => {
+
+                        const raw =
+                            payload.new;
+
+
+                        if (!raw) {
+                            return;
+                        }
+
+
+                        const isThisConversation =
+                            (
+                                raw.sender_username ===
+                                    currentUser.username &&
+                                raw.receiver_username ===
+                                    targetUsername
+                            ) ||
+                            (
+                                raw.sender_username ===
+                                    targetUsername &&
+                                raw.receiver_username ===
+                                    currentUser.username
+                            );
+
+
+                        if (
+                            !isThisConversation
+                        ) {
+
+                            return;
+                        }
+
+
+                        if (
+                            messagesCache.some(
+                                message =>
+                                    message.id ===
+                                    raw.id
+                            )
+                        ) {
+
+                            return;
+                        }
+
+
+                        const decoded =
+                            decodePrivateMessage(
+                                raw
+                            );
+
+
+                        if (!decoded) {
+                            return;
+                        }
+
+
+                        messagesCache.push(
+                            decoded
+                        );
+
+
+                        messagesCache.sort(
+                            (a, b) => {
+
+                                if (
+                                    a.created_at &&
+                                    b.created_at
+                                ) {
+
+                                    return (
+                                        new Date(
+                                            a.created_at
+                                        ).getTime() -
+                                        new Date(
+                                            b.created_at
+                                        ).getTime()
+                                    );
+                                }
+
+
+                                return 0;
+                            }
+                        );
+
+
+                        renderMessages(
+                            messagesCache
+                        );
+                    }
+                )
+                .subscribe(
+                    status => {
+
+                        console.log(
+                            'Private chat realtime status:',
+                            status
+                        );
+                    }
                 );
-        }
+    }
 
 
-        /* ============================================================
-           REALTIME PRIVATE CHAT
-        ============================================================ */
+    /* ============================================================
+       CLEANUP
+    ============================================================ */
 
-        function subscribeToMessages() {
-
-            if (
-                typeof supabaseClient ===
-                'undefined'
-            ) {
-                return;
-            }
+    window.addEventListener(
+        'beforeunload',
+        () => {
 
             if (
-                messageSubscription
+                messageSubscription &&
+                chatroomSupabaseClient
             ) {
 
-                supabaseClient.removeChannel(
+                chatroomSupabaseClient.removeChannel(
                     messageSubscription
                 );
             }
-
-            messageSubscription =
-                supabaseClient
-                    .channel(
-                        `private_chat_${currentUser.username}_${targetUsername}`
-                    )
-                    .on(
-                        'postgres_changes',
-                        {
-                            event:
-                                'INSERT',
-
-                            schema:
-                                'public',
-
-                            table:
-                                'private_messages'
-                        },
-                        payload => {
-
-                            const raw =
-                                payload.new;
-
-                            if (!raw) {
-                                return;
-                            }
-
-                            const isThisConversation =
-                                (
-                                    raw.sender_username ===
-                                        currentUser.username &&
-                                    raw.receiver_username ===
-                                        targetUsername
-                                ) ||
-                                (
-                                    raw.sender_username ===
-                                        targetUsername &&
-                                    raw.receiver_username ===
-                                        currentUser.username
-                                );
-
-                            if (
-                                !isThisConversation
-                            ) {
-                                return;
-                            }
-
-                            if (
-                                messagesCache.some(
-                                    message =>
-                                        message.id ===
-                                        raw.id
-                                )
-                            ) {
-                                return;
-                            }
-
-                            const decoded =
-                                decodePrivateMessage(
-                                    raw
-                                );
-
-                            if (!decoded) {
-                                return;
-                            }
-
-                            messagesCache.push(
-                                decoded
-                            );
-
-                            messagesCache.sort(
-                                (a, b) => {
-
-                                    if (
-                                        a.created_at &&
-                                        b.created_at
-                                    ) {
-
-                                        return (
-                                            new Date(
-                                                a.created_at
-                                            ).getTime() -
-                                            new Date(
-                                                b.created_at
-                                            ).getTime()
-                                        );
-                                    }
-
-                                    return 0;
-                                }
-                            );
-
-                            renderMessages(
-                                messagesCache
-                            );
-                        }
-                    )
-                    .subscribe(
-                        status => {
-
-                            console.log(
-                                'Private chat realtime status:',
-                                status
-                            );
-                        }
-                    );
         }
+    );
 
 
-        /* ============================================================
-           CLEANUP
-        ============================================================ */
+    /* ============================================================
+       START PRIVATE CHAT
+    ============================================================ */
 
-        window.addEventListener(
-            'beforeunload',
-            () => {
+    fetchMessages();
 
-                if (
-                    messageSubscription &&
-                    typeof supabaseClient !==
-                        'undefined'
-                ) {
+    subscribeToMessages();
 
-                    supabaseClient.removeChannel(
-                        messageSubscription
-                    );
-                }
-            }
-        );
-
-
-        /* ============================================================
-           START PRIVATE CHAT
-        ============================================================ */
-
-        fetchMessages();
-
-        subscribeToMessages();
-
-    </script>
+</script>
 
 </body>
 </html>
