@@ -1060,28 +1060,27 @@
                 created_at: new Date().toISOString()
             };
 
-            if (!navigator.onLine) {
-                const offlineQueue = loadOfflineQueue();
-                const pendingItem = { ...payload, is_offline_pending: true };
-                offlineQueue.push(pendingItem);
-                saveOfflineQueue(offlineQueue);
-                renderMessages(messagesCache);
-                return;
+            // Attempt direct insert when browser reports online connection
+            if (navigator.onLine) {
+                const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+
+                if (!error && data && data.length > 0) {
+                    messagesCache.push(data[0]);
+                    saveLocalCache(messagesCache);
+                    renderMessages(messagesCache);
+                    return; // Successfully sent, exit early
+                }
+                
+                // If direct insert fails due to a network or silent server drop, fall through to queue
+                console.warn('Direct send failed or encountered error, caching into offline queue:', error);
             }
 
-            const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
-
-            if (error) {
-                console.error('Error sending message:', error);
-                const offlineQueue = loadOfflineQueue();
-                offlineQueue.push({ ...payload, is_offline_pending: true });
-                saveOfflineQueue(offlineQueue);
-                renderMessages(messagesCache);
-            } else if (data && data.length > 0) {
-                messagesCache.push(data[0]);
-                saveLocalCache(messagesCache);
-                renderMessages(messagesCache);
-            }
+            // Fallback: Store inside local offline queue with pending flag if offline or network request errored
+            const offlineQueue = loadOfflineQueue();
+            const pendingItem = { ...payload, is_offline_pending: true };
+            offlineQueue.push(pendingItem);
+            saveOfflineQueue(offlineQueue);
+            renderMessages(messagesCache);
         }
 
         function openMediaGallery(typeFilter) {
