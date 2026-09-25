@@ -2,7 +2,12 @@
 const SUPABASE_URL = 'https://qclfxoyxnihuttlemzmi.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_-jLY8uajMI_u_mxQHHUAsA_Q5d5FWVG';
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabaseClient = null;
+try {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (err) {
+    console.error('Supabase initialization error:', err);
+}
 
 // --- APP STATE ---
 let currentUser = null;
@@ -11,24 +16,43 @@ let messageSubscription = null;
 
 // --- VIEW NAVIGATION CONTROLLER ---
 function switchView(viewId) {
-    document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
-    document.getElementById(viewId).classList.remove('hidden');
+    document.querySelectorAll('.view').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    });
+    
+    const target = document.getElementById(viewId);
+    if (target) {
+        target.classList.remove('hidden');
+        target.classList.add('flex');
+    }
 }
 
 // --- MODAL CONTROLLERS ---
 function openLoginModal() {
-    document.getElementById('login-modal').classList.remove('hidden');
-    document.getElementById('login-modal').classList.add('flex');
+    const modal = document.getElementById('login-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
 }
 
 function closeLoginModal() {
-    document.getElementById('login-modal').classList.add('hidden');
-    document.getElementById('login-modal').classList.remove('flex');
+    const modal = document.getElementById('login-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
 }
 
 // --- REGISTRATION LOGIC ---
 async function handleRegister(e) {
     e.preventDefault();
+    if (!supabaseClient) {
+        alert('Database client not initialized properly.');
+        return;
+    }
+
     const name = document.getElementById('reg-name').value.trim();
     const gender = document.getElementById('reg-gender').value;
     const username = document.getElementById('reg-username').value.trim().toLowerCase();
@@ -41,11 +65,11 @@ async function handleRegister(e) {
     }
 
     // Check if username exists
-    const { data: existing } = await supabaseClient
+    const { data: existing, error: checkError } = await supabaseClient
         .from('profiles')
         .select('username')
         .eq('username', username)
-        .single();
+        .maybeSingle();
 
     if (existing) {
         alert('Username is already taken. Please choose another.');
@@ -70,6 +94,11 @@ async function handleRegister(e) {
 // --- LOGIN LOGIC ---
 async function handleLogin(e) {
     e.preventDefault();
+    if (!supabaseClient) {
+        alert('Database client not initialized properly.');
+        return;
+    }
+
     const username = document.getElementById('login-username').value.trim().toLowerCase();
     const password = document.getElementById('login-password').value;
 
@@ -78,7 +107,7 @@ async function handleLogin(e) {
         .select('*')
         .eq('username', username)
         .eq('password', password)
-        .single();
+        .maybeSingle();
 
     if (error || !data) {
         alert('Invalid username or password.');
@@ -87,7 +116,12 @@ async function handleLogin(e) {
 
     currentUser = data;
     closeLoginModal();
-    document.getElementById('current-user-display').textContent = `${currentUser.name} (@${currentUser.username})`;
+    
+    const displayEl = document.getElementById('current-user-display');
+    if (displayEl) {
+        displayEl.textContent = `${currentUser.name} (@${currentUser.username})`;
+    }
+    
     loadChatList();
     switchView('view-chatlist');
 }
@@ -95,18 +129,24 @@ async function handleLogin(e) {
 function handleLogout() {
     currentUser = null;
     activeChatUser = null;
-    if (messageSubscription) supabaseClient.removeChannel(messageSubscription);
+    if (messageSubscription && supabaseClient) {
+        supabaseClient.removeChannel(messageSubscription);
+    }
     switchView('view-welcome');
 }
 
 // --- CHAT LIST LOGIC ---
 async function loadChatList() {
+    if (!supabaseClient || !currentUser) return;
+
     const { data: members, error } = await supabaseClient
         .from('profiles')
         .select('*')
         .neq('username', currentUser.username);
 
     const listContainer = document.getElementById('members-list');
+    if (!listContainer) return;
+    
     listContainer.innerHTML = '';
 
     if (error || !members || members.length === 0) {
@@ -145,11 +185,14 @@ async function openChatRoom(member) {
 }
 
 async function fetchMessages() {
+    if (!supabaseClient || !currentUser || !activeChatUser) return;
+
     const container = document.getElementById('chat-messages');
     container.innerHTML = '';
 
+    // Updated to query 'private_messages'
     const { data: messages, error } = await supabaseClient
-        .from('messages')
+        .from('private_messages')
         .select('*')
         .or(`and(sender_username.eq.${currentUser.username},receiver_username.eq.${activeChatUser.username}),and(sender_username.eq.${activeChatUser.username},receiver_username.eq.${currentUser.username})`)
         .order('created_at', { ascending: true });
@@ -159,8 +202,10 @@ async function fetchMessages() {
         return;
     }
 
-    messages.forEach(msg => appendMessageToDOM(msg));
-    container.scrollTop = container.scrollHeight;
+    if (messages) {
+        messages.forEach(msg => appendMessageToDOM(msg));
+        container.scrollTop = container.scrollHeight;
+    }
 }
 
 function appendMessageToDOM(msg) {
@@ -187,12 +232,15 @@ function appendMessageToDOM(msg) {
 
 async function sendMessage(e) {
     e.preventDefault();
+    if (!supabaseClient || !currentUser || !activeChatUser) return;
+
     const input = document.getElementById('message-input');
     const content = input.value.trim();
     if (!content) return;
 
+    // Updated to insert into 'private_messages'
     const { error } = await supabaseClient
-        .from('messages')
+        .from('private_messages')
         .insert([{
             sender_username: currentUser.username,
             receiver_username: activeChatUser.username,
@@ -208,16 +256,20 @@ async function sendMessage(e) {
 }
 
 function subscribeToMessages() {
+    if (!supabaseClient) return;
     if (messageSubscription) supabaseClient.removeChannel(messageSubscription);
 
+    // Updated channel name and table target to 'private_messages'
     messageSubscription = supabaseClient
-        .channel('public:messages')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        .channel('public:private_messages')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'private_messages' }, payload => {
             const msg = payload.new;
-            // Append message if it belongs to the active conversation
             if (
-                (msg.sender_username === currentUser.username && msg.receiver_username === activeChatUser.username) ||
-                (msg.sender_username === activeChatUser.username && msg.receiver_username === currentUser.username)
+                activeChatUser &&
+                (
+                    (msg.sender_username === currentUser.username && msg.receiver_username === activeChatUser.username) ||
+                    (msg.sender_username === activeChatUser.username && msg.receiver_username === currentUser.username)
+                )
             ) {
                 appendMessageToDOM(msg);
                 const container = document.getElementById('chat-messages');
