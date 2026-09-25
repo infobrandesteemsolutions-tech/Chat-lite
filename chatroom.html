@@ -81,12 +81,6 @@ body > header .flex-1 {
 .message-options {
     box-shadow: 0 15px 40px rgba(0, 0, 0, .18);
 }
-#media-gallery img, #media-gallery video {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 10px;
-}
 
 /* =========================================================
    ATTACHMENT MENU
@@ -139,33 +133,18 @@ body > header .flex-1 {
 }
 
 /* =========================================================
-   REPLY PREVIEW
+   REPLY & MEDIA PREVIEW
 ========================================================= */
-#reply-preview {
+#reply-preview, #media-preview {
     background: #ffffff;
     padding-left: 16px;
     padding-right: 16px;
 }
-#reply-preview > div {
+#reply-preview > div, #media-preview > div {
     width: 100%;
     max-width: 748px;
     margin: 0 auto;
     min-height: 42px;
-}
-
-/* =========================================================
-   MEDIA PREVIEW
-========================================================= */
-#media-preview {
-    background: #ffffff;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-#media-preview > div {
-    width: 100%;
-    max-width: 748px;
-    margin: 0 auto;
-    min-height: 64px;
 }
 
 /* =========================================================
@@ -214,14 +193,10 @@ body > header .flex-1 {
     border-radius: 50%;
     font-size: 24px;
     line-height: 1;
-    font-weight: 400;
     transition: background .15s ease, transform .15s ease;
 }
 #message-form button:first-child:hover {
     background: #eef2ff;
-}
-#message-form button:first-child:active {
-    transform: scale(.94);
 }
 #mic-button {
     width: 42px;
@@ -241,9 +216,6 @@ body > header .flex-1 {
     border-radius: 50%;
     box-shadow: 0 4px 10px rgba(79, 70, 229, .22);
 }
-#message-form button[type="submit"]:active {
-    transform: scale(.94);
-}
 
 /* =========================================================
    UNDO BANNER
@@ -256,15 +228,9 @@ body > header .flex-1 {
     transform: translateX(-50%);
 }
 
-/* =========================================================
-   DESKTOP
-========================================================= */
 @media (min-width: 768px) {
     html, body {
         background: #e2e8f0;
-    }
-    body > header {
-        border-radius: 0;
     }
     #messages {
         padding-top: 20px;
@@ -272,57 +238,6 @@ body > header .flex-1 {
     }
     .message-bubble {
         max-width: 520px;
-    }
-    #message-form {
-        padding-top: 12px;
-        padding-bottom: 12px;
-    }
-}
-
-/* =========================================================
-   MOBILE
-========================================================= */
-@media (max-width: 600px) {
-    html, body {
-        background: #f8fafc;
-    }
-    #messages {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-    .message-bubble {
-        max-width: 84%;
-    }
-    #attachment-menu {
-        padding-left: 8px;
-        padding-right: 8px;
-    }
-    #attachment-menu > div {
-        gap: 5px;
-        padding: 7px;
-        border-radius: 16px;
-    }
-    #attachment-menu button {
-        height: 58px;
-        padding: 5px;
-        border-radius: 12px;
-    }
-    #attachment-menu button span:first-child {
-        font-size: 20px;
-    }
-    #attachment-menu button span:last-child {
-        font-size: 10px;
-    }
-    #message-form {
-        padding-left: 10px;
-        padding-right: 10px;
-    }
-    #message-form #message-input {
-        font-size: 15px;
-    }
-    .message-image, .message-video {
-        max-width: 230px;
-        max-height: 300px;
     }
 }
 </style>
@@ -355,7 +270,7 @@ body > header .flex-1 {
     <main id="messages" class="flex-1 overflow-y-auto px-3 py-4 space-y-3">
     </main>
 
-    <!-- EMPTY / LOADING -->
+    <!-- LOADING -->
     <div id="loading-message" class="hidden text-center text-sm text-slate-400 py-3">
         Loading messages...
     </div>
@@ -368,34 +283,19 @@ body > header .flex-1 {
         </button>
     </div>
 
-    <!-- MESSAGE OPTIONS -->
+    <!-- MESSAGE OPTIONS OVERLAY -->
     <div id="message-options-overlay" class="hidden fixed inset-0 z-50 bg-black/30" onclick="closeMessageOptions()">
         <div id="message-options" class="message-options absolute left-1/2 -translate-x-1/2 bottom-4 w-[calc(100%-24px)] max-w-md bg-white rounded-2xl overflow-hidden" onclick="event.stopPropagation()">
             <div class="px-4 py-3 border-b">
-                <div class="text-xs text-slate-400">
-                    Message options
-                </div>
-                <div id="options-preview" class="text-sm mt-1 truncate">
-                </div>
+                <div class="text-xs text-slate-400">Message options</div>
+                <div id="options-preview" class="text-sm mt-1 truncate"></div>
             </div>
-            <button onclick="replyToSelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">
-                ↩️ Reply
-            </button>
-            <button onclick="copySelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">
-                📋 Copy
-            </button>
-            <button onclick="forwardSelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">
-                ↗️ Forward
-            </button>
-            <button onclick="deleteSelectedForMe()" class="w-full text-left px-4 py-4 hover:bg-slate-50">
-                🗑️ Delete for me
-            </button>
-            <button id="delete-everyone-button" onclick="deleteSelectedForEveryone()" class="w-full text-left px-4 py-4 hover:bg-slate-50 text-red-600">
-                🗑️ Delete for everyone
-            </button>
-            <button onclick="closeMessageOptions()" class="w-full text-left px-4 py-4 border-t hover:bg-slate-50">
-                Cancel
-            </button>
+            <button onclick="replyToSelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">↩️ Reply</button>
+            <button onclick="copySelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">📋 Copy</button>
+            <button onclick="forwardSelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">↗️ Forward</button>
+            <button onclick="deleteSelectedForMe()" class="w-full text-left px-4 py-4 hover:bg-slate-50">🗑️ Delete for me</button>
+            <button id="delete-everyone-button" onclick="deleteSelectedForEveryone()" class="w-full text-left px-4 py-4 hover:bg-slate-50 text-red-600 hidden">🗑️ Delete for everyone</button>
+            <button onclick="closeMessageOptions()" class="w-full text-left px-4 py-4 border-t hover:bg-slate-50">Cancel</button>
         </div>
     </div>
 
@@ -403,32 +303,22 @@ body > header .flex-1 {
     <div id="reply-preview" class="hidden bg-white border-t px-3 py-2">
         <div class="flex items-center gap-3">
             <div class="flex-1 min-w-0">
-                <div class="text-xs font-semibold text-indigo-600">
-                    Replying to <span id="reply-name"></span>
-                </div>
-                <div id="reply-text" class="text-sm text-slate-500 truncate">
-                </div>
+                <div class="text-xs font-semibold text-indigo-600">Replying to <span id="reply-name"></span></div>
+                <div id="reply-text" class="text-sm text-slate-500 truncate"></div>
             </div>
-            <button onclick="cancelReply()" class="w-8 h-8 rounded-full hover:bg-slate-100">
-                ✕
-            </button>
+            <button onclick="cancelReply()" class="w-8 h-8 rounded-full hover:bg-slate-100">✕</button>
         </div>
     </div>
 
     <!-- MEDIA PREVIEW -->
     <div id="media-preview" class="hidden bg-white border-t px-3 py-2">
         <div class="flex items-center gap-3">
-            <div id="media-preview-content" class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">
-            </div>
+            <div id="media-preview-content" class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center"></div>
             <div class="flex-1 min-w-0">
-                <div class="font-medium text-sm truncate" id="media-file-name">
-                </div>
-                <div class="text-xs text-slate-400" id="media-file-type">
-                </div>
+                <div class="font-medium text-sm truncate" id="media-file-name"></div>
+                <div class="text-xs text-slate-400" id="media-file-type"></div>
             </div>
-            <button onclick="cancelMedia()" class="w-8 h-8 rounded-full hover:bg-slate-100">
-                ✕
-            </button>
+            <button onclick="cancelMedia()" class="w-8 h-8 rounded-full hover:bg-slate-100">✕</button>
         </div>
     </div>
 
@@ -464,19 +354,11 @@ body > header .flex-1 {
         <div class="flex items-center gap-3">
             <div class="w-3 h-3 rounded-full bg-red-500 recording-pulse"></div>
             <div class="flex-1">
-                <div class="font-semibold text-red-600">
-                    Recording
-                </div>
-                <div id="recording-time" class="text-xs text-slate-500">
-                    00:00
-                </div>
+                <div class="font-semibold text-red-600">Recording</div>
+                <div id="recording-time" class="text-xs text-slate-500">00:00</div>
             </div>
-            <button id="pause-recording" onclick="togglePauseRecording()" class="px-3 py-2 rounded-lg bg-white border text-sm">
-                Pause
-            </button>
-            <button onclick="stopRecording()" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm">
-                Stop
-            </button>
+            <button id="pause-recording" onclick="togglePauseRecording()" class="px-3 py-2 rounded-lg bg-white border text-sm">Pause</button>
+            <button onclick="stopRecording()" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm">Stop</button>
         </div>
     </div>
 
@@ -495,18 +377,12 @@ body > header .flex-1 {
     </form>
 
     <script>
-    /* =========================================================
-       PRIVATE CHAT (PURE SUPABASE & MEMORY STATE)
-    ========================================================= */
+    // --- PRIVATE CHAT CONTROLLER ---
     const currentUser = JSON.parse(localStorage.getItem('chatlite_user') || 'null');
     const params = new URLSearchParams(window.location.search);
     const targetUsername = decodeURIComponent(params.get('to') || '');
-    const targetName = decodeURIComponent(
-        params.get('name') || targetUsername || 'Chat'
-    );
-    const targetGender = decodeURIComponent(
-        params.get('gender') || ''
-    );
+    const targetName = decodeURIComponent(params.get('name') || targetUsername || 'Chat');
+    const targetGender = decodeURIComponent(params.get('gender') || '');
 
     let messagesCache = [];
     let messageSubscription = null;
@@ -520,149 +396,81 @@ body > header .flex-1 {
     let stagedPayload = null;
     let activeReplyMessage = null;
     let selectedMessage = null;
-    let deletedForMe = new Set(); // Stored purely in memory
+    let deletedForMe = new Set();
     let pendingDeleteTimer = null;
     let undoTargetMessage = null;
 
-    /* =========================================================
-       SAFETY / INITIALIZATION
-    ========================================================= */
-    document.addEventListener(
-        'DOMContentLoaded',
-        initChat
-    );
+    document.addEventListener('DOMContentLoaded', initChat);
 
     async function initChat() {
-        if (!currentUser || !currentUser.username) {
-            window.location.href = 'chatlist.html';
-            return;
-        }
-        if (!targetUsername) {
+        if (!currentUser || !currentUser.username || !targetUsername) {
             window.location.href = 'chatlist.html';
             return;
         }
 
         setupHeader();
-
-        document
-            .getElementById('message-form')
-            .addEventListener(
-                'submit',
-                handleSend
-            );
+        document.getElementById('message-form').addEventListener('submit', handleSend);
 
         await fetchPrivateMessages();
         subscribeToPrivateMessages();
     }
 
-    /* =========================================================
-       HEADER
-    ========================================================= */
     function setupHeader() {
-        const nameElement = document.getElementById('target-name');
-        const infoElement = document.getElementById('target-info');
-        const avatarElement = document.getElementById('target-avatar');
-
-        nameElement.textContent = targetName || targetUsername;
-        infoElement.textContent = '@' + targetUsername + (
-            targetGender ? ' • ' + targetGender : ''
-        );
-
-        const firstLetter = (
-            targetName || targetUsername || '?'
-        )
-            .charAt(0)
-            .toUpperCase();
-        avatarElement.textContent = firstLetter;
+        document.getElementById('target-name').textContent = targetName;
+        document.getElementById('target-info').textContent = '@' + targetUsername + (targetGender ? ' • ' + targetGender : '');
+        document.getElementById('target-avatar').textContent = (targetName || targetUsername || '?').charAt(0).toUpperCase();
     }
 
-    /* =========================================================
-       NAVIGATION
-    ========================================================= */
     function goBack() {
         window.location.href = 'chatlist.html';
     }
 
-    /* =========================================================
-       SEARCH
-    ========================================================= */
     function toggleSearch() {
         const bar = document.getElementById('search-bar');
         bar.classList.toggle('hidden');
         if (!bar.classList.contains('hidden')) {
-            document
-                .getElementById('search-input')
-                .focus();
+            document.getElementById('search-input').focus();
         }
     }
 
-    /* =========================================================
-       ATTACHMENT MENU
-    ========================================================= */
     function toggleAttachmentMenu() {
-        const menu = document.getElementById(
-            'attachment-menu'
-        );
-        menu.classList.toggle('hidden');
+        document.getElementById('attachment-menu').classList.toggle('hidden');
     }
 
     function closeAttachmentMenu() {
-        document
-            .getElementById('attachment-menu')
-            .classList.add('hidden');
+        document.getElementById('attachment-menu').classList.add('hidden');
     }
 
     function openFilePicker() {
         closeAttachmentMenu();
-        document
-            .getElementById('file-input')
-            .click();
+        document.getElementById('file-input').click();
     }
 
     function openImagePicker() {
         closeAttachmentMenu();
-        document
-            .getElementById('image-input')
-            .click();
+        document.getElementById('image-input').click();
     }
 
     function openCameraPicker() {
         closeAttachmentMenu();
-        document
-            .getElementById('camera-input')
-            .click();
+        document.getElementById('camera-input').click();
     }
 
-    /* =========================================================
-       FILE / MEDIA STAGING
-    ========================================================= */
     function stageSelectedFile(file) {
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(event) {
-            const dataUrl = event.target.result;
             let type = 'file';
-
-            if (file.type.startsWith('image/')) {
-                type = 'image';
-            } else if (
-                file.type.startsWith('video/')
-            ) {
-                type = 'video';
-            } else if (
-                file.type.startsWith('audio/')
-            ) {
-                type = 'audio';
-            }
+            if (file.type.startsWith('image/')) type = 'image';
+            else if (file.type.startsWith('video/')) type = 'video';
+            else if (file.type.startsWith('audio/')) type = 'audio';
 
             stagedPayload = {
                 type,
-                content: dataUrl,
+                content: event.target.result,
                 fileName: file.name,
                 mimeType: file.type
             };
-
             showMediaPreview();
         };
         reader.readAsDataURL(file);
@@ -670,103 +478,52 @@ body > header .flex-1 {
 
     function showMediaPreview() {
         if (!stagedPayload) return;
-
-        const preview = document.getElementById(
-            'media-preview'
-        );
-        const previewContent = document.getElementById(
-            'media-preview-content'
-        );
-        const fileName = document.getElementById(
-            'media-file-name'
-        );
-        const fileType = document.getElementById(
-            'media-file-type'
-        );
+        const preview = document.getElementById('media-preview');
+        const previewContent = document.getElementById('media-preview-content');
+        document.getElementById('media-file-name').textContent = stagedPayload.fileName || 'Attachment';
+        document.getElementById('media-file-type').textContent = stagedPayload.type;
 
         previewContent.innerHTML = '';
-        fileName.textContent = stagedPayload.fileName || 'Attachment';
-        fileType.textContent = stagedPayload.type;
-
-        if (
-            stagedPayload.type === 'image'
-        ) {
+        if (stagedPayload.type === 'image') {
             const img = document.createElement('img');
             img.src = stagedPayload.content;
             img.className = 'w-full h-full object-cover';
-            previewContent.appendChild(
-                img
-            );
-        } else if (
-            stagedPayload.type === 'video'
-        ) {
+            previewContent.appendChild(img);
+        } else if (stagedPayload.type === 'video') {
             const video = document.createElement('video');
             video.src = stagedPayload.content;
             video.className = 'w-full h-full object-cover';
             video.muted = true;
-            previewContent.appendChild(
-                video
-            );
+            previewContent.appendChild(video);
         } else {
             previewContent.innerHTML = '<span class="text-2xl">📎</span>';
         }
-
-        preview.classList.remove(
-            'hidden'
-        );
+        preview.classList.remove('hidden');
     }
 
     function cancelMedia() {
         stagedPayload = null;
-        document
-            .getElementById('media-preview')
-            .classList.add('hidden');
-        document
-            .getElementById('media-preview-content')
-            .innerHTML = '';
+        document.getElementById('media-preview').classList.add('hidden');
+        document.getElementById('media-preview-content').innerHTML = '';
     }
 
-    /* =========================================================
-       VOICE RECORDING
-    ========================================================= */
     async function startRecording() {
         if (isRecording) return;
-
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
             recordedBlob = null;
 
-            mediaRecorder.ondataavailable = function(event) {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = function() {
-                recordedBlob = new Blob(
-                    audioChunks,
-                    { type: mediaRecorder.mimeType || 'audio/webm' }
-                );
-                stream
-                    .getTracks()
-                    .forEach(track => {
-                        track.stop();
-                    });
-
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                stream.getTracks().forEach(t => t.stop());
                 isRecording = false;
                 isPaused = false;
-                clearInterval(
-                    recordingTimerInterval
-                );
-                document
-                    .getElementById('recording-bar')
-                    .classList.add('hidden');
-                document
-                    .getElementById('pause-recording')
-                    .textContent = 'Pause';
-
+                clearInterval(recordingTimerInterval);
+                document.getElementById('recording-bar').classList.add('hidden');
+                document.getElementById('pause-recording').textContent = 'Pause';
                 sendRecordedAudio();
             };
 
@@ -774,180 +531,94 @@ body > header .flex-1 {
             isRecording = true;
             isPaused = false;
             recordingSeconds = 0;
-
-            document
-                .getElementById('recording-bar')
-                .classList.remove('hidden');
+            document.getElementById('recording-bar').classList.remove('hidden');
             updateRecordingTime();
-
-            recordingTimerInterval = setInterval(
-                () => {
-                    if (!isPaused) {
-                        recordingSeconds++;
-                        updateRecordingTime();
-                    }
-                },
-                1000
-            );
+            recordingTimerInterval = setInterval(() => {
+                if (!isPaused) {
+                    recordingSeconds++;
+                    updateRecordingTime();
+                }
+            }, 1000);
         } catch (error) {
-            console.error(
-                'Microphone error:',
-                error
-            );
-            alert(
-                'Microphone access was not allowed. Please allow microphone access and try again.'
-            );
+            alert('Microphone access denied or unavailable.');
         }
     }
 
     function togglePauseRecording() {
-        if (
-            !mediaRecorder || !isRecording
-        ) {
-            return;
-        }
-
+        if (!mediaRecorder || !isRecording) return;
         if (isPaused) {
             mediaRecorder.resume();
             isPaused = false;
-            document
-                .getElementById('pause-recording')
-                .textContent = 'Pause';
+            document.getElementById('pause-recording').textContent = 'Pause';
         } else {
             mediaRecorder.pause();
             isPaused = true;
-            document
-                .getElementById('pause-recording')
-                .textContent = 'Resume';
+            document.getElementById('pause-recording').textContent = 'Resume';
         }
     }
 
     function stopRecording() {
-        if (
-            !mediaRecorder || !isRecording
-        ) {
-            return;
-        }
+        if (!mediaRecorder || !isRecording) return;
         mediaRecorder.stop();
     }
 
     function updateRecordingTime() {
-        const minutes = Math.floor(
-            recordingSeconds / 60
-        )
-            .toString()
-            .padStart(2, '0');
-        const seconds = (
-            recordingSeconds % 60
-        )
-            .toString()
-            .padStart(2, '0');
-
-        document
-            .getElementById('recording-time')
-            .textContent = minutes + ':' + seconds;
+        const m = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+        const s = (recordingSeconds % 60).toString().padStart(2, '0');
+        document.getElementById('recording-time').textContent = m + ':' + s;
     }
 
     function sendRecordedAudio() {
         if (!recordedBlob) return;
-
         const reader = new FileReader();
         reader.onload = async function(event) {
-            const dataUrl = event.target.result;
             await sendPrivatePayload({
                 type: 'audio',
-                content: dataUrl,
+                content: event.target.result,
                 fileName: 'voice-note.webm',
                 mimeType: recordedBlob.type || 'audio/webm'
             });
             recordedBlob = null;
         };
-        reader.readAsDataURL(
-            recordedBlob
-        );
+        reader.readAsDataURL(recordedBlob);
     }
 
-    /* =========================================================
-       REPLY
-    ========================================================= */
     function setReply(message) {
         activeReplyMessage = message;
-        document
-            .getElementById('reply-preview')
-            .classList.remove('hidden');
-        document
-            .getElementById('reply-name')
-            .textContent = message.sender_username === currentUser.username ? 'You' : targetName;
-        document
-            .getElementById('reply-text')
-            .textContent = getDisplayText(message);
-        document
-            .getElementById('message-input')
-            .focus();
+        document.getElementById('reply-preview').classList.remove('hidden');
+        document.getElementById('reply-name').textContent = message.sender_username === currentUser.username ? 'You' : targetName;
+        document.getElementById('reply-text').textContent = getDisplayText(message);
+        document.getElementById('message-input').focus();
     }
 
     function cancelReply() {
         activeReplyMessage = null;
-        document
-            .getElementById('reply-preview')
-            .classList.add('hidden');
+        document.getElementById('reply-preview').classList.add('hidden');
     }
 
-    /* =========================================================
-       SEND
-    ========================================================= */
-    async function handleSend(event) {
-        event.preventDefault();
-
-        if (isRecording) {
-            stopRecording();
-            return;
-        }
-
-        if (recordedBlob) {
-            sendRecordedAudio();
-            return;
-        }
-
+    async function handleSend(e) {
+        e.preventDefault();
+        if (isRecording) { stopRecording(); return; }
+        if (recordedBlob) { sendRecordedAudio(); return; }
         if (stagedPayload) {
             const payload = stagedPayload;
             stagedPayload = null;
-            document
-                .getElementById('media-preview')
-                .classList.add('hidden');
-            await sendPrivatePayload(
-                payload
-            );
+            document.getElementById('media-preview').classList.add('hidden');
+            await sendPrivatePayload(payload);
             return;
         }
 
-        const input = document.getElementById(
-            'message-input'
-        );
+        const input = document.getElementById('message-input');
         const text = input.value.trim();
         if (!text) return;
-
         input.value = '';
-        await sendPrivatePayload({
-            type: 'text',
-            content: text
-        });
+        await sendPrivatePayload({ type: 'text', content: text });
     }
 
-    /* =========================================================
-       UNIQUE CLIENT ID
-    ========================================================= */
     function makeClientId() {
-        return (
-            Date.now().toString(36) + '-' + Math.random()
-                .toString(36)
-                .slice(2, 12)
-        );
+        return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
     }
 
-    /* =========================================================
-       PRIVATE MESSAGE ENVELOPE
-    ========================================================= */
     function createPrivateEnvelope(payload) {
         return {
             __chatlite_private: true,
@@ -957,26 +628,19 @@ body > header .flex-1 {
             fileName: payload.fileName || null,
             mimeType: payload.mimeType || null,
             reply_to_sender: activeReplyMessage ? activeReplyMessage.sender_username : null,
-            reply_to_message: activeReplyMessage ? getDisplayText(
-                activeReplyMessage
-            ) : null
+            reply_to_message: activeReplyMessage ? getDisplayText(activeReplyMessage) : null
         };
     }
 
-    /* =========================================================
-       SEND PRIVATE PAYLOAD
-    ========================================================= */
     async function sendPrivatePayload(payload) {
         const envelope = createPrivateEnvelope(payload);
-        const dbContent = JSON.stringify(envelope);
-
         const localMessage = {
             local_only: true,
             client_id: envelope.client_id,
             sender_username: currentUser.username,
             receiver_username: targetUsername,
             content: envelope.content,
-            raw_content: dbContent,
+            raw_content: JSON.stringify(envelope),
             type: envelope.type,
             fileName: envelope.fileName,
             mimeType: envelope.mimeType,
@@ -986,28 +650,14 @@ body > header .flex-1 {
             is_pending: true
         };
 
-        messagesCache.push(
-            localMessage
-        );
+        messagesCache.push(localMessage);
         renderMessages();
         cancelReply();
-
-        await insertPrivateMessage(
-            localMessage
-        );
+        await insertPrivateMessage(localMessage);
     }
 
-    /* =========================================================
-       DATABASE INSERT
-    ========================================================= */
     async function insertPrivateMessage(message) {
-        if (!supabaseClient) {
-            console.error(
-                'Supabase client is not available.'
-            );
-            return;
-        }
-
+        if (!supabaseClient) return;
         try {
             const { data, error } = await supabaseClient
                 .from('messages')
@@ -1020,217 +670,59 @@ body > header .flex-1 {
                 .single();
 
             if (error) {
-                console.error(
-                    'PRIVATE MESSAGE INSERT ERROR:',
-                    error
-                );
-                markMessagePending(
-                    message.client_id,
-                    true
-                );
+                markMessagePending(message.client_id, true);
                 renderMessages();
-                alert(
-                    'Could not save message:\n\n' + error.message
-                );
                 return;
             }
 
             if (data) {
-                const databaseMessage = normalizeDatabaseMessage(data);
-                const localIndex = messagesCache.findIndex(
-                    item => item.local_only && item.client_id === message.client_id
-                );
-                if (localIndex !== -1) {
-                    messagesCache[
-                        localIndex
-                    ] = databaseMessage;
-                } else {
-                    messagesCache.push(
-                        databaseMessage
-                    );
-                }
-            } else {
-                markMessagePending(
-                    message.client_id,
-                    false
-                );
+                const dbMsg = normalizeDatabaseMessage(data);
+                const idx = messagesCache.findIndex(item => item.local_only && item.client_id === message.client_id);
+                if (idx !== -1) messagesCache[idx] = dbMsg;
+                else messagesCache.push(dbMsg);
             }
-
             renderMessages();
-        } catch (error) {
-            console.error(
-                'Could not save private chat:',
-                error
-            );
-            markMessagePending(
-                message.client_id,
-                true
-            );
+        } catch (err) {
+            markMessagePending(message.client_id, true);
             renderMessages();
-            alert(
-                'Could not save private message:\n\n' + (
-                    error.message || error
-                )
-            );
         }
     }
 
-    /* =========================================================
-       FETCH PRIVATE MESSAGES
-    ========================================================= */
     async function fetchPrivateMessages() {
         if (!supabaseClient) return;
-
-        const loading = document.getElementById(
-            'loading-message'
-        );
-        loading.classList.remove(
-            'hidden'
-        );
+        document.getElementById('loading-message').classList.remove('hidden');
 
         try {
-            const sentPromise = supabaseClient
-                .from('messages')
-                .select('*')
-                .eq(
-                    'sender_username',
-                    currentUser.username
-                )
-                .eq(
-                    'receiver_username',
-                    targetUsername
-                )
-                .order(
-                    'created_at',
-                    { ascending: true }
-                );
-
-            const receivedPromise = supabaseClient
-                .from('messages')
-                .select('*')
-                .eq(
-                    'sender_username',
-                    targetUsername
-                )
-                .eq(
-                    'receiver_username',
-                    currentUser.username
-                )
-                .order(
-                    'created_at',
-                    { ascending: true }
-                );
-
-            const [
-                sentResult,
-                receivedResult
-            ] = await Promise.all([
-                sentPromise,
-                receivedPromise
+            const [sentRes, recvRes] = await Promise.all([
+                supabaseClient.from('messages').select('*').eq('sender_username', currentUser.username).eq('receiver_username', targetUsername).order('created_at', { ascending: true }),
+                supabaseClient.from('messages').select('*').eq('sender_username', targetUsername).eq('receiver_username', currentUser.username).order('created_at', { ascending: true })
             ]);
 
-            if (sentResult.error) {
-                throw sentResult.error;
-            }
-            if (receivedResult.error) {
-                throw receivedResult.error;
-            }
+            const rows = [...(sentRes.data || []), ...(recvRes.data || [])];
+            rows.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
 
-            const databaseRows = [
-                ...(sentResult.data || []),
-                ...(receivedResult.data || [])
-            ];
+            const dbMessages = rows.map(normalizeDatabaseMessage);
+            const dbIds = new Set(dbMessages.map(m => m.client_id).filter(Boolean));
+            const pendingLocals = messagesCache.filter(m => m.local_only && (!m.client_id || !dbIds.has(m.client_id)));
 
-            databaseRows.sort(
-                (a, b) => {
-                    return (
-                        new Date(
-                            a.created_at || 0
-                        ) - new Date(
-                            b.created_at || 0
-                        )
-                    );
-                }
-            );
-
-            const databaseMessages = databaseRows.map(
-                normalizeDatabaseMessage
-            );
-            const databaseClientIds = new Set(
-                databaseMessages
-                    .map(
-                        message => message.client_id
-                    )
-                    .filter(Boolean)
-            );
-
-            const localMessagesNotYetReturned = messagesCache.filter(
-                message => {
-                    if (!message.local_only) {
-                        return false;
-                    }
-                    if (
-                        message.client_id && databaseClientIds.has(
-                            message.client_id
-                        )
-                    ) {
-                        return false;
-                    }
-                    return true;
-                }
-            );
-
-            messagesCache = [
-                ...databaseMessages,
-                ...localMessagesNotYetReturned
-            ];
-
-            messagesCache.sort(
-                (a, b) => {
-                    return (
-                        new Date(
-                            a.created_at || 0
-                        ) - new Date(
-                            b.created_at || 0
-                        )
-                    );
-                }
-            );
-
+            messagesCache = [...dbMessages, ...pendingLocals];
+            messagesCache.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
             renderMessages();
-        } catch (error) {
-            console.error(
-                'Could not load private messages:',
-                error
-            );
+        } catch (err) {
+            console.error(err);
         } finally {
-            loading.classList.add(
-                'hidden'
-            );
+            document.getElementById('loading-message').classList.add('hidden');
         }
     }
 
-    /* =========================================================
-       NORMALIZE DATABASE MESSAGE
-    ========================================================= */
     function normalizeDatabaseMessage(row) {
         let envelope = null;
         try {
-            if (
-                typeof row.content === 'string' && row.content.trim().startsWith('{')
-            ) {
-                const parsed = JSON.parse(
-                    row.content
-                );
-                if (
-                    parsed && parsed.__chatlite_private === true
-                ) {
-                    envelope = parsed;
-                }
+            if (typeof row.content === 'string' && row.content.trim().startsWith('{')) {
+                const parsed = JSON.parse(row.content);
+                if (parsed && parsed.__chatlite_private === true) envelope = parsed;
             }
-        } catch (error) {
-            envelope = null;
-        }
+        } catch (e) { envelope = null; }
 
         if (!envelope) {
             return {
@@ -1240,10 +732,6 @@ body > header .flex-1 {
                 content: row.content || '',
                 raw_content: row.content || '',
                 type: 'text',
-                fileName: null,
-                mimeType: null,
-                reply_to_sender: null,
-                reply_to_message: null,
                 is_pending: false
             };
         }
@@ -1263,755 +751,229 @@ body > header .flex-1 {
         };
     }
 
-    /* =========================================================
-       PENDING STATE
-    ========================================================= */
-    function markMessagePending(
-        clientId,
-        pending
-    ) {
-        const message = messagesCache.find(
-            m => m.client_id === clientId
-        );
-        if (message) {
-            message.is_pending = pending;
-        }
+    function markMessagePending(clientId, pending) {
+        const msg = messagesCache.find(m => m.client_id === clientId);
+        if (msg) msg.is_pending = pending;
     }
 
-    /* =========================================================
-       RENDER
-    ========================================================= */
     function renderMessages() {
-        const container = document.getElementById(
-            'messages'
-        );
-        const search = (
-            document
-                .getElementById(
-                    'search-input'
-                )?.value || ''
-        )
-            .trim()
-            .toLowerCase();
-
+        const container = document.getElementById('messages');
+        const search = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
         container.innerHTML = '';
 
-        const filtered = messagesCache.filter(
-            message => {
-                if (
-                    deletedForMe.has(
-                        getMessageKey(
-                            message
-                        )
-                    )
-                ) {
-                    return false;
-                }
-                if (!search) {
-                    return true;
-                }
-                return getDisplayText(
-                    message
-                )
-                    .toLowerCase()
-                    .includes(search);
-            }
-        );
+        const filtered = messagesCache.filter(msg => {
+            if (deletedForMe.has(getMessageKey(msg))) return false;
+            if (!search) return true;
+            return getDisplayText(msg).toLowerCase().includes(search);
+        });
 
         if (!filtered.length) {
-            const empty = document.createElement(
-                'div'
-            );
+            const empty = document.createElement('div');
             empty.className = 'text-center text-slate-400 text-sm py-10';
             empty.textContent = search ? 'No matching messages' : 'No messages yet';
-            container.appendChild(
-                empty
-            );
+            container.appendChild(empty);
             return;
         }
 
-        filtered.forEach(
-            message => {
-                appendMessageToDOM(
-                    message,
-                    container
-                );
-            }
-        );
-
-        requestAnimationFrame(
-            () => {
-                container.scrollTop = container.scrollHeight;
-            }
-        );
+        filtered.forEach(msg => appendMessageToDOM(msg, container));
+        requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
     }
 
-    /* =========================================================
-       APPEND MESSAGE
-    ========================================================= */
-    function appendMessageToDOM(
-        message,
-        container
-    ) {
+    function appendMessageToDOM(message, container) {
         const isMine = message.sender_username === currentUser.username;
-        const wrapper = document.createElement(
-            'div'
-        );
-        wrapper.className = 'flex ' + (
-            isMine ? 'justify-end' : 'justify-start'
-        );
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex ' + (isMine ? 'justify-end' : 'justify-start');
 
-        const bubble = document.createElement(
-            'div'
-        );
-        bubble.className = 'message-bubble max-w-[82%] rounded-2xl px-3 py-2 ' + (
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble rounded-2xl px-3 py-2 ' + (
             isMine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-white border text-slate-800 rounded-bl-md'
         );
 
-        let longPressTimer = null;
-        bubble.addEventListener(
-            'pointerdown',
-            () => {
-                longPressTimer = setTimeout(
-                    () => {
-                        openMessageOptions(
-                            message
-                        );
-                    },
-                    600
-                );
-            }
-        );
-        bubble.addEventListener(
-            'pointerup',
-            () => {
-                clearTimeout(
-                    longPressTimer
-                );
-            }
-        );
-        bubble.addEventListener(
-            'pointerleave',
-            () => {
-                clearTimeout(
-                    longPressTimer
-                );
-            }
-        );
+        let pressTimer = null;
+        bubble.addEventListener('pointerdown', () => { pressTimer = setTimeout(() => openMessageOptions(message), 600); });
+        bubble.addEventListener('pointerup', () => clearTimeout(pressTimer));
+        bubble.addEventListener('pointerleave', () => clearTimeout(pressTimer));
 
         let startX = 0;
-        bubble.addEventListener(
-            'touchstart',
-            event => {
-                startX = event.touches[0]
-                    .clientX;
-            },
-            { passive: true }
-        );
-        bubble.addEventListener(
-            'touchend',
-            event => {
-                const endX = event.changedTouches[0]
-                    .clientX;
-                if (
-                    endX - startX > 70
-                ) {
-                    setReply(
-                        message
-                    );
-                }
-            },
-            { passive: true }
-        );
+        bubble.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+        bubble.addEventListener('touchend', e => { if (e.changedTouches[0].clientX - startX > 70) setReply(message); }, { passive: true });
 
-        if (
-            message.reply_to_message
-        ) {
-            const quote = document.createElement(
-                'div'
-            );
+        if (message.reply_to_message) {
+            const quote = document.createElement('div');
             quote.className = 'reply-quote rounded-lg px-2 py-1 mb-2';
-
-            const quoteName = document.createElement(
-                'div'
-            );
-            quoteName.className = 'text-xs font-semibold';
-            quoteName.textContent = message.reply_to_sender === currentUser.username ? 'You' : targetName;
-
-            const quoteText = document.createElement(
-                'div'
-            );
-            quoteText.className = 'text-xs opacity-80 truncate';
-            quoteText.textContent = message.reply_to_message;
-
-            quote.appendChild(
-                quoteName
-            );
-            quote.appendChild(
-                quoteText
-            );
-            bubble.appendChild(
-                quote
-            );
+            const qName = document.createElement('div');
+            qName.className = 'text-xs font-semibold';
+            qName.textContent = message.reply_to_sender === currentUser.username ? 'You' : targetName;
+            const qText = document.createElement('div');
+            qText.className = 'text-xs opacity-80 truncate';
+            qText.textContent = message.reply_to_message;
+            quote.appendChild(qName);
+            quote.appendChild(qText);
+            bubble.appendChild(quote);
         }
 
-        if (
-            message.type === 'image'
-        ) {
-            const img = document.createElement(
-                'img'
-            );
+        if (message.type === 'image') {
+            const img = document.createElement('img');
             img.src = message.content;
             img.className = 'message-image';
-            img.loading = 'lazy';
-            bubble.appendChild(
-                img
-            );
-        } else if (
-            message.type === 'video'
-        ) {
-            const video = document.createElement(
-                'video'
-            );
-            video.src = message.content;
-            video.controls = true;
-            video.className = 'message-video';
-            bubble.appendChild(
-                video
-            );
-        } else if (
-            message.type === 'audio'
-        ) {
-            const audio = document.createElement(
-                'audio'
-            );
-            audio.src = message.content;
-            audio.controls = true;
-            audio.className = 'message-audio';
-            bubble.appendChild(
-                audio
-            );
-        } else if (
-            message.type === 'file'
-        ) {
-            const link = document.createElement(
-                'a'
-            );
+            bubble.appendChild(img);
+        } else if (message.type === 'video') {
+            const vid = document.createElement('video');
+            vid.src = message.content;
+            vid.controls = true;
+            vid.className = 'message-video';
+            bubble.appendChild(vid);
+        } else if (message.type === 'audio') {
+            const aud = document.createElement('audio');
+            aud.src = message.content;
+            aud.controls = true;
+            aud.className = 'message-audio';
+            bubble.appendChild(aud);
+        } else if (message.type === 'file') {
+            const link = document.createElement('a');
             link.href = message.content;
             link.download = message.fileName || 'download';
             link.className = 'flex items-center gap-2 underline';
-            link.innerHTML = '📎 ' + escapeHtml(
-                message.fileName || 'File'
-            );
-            bubble.appendChild(
-                link
-            );
+            link.innerHTML = '📎 ' + escapeHtml(message.fileName || 'File');
+            bubble.appendChild(link);
         } else {
-            const text = document.createElement(
-                'div'
-            );
-            text.textContent = message.content;
-            bubble.appendChild(
-                text
-            );
+            const txt = document.createElement('div');
+            txt.textContent = message.content;
+            bubble.appendChild(txt);
         }
 
-        const footer = document.createElement(
-            'div'
-        );
+        const footer = document.createElement('div');
         footer.className = 'flex items-center justify-end gap-1 mt-1';
-
-        const time = document.createElement(
-            'span'
-        );
-        time.className = 'text-[10px] ' + (
-            isMine ? 'text-white/70' : 'text-slate-400'
-        );
-        time.textContent = formatTime(
-            message.created_at
-        );
-        footer.appendChild(
-            time
-        );
+        const time = document.createElement('span');
+        time.className = 'text-[10px] ' + (isMine ? 'text-white/70' : 'text-slate-400');
+        time.textContent = formatTime(message.created_at);
+        footer.appendChild(time);
 
         if (isMine) {
-            const status = document.createElement(
-                'span'
-            );
+            const status = document.createElement('span');
             status.className = 'text-[11px]';
             status.textContent = message.is_pending ? '🕒' : '✓✓';
-            footer.appendChild(
-                status
-            );
+            footer.appendChild(status);
         }
 
-        bubble.appendChild(
-            footer
-        );
-        wrapper.appendChild(
-            bubble
-        );
-        container.appendChild(
-            wrapper
-        );
+        bubble.appendChild(footer);
+        wrapper.appendChild(bubble);
+        container.appendChild(wrapper);
     }
 
-    /* =========================================================
-       DISPLAY TEXT
-    ========================================================= */
-    function getDisplayText(
-        message
-    ) {
-        if (!message) {
-            return '';
-        }
-        if (
-            message.type === 'text'
-        ) {
-            return message.content || '';
-        }
-        if (
-            message.type === 'image'
-        ) {
-            return '📷 Photo';
-        }
-        if (
-            message.type === 'video'
-        ) {
-            return '🎥 Video';
-        }
-        if (
-            message.type === 'audio'
-        ) {
-            return '🎙️ Voice note';
-        }
-        if (
-            message.type === 'file'
-        ) {
-            return '📎 ' + (
-                message.fileName || 'File'
-            );
-        }
-        return message.content || '';
+    function getDisplayText(msg) {
+        if (!msg) return '';
+        if (msg.type === 'text') return msg.content || '';
+        if (msg.type === 'image') return '📷 Photo';
+        if (msg.type === 'video') return '🎥 Video';
+        if (msg.type === 'audio') return '🎙️ Voice note';
+        if (msg.type === 'file') return '📎 ' + (msg.fileName || 'File');
+        return msg.content || '';
     }
 
-    /* =========================================================
-       TIME
-    ========================================================= */
-    function formatTime(
-        dateString
-    ) {
-        if (!dateString) {
-            return '';
-        }
-        const date = new Date(
-            dateString
-        );
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
-            return '';
-        }
-        return date.toLocaleTimeString(
-            [],
-            { hour: '2-digit', minute: '2-digit' }
-        );
+    function formatTime(dStr) {
+        if (!dStr) return '';
+        const d = new Date(dStr);
+        return isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    /* =========================================================
-       MESSAGE OPTIONS
-    ========================================================= */
-    function openMessageOptions(
-        message
-    ) {
-        selectedMessage = message;
-        document
-            .getElementById(
-                'options-preview'
-            )
-            .textContent = getDisplayText(
-                message
-            );
-
-        const deleteEveryone = document.getElementById(
-            'delete-everyone-button'
-        );
-        if (
-            message.sender_username === currentUser.username && message.id
-        ) {
-            deleteEveryone.classList.remove(
-                'hidden'
-            );
+    function openMessageOptions(msg) {
+        selectedMessage = msg;
+        document.getElementById('options-preview').textContent = getDisplayText(msg);
+        const delEveryoneBtn = document.getElementById('delete-everyone-button');
+        if (msg.sender_username === currentUser.username && msg.id) {
+            delEveryoneBtn.classList.remove('hidden');
         } else {
-            deleteEveryone.classList.add(
-                'hidden'
-            );
+            delEveryoneBtn.classList.add('hidden');
         }
-
-        document
-            .getElementById(
-                'message-options-overlay'
-            )
-            .classList.remove(
-                'hidden'
-            );
+        document.getElementById('message-options-overlay').classList.remove('hidden');
     }
 
     function closeMessageOptions() {
-        document
-            .getElementById(
-                'message-options-overlay'
-            )
-            .classList.add(
-                'hidden'
-            );
+        document.getElementById('message-options-overlay').classList.add('hidden');
         selectedMessage = null;
     }
 
     function replyToSelected() {
-        if (!selectedMessage) {
-            return;
-        }
-        const message = selectedMessage;
+        if (!selectedMessage) return;
+        const m = selectedMessage;
         closeMessageOptions();
-        setReply(
-            message
-        );
+        setReply(m);
     }
 
     async function copySelected() {
-        if (!selectedMessage) {
-            return;
-        }
-        const text = getDisplayText(
-            selectedMessage
-        );
-        try {
-            await navigator.clipboard.writeText(
-                text
-            );
-        } catch (error) {
-            console.warn(
-                'Clipboard failed:',
-                error
-            );
-            prompt(
-                'Copy message:',
-                text
-            );
-        }
+        if (!selectedMessage) return;
+        try { await navigator.clipboard.writeText(getDisplayText(selectedMessage)); } catch (e) {}
         closeMessageOptions();
     }
 
     function forwardSelected() {
-        if (!selectedMessage) {
-            return;
-        }
-        alert(
-            'Forwarding can be connected to your contacts list next.'
-        );
+        alert('Forwarding can be configured with contacts next.');
         closeMessageOptions();
     }
 
-    /* =========================================================
-       DELETE FOR ME
-    ========================================================= */
-    function getMessageKey(
-        message
-    ) {
-        return String(
-            message.id || message.client_id || (
-                message.created_at + '_' + message.sender_username
-            )
-        );
+    function getMessageKey(msg) {
+        return String(msg.id || msg.client_id || (msg.created_at + '_' + msg.sender_username));
     }
 
     function deleteSelectedForMe() {
-        if (!selectedMessage) {
-            return;
-        }
-        const message = selectedMessage;
+        if (!selectedMessage) return;
+        const msg = selectedMessage;
         closeMessageOptions();
-        deletedForMe.add(
-            getMessageKey(
-                message
-            )
-        );
+        deletedForMe.add(getMessageKey(msg));
         renderMessages();
     }
 
-    /* =========================================================
-       DELETE FOR EVERYONE
-    ========================================================= */
     async function deleteSelectedForEveryone() {
-        if (!selectedMessage) {
-            return;
-        }
-        const message = selectedMessage;
+        if (!selectedMessage) return;
+        const msg = selectedMessage;
         closeMessageOptions();
-
-        if (
-            message.sender_username !== currentUser.username
-        ) {
-            return;
-        }
-        if (!message.id) {
-            alert(
-                'This message does not have a database ID, so it cannot be deleted for everyone.'
-            );
-            return;
-        }
+        if (msg.sender_username !== currentUser.username || !msg.id) return;
 
         const deletedEnvelope = {
             __chatlite_private: true,
-            client_id: message.client_id || null,
+            client_id: msg.client_id || null,
             type: 'text',
             content: 'This message was deleted.',
-            fileName: null,
-            mimeType: null,
-            reply_to_sender: null,
-            reply_to_message: null,
             deleted: true
         };
 
         try {
-            const { error } = await supabaseClient
-                .from('messages')
-                .update({
-                    content: JSON.stringify(
-                        deletedEnvelope
-                    )
-                })
-                .eq(
-                    'id',
-                    message.id
-                );
-
-            if (error) {
-                console.error(
-                    'Delete for everyone failed:',
-                    error
-                );
-                alert(
-                    'Could not delete message:\n\n' + error.message
-                );
-                return;
-            }
-
+            await supabaseClient.from('messages').update({ content: JSON.stringify(deletedEnvelope) }).eq('id', msg.id);
             await fetchPrivateMessages();
-        } catch (error) {
-            console.error(
-                'Delete for everyone error:',
-                error
-            );
-            alert(
-                'Could not delete message:\n\n' + (
-                    error.message || error
-                )
-            );
+        } catch (e) {
+            alert('Could not delete message for everyone.');
         }
     }
 
-    /* =========================================================
-       UNDO
-    ========================================================= */
-    function showUndo(
-        message
-    ) {
-        undoTargetMessage = message;
-        const banner = document.getElementById(
-            'undo-banner'
-        );
-        banner.classList.remove(
-            'hidden'
-        );
-        clearTimeout(
-            pendingDeleteTimer
-        );
-        pendingDeleteTimer = setTimeout(
-            () => {
-                banner.classList.add(
-                    'hidden'
-                );
-                undoTargetMessage = null;
-            },
-            10000
-        );
-    }
-
-    function undoDelete() {
-        if (!undoTargetMessage) {
-            return;
-        }
-        deletedForMe.delete(
-            getMessageKey(
-                undoTargetMessage
-            )
-        );
-        undoTargetMessage = null;
-        clearTimeout(
-            pendingDeleteTimer
-        );
-        document
-            .getElementById(
-                'undo-banner'
-            )
-            .classList.add(
-                'hidden'
-            );
-        renderMessages();
-    }
-
-    /* =========================================================
-       REALTIME
-    ========================================================= */
     function subscribeToPrivateMessages() {
-        if (!supabaseClient) {
-            return;
-        }
+        if (!supabaseClient) return;
         if (messageSubscription) {
-            try {
-                supabaseClient.removeChannel(
-                    messageSubscription
-                );
-            } catch (error) {}
+            try { supabaseClient.removeChannel(messageSubscription); } catch (e) {}
         }
 
         messageSubscription = supabaseClient
-            .channel(
-                'chatlite-private-' + currentUser.username + '-' + targetUsername
-            )
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'messages' },
-                payload => {
-                    const row = payload.new || payload.old;
-                    if (!row) {
-                        return;
-                    }
-
-                    const belongsToChat = (
-                        row.sender_username === currentUser.username && row.receiver_username === targetUsername
-                    ) || (
-                        row.sender_username === targetUsername && row.receiver_username === currentUser.username
-                    );
-
-                    if (!belongsToChat) {
-                        return;
-                    }
-
-                    fetchPrivateMessages();
-                }
-            )
+            .channel('chatlite-private-' + currentUser.username + '-' + targetUsername)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
+                const row = payload.new || payload.old;
+                if (!row) return;
+                const belongs = (row.sender_username === currentUser.username && row.receiver_username === targetUsername) ||
+                                (row.sender_username === targetUsername && row.receiver_username === currentUser.username);
+                if (belongs) fetchPrivateMessages();
+            })
             .subscribe();
     }
 
-    /* =========================================================
-       GALLERY
-    ========================================================= */
-    function openMediaGallery() {
-        const media = messagesCache.filter(
-            message => {
-                return (
-                    message.type === 'image' || message.type === 'video'
-                );
-            }
-        );
-
-        if (!media.length) {
-            alert(
-                'No photos or videos in this chat.'
-            );
-            return;
-        }
-
-        const gallery = document.getElementById(
-            'media-gallery'
-        );
-        if (!gallery) {
-            return;
-        }
-
-        gallery.innerHTML = '';
-        media.forEach(
-            message => {
-                if (
-                    message.type === 'image'
-                ) {
-                    const img = document.createElement(
-                        'img'
-                    );
-                    img.src = message.content;
-                    gallery.appendChild(
-                        img
-                    );
-                } else {
-                    const video = document.createElement(
-                        'video'
-                    );
-                    video.src = message.content;
-                    video.controls = true;
-                    gallery.appendChild(
-                        video
-                    );
-                }
-            }
-        );
+    function escapeHtml(str) {
+        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
-    /* =========================================================
-       ESCAPE HELPER
-    ========================================================= */
-    function escapeHtml(
-        value
-    ) {
-        return String(
-            value || ''
-        )
-            .replace(
-                /&/g,
-                '&amp;'
-            )
-            .replace(
-                /</g,
-                '&lt;'
-            )
-            .replace(
-                />/g,
-                '&gt;'
-            )
-            .replace(
-                /"/g,
-                '&quot;'
-            )
-            .replace(
-                /'/g,
-                '&#039;'
-            );
-    }
-
-    /* =========================================================
-       CLEANUP
-    ========================================================= */
-    window.addEventListener(
-        'beforeunload',
-        () => {
-            clearInterval(
-                recordingTimerInterval
-            );
-            if (
-                messageSubscription && supabaseClient
-            ) {
-                try {
-                    supabaseClient.removeChannel(
-                        messageSubscription
-                    );
-                } catch (error) {}
-            }
+    window.addEventListener('beforeunload', () => {
+        clearInterval(recordingTimerInterval);
+        if (messageSubscription && supabaseClient) {
+            try { supabaseClient.removeChannel(messageSubscription); } catch (e) {}
         }
-    );
+    });
     </script>
 </body>
 </html>
