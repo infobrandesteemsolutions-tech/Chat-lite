@@ -301,19 +301,45 @@ html, body {
         };
 
         // Instantly push to local array for fluid UI rendering
+        const tempId = 'temp_' + Date.now();
         messagesCache.push({
             ...messageData,
-            id: 'temp_' + Date.now(),
+            id: tempId,
             created_at: new Date().toISOString()
         });
         renderMessages();
 
-        const { error } = await supabaseClient.from('messages').insert(messageData);
+        // Ask Supabase to return the inserted row so we can reconcile it
+        // with our optimistic temp entry, instead of re-fetching and
+        // wholesale-replacing messagesCache (which can race with
+        // replication/realtime and make the message briefly vanish).
+        const { data, error } = await supabaseClient
+            .from('messages')
+            .insert(messageData)
+            .select()
+            .single();
+
         if (error) {
             alert('Error sending message: ' + error.message);
-        } else {
-            await fetchPrivateMessages();
+            // Remove the failed optimistic message so the UI doesn't lie
+            messagesCache = messagesCache.filter(m => m.id !== tempId);
+            renderMessages();
+        } else if (data) {
+            reconcileMessage(tempId, data);
         }
+    }
+
+    // Replace a temp/optimistic message with the confirmed server row,
+    // or add the server row if the temp one is no longer present
+    // (e.g. it already arrived via the realtime subscription).
+    function reconcileMessage(tempId, realMsg) {
+        const idx = messagesCache.findIndex(m => m.id === tempId);
+        if (idx !== -1) {
+            messagesCache[idx] = realMsg;
+        } else if (!messagesCache.some(m => m.id === realMsg.id)) {
+            messagesCache.push(realMsg);
+        }
+        renderMessages();
     }
 
     async function fetchPrivateMessages() {
@@ -349,8 +375,10 @@ html, body {
                 }
             } catch (e) {}
 
-            const textVal = typeof parsed === 'object' ? (parsed.content || '') : parsed;
-            if (search && !textVal.toLowerCase().includes(search)) return;
+            const textVal = (typeof parsed === 'object' && parsed !== null)
+                ? (parsed.type === 'text' ? (parsed.content || '') : '')
+                : (parsed || '');
+            if (search && !String(textVal).toLowerCase().includes(search)) return;
 
             const isMine = msg.sender_username === currentUser.username;
             const wrapper = document.createElement('div');
@@ -406,7 +434,7 @@ html, body {
                 const newMsg = payload.new;
                 const relevant = (newMsg.sender_username === currentUser.username && newMsg.receiver_username === targetUsername) ||
                                  (newMsg.sender_username === targetUsername && newMsg.receiver_username === currentUser.username);
-                if (relevant) {
+                if (relevant && !messagesCache.some(m => m.id === newMsg.id)) {
                     messagesCache.push(newMsg);
                     renderMessages();
                 }
