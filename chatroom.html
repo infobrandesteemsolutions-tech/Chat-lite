@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Lite - Conversation</title>
+    <title>Chat Lite - Group Conversation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -14,10 +14,10 @@
         <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-900 z-20 flex-shrink-0">
             <div class="flex items-center gap-2.5 overflow-hidden">
                 <button onclick="window.location.href='chatlist.html'" class="text-slate-400 hover:text-white text-sm cursor-pointer px-1">&larr;</button>
-                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden" id="active-chat-avatar">U</div>
+                <div class="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 text-xs flex-shrink-0 overflow-hidden" id="active-chat-avatar">G</div>
                 <div class="overflow-hidden">
-                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Username</h3>
-                    <span class="text-[9px] text-slate-400 truncate block" id="active-chat-gender">Gender</span>
+                    <h3 class="font-bold text-xs truncate" id="active-chat-name">Group Name</h3>
+                    <span class="text-[9px] text-slate-400 truncate block" id="active-chat-members">Loading members...</span>
                 </div>
             </div>
             <!-- Header Quick Action Buttons -->
@@ -31,7 +31,7 @@
 
         <!-- Hidden Search Bar Slide-down -->
         <div id="search-container" class="hidden p-2 bg-slate-950 border-b border-slate-800 flex items-center gap-2 z-20 flex-shrink-0">
-            <input type="text" id="search-keyword-input" placeholder="Search keywords in chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
+            <input type="text" id="search-keyword-input" placeholder="Search keywords in group chat..." oninput="filterMessages(this.value)" class="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500">
             <button onclick="toggleSearchBox()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg cursor-pointer">Close</button>
         </div>
 
@@ -116,7 +116,7 @@
         <!-- Media Gallery Modal Drawer -->
         <div id="media-gallery-modal" class="hidden absolute inset-0 bg-slate-950/90 z-40 flex flex-col p-4 backdrop-blur-sm">
             <div class="flex justify-between items-center pb-3 border-b border-slate-800">
-                <h3 class="font-bold text-sm text-white" id="gallery-title">Chat Media</h3>
+                <h3 class="font-bold text-sm text-white" id="gallery-title">Group Media</h3>
                 <button onclick="closeMediaGallery()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">Close</button>
             </div>
             <div id="gallery-content-grid" class="flex-1 overflow-y-auto grid grid-cols-2 gap-2 pt-3">
@@ -158,20 +158,18 @@
     <script>
         const currentUser = JSON.parse(localStorage.getItem('chatlite_user'));
         const urlParams = new URLSearchParams(window.location.search);
-        const targetUsername = urlParams.get('to');
-        const targetName = urlParams.get('name');
-        const targetGender = urlParams.get('gender');
+        const targetGroupId = urlParams.get('group_id');
+        const targetGroupName = urlParams.get('name') || 'Group Chat';
 
-        if (!currentUser || !targetUsername) {
+        if (!currentUser || !targetGroupId) {
             window.location.href = 'chatlist.html';
         }
 
-        document.getElementById('active-chat-name').textContent = targetName;
-        document.getElementById('active-chat-gender').textContent = `@${targetUsername} • ${targetGender}`;
-        document.getElementById('active-chat-avatar').textContent = targetName.charAt(0).toUpperCase();
+        document.getElementById('active-chat-name').textContent = targetGroupName;
+        document.getElementById('active-chat-avatar').textContent = targetGroupName.charAt(0).toUpperCase();
 
-        const STORAGE_KEY = `chatlite_cache_${currentUser.username}_${targetUsername}`;
-        const QUEUE_KEY = `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
+        const STORAGE_KEY = `chatlite_group_cache_${currentUser.username}_${targetGroupId}`;
+        const QUEUE_KEY = `chatlite_group_offline_queue_${currentUser.username}_${targetGroupId}`;
 
         let messageSubscription = null;
         let messagesCache = loadLocalCache();
@@ -245,38 +243,19 @@
             }
 
             const { data: messages, error } = await supabaseClient
-                .from('messages')
+                .from('group_messages')
                 .select('*')
-                .or(`and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username})`)
+                .eq('group_id', targetGroupId)
                 .order('created_at', { ascending: true });
 
             if (error) {
-                console.error('Error fetching messages:', error);
+                console.error('Error fetching group messages:', error);
                 return;
             }
 
             if (messages) {
                 saveLocalCache(messages);
                 renderMessages(messagesCache);
-                markIncomingMessagesAsRead(messages);
-            }
-        }
-
-        async function markIncomingMessagesAsRead(messages) {
-            let hiddenForMe = [];
-            try {
-                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
-            } catch(e) {}
-
-            const unreadIds = messages
-                .filter(m => m.receiver_username === currentUser.username && !m.is_read && !hiddenForMe.includes(m.id))
-                .map(m => m.id);
-
-            if (unreadIds.length > 0) {
-                await supabaseClient
-                    .from('messages')
-                    .update({ is_read: true })
-                    .in('id', unreadIds);
             }
         }
 
@@ -286,7 +265,7 @@
 
             let hiddenForMe = [];
             try {
-                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`) || '[]');
             } catch(e) {}
 
             const filtered = messages.filter(m => !hiddenForMe.includes(m.id) && !m.is_deleted_for_everyone);
@@ -311,6 +290,7 @@
                 if (m.is_deleted_for_everyone) return false;
                 if ((m.message_type || 'text') === 'text' && m.content.toLowerCase().includes(term)) return true;
                 if ((m.message_type || 'text') === keyword) return true;
+                if (m.sender_username && m.sender_username.toLowerCase().includes(term)) return true;
                 return false;
             });
             renderMessages(filtered);
@@ -409,6 +389,14 @@
                 isMe ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
             }`;
 
+            // Sender Name Label for Group Messages
+            if (!isMe) {
+                const senderLabelEl = document.createElement('span');
+                senderLabelEl.className = 'text-[10px] font-bold text-indigo-400 block mb-0.5';
+                senderLabelEl.textContent = `@${msg.sender_username}`;
+                bubble.appendChild(senderLabelEl);
+            }
+
             if (msg.reply_to) {
                 const replySnippet = document.createElement('div');
                 replySnippet.className = `mb-1 p-1.5 rounded text-xs border-l-2 ${isMe ? 'bg-indigo-700/50 border-indigo-300 text-indigo-100' : 'bg-slate-900/60 border-indigo-500 text-slate-300'}`;
@@ -483,8 +471,8 @@
                     tickSpan.textContent = '🕒';
                     tickSpan.title = 'Pending (Waiting for network)';
                 } else {
-                    tickSpan.textContent = msg.is_read ? '✓✓' : '✓';
-                    tickSpan.classList.add(msg.is_read ? 'text-indigo-300' : 'text-slate-500');
+                    tickSpan.textContent = '✓';
+                    tickSpan.classList.add('text-slate-500');
                 }
                 metaRow.appendChild(tickSpan);
             }
@@ -557,13 +545,13 @@
             if (actionType === 'me') {
                 let hiddenForMe = [];
                 try {
-                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`) || '[]');
                 } catch(e) {}
 
                 selectedMessageIds.forEach(id => {
                     if (!hiddenForMe.includes(id)) hiddenForMe.push(id);
                 });
-                localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+                localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`, JSON.stringify(hiddenForMe));
 
                 exitMultiSelectMode();
                 renderMessages(messagesCache);
@@ -587,7 +575,7 @@
                 showUndoBanner(10, async () => {
                     if (validIds.length > 0) {
                         await supabaseClient
-                            .from('messages')
+                            .from('group_messages')
                             .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
                             .in('id', validIds);
                     }
@@ -603,7 +591,7 @@
             const senderNameEl = document.getElementById('reply-target-sender');
             const contentEl = document.getElementById('reply-target-content');
 
-            const senderLabel = msg.sender_username === currentUser.username ? 'You' : targetName;
+            const senderLabel = msg.sender_username === currentUser.username ? 'You' : `@${msg.sender_username}`;
             senderNameEl.textContent = `Replying to ${senderLabel}`;
             
             let previewText = msg.content;
@@ -633,16 +621,15 @@
             const remainingQueue = [];
             for (const item of queue) {
                 const payload = {
+                    group_id: item.group_id,
                     sender_username: item.sender_username,
-                    receiver_username: item.receiver_username,
                     content: item.content,
                     message_type: item.message_type || 'text',
                     reply_to: item.reply_to || null,
-                    is_read: false,
                     created_at: item.created_at || new Date().toISOString()
                 };
 
-                const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+                const { data, error } = await supabaseClient.from('group_messages').insert([payload]).select();
 
                 if (error) {
                     remainingQueue.push(item);
@@ -747,10 +734,10 @@
             if (scope === 'me') {
                 let hiddenForMe = [];
                 try {
-                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                    hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`) || '[]');
                 } catch(e) {}
                 hiddenForMe.push(msg.id);
-                localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+                localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`, JSON.stringify(hiddenForMe));
             } else {
                 msg.is_deleted_for_everyone = true;
             }
@@ -759,7 +746,7 @@
             showUndoBanner(10, async () => {
                 if (scope === 'everyone' && msg.id) {
                     await supabaseClient
-                        .from('messages')
+                        .from('group_messages')
                         .update({ is_deleted_for_everyone: true, content: '[Message deleted]', message_type: 'text' })
                         .eq('id', msg.id);
                 }
@@ -801,10 +788,10 @@
                 if (scope === 'me') {
                     let hiddenForMe = [];
                     try {
-                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`) || '[]');
+                        hiddenForMe = JSON.parse(localStorage.getItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`) || '[]');
                     } catch(e) {}
                     hiddenForMe = hiddenForMe.filter(id => id !== msg.id);
-                    localStorage.setItem(`chatlite_deleted_for_me_${currentUser.username}_${targetUsername}`, JSON.stringify(hiddenForMe));
+                    localStorage.setItem(`chatlite_group_deleted_for_me_${currentUser.username}_${targetGroupId}`, JSON.stringify(hiddenForMe));
                 } else {
                     msg.is_deleted_for_everyone = false;
                 }
@@ -1012,7 +999,7 @@
             if (replyingToMessage) {
                 const repType = replyingToMessage.message_type || 'text';
                 replyMeta = {
-                    sender: replyingToMessage.sender_username === currentUser.username ? 'You' : targetName,
+                    sender: replyingToMessage.sender_username === currentUser.username ? 'You' : `@${replyingToMessage.sender_username}`,
                     content: repType === 'text' ? replyingToMessage.content : `[${repType}]`
                 };
             }
@@ -1051,12 +1038,11 @@
 
         async function sendPayloadToSupabase(content, type, replyMeta = null) {
             const payload = {
+                group_id: targetGroupId,
                 sender_username: currentUser.username,
-                receiver_username: targetUsername,
                 content: content,
                 message_type: type || 'text',
                 reply_to: replyMeta,
-                is_read: false,
                 created_at: new Date().toISOString()
             };
 
@@ -1069,10 +1055,10 @@
                 return;
             }
 
-            const { data, error } = await supabaseClient.from('messages').insert([payload]).select();
+            const { data, error } = await supabaseClient.from('group_messages').insert([payload]).select();
 
             if (error) {
-                console.error('Error sending message:', error);
+                console.error('Error sending group message:', error);
                 const offlineQueue = loadOfflineQueue();
                 offlineQueue.push({ ...payload, is_offline_pending: true });
                 saveOfflineQueue(offlineQueue);
@@ -1090,7 +1076,7 @@
             const title = document.getElementById('gallery-title');
             modal.classList.remove('hidden');
             grid.innerHTML = '';
-            title.textContent = `${typeFilter.toUpperCase()} Gallery`;
+            title.textContent = `Group ${typeFilter.toUpperCase()} Gallery`;
 
             const matching = messagesCache.filter(m => {
                 if (m.is_deleted_for_everyone) return false;
@@ -1102,7 +1088,7 @@
             });
 
             if (matching.length === 0) {
-                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
+                grid.innerHTML = `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this group.</span>`;
                 return;
             }
 
@@ -1131,21 +1117,21 @@
             }
 
             messageSubscription = supabaseClient
-                .channel('public:messages')
+                .channel(`public:group_messages:group_id=eq.${targetGroupId}`)
                 .on(
                     'postgres_changes',
                     {
                         event: 'INSERT',
                         schema: 'public',
-                        table: 'messages'
+                        table: 'group_messages',
+                        filter: `group_id=eq.${targetGroupId}`
                     },
                     payload => {
                         const newMsg = payload.new;
-                        if (
-                            (newMsg.sender_username === targetUsername && newMsg.receiver_username === currentUser.username) ||
-                            (newMsg.sender_username === currentUser.username && newMsg.receiver_username === targetUsername)
-                        ) {
-                            fetchMessages();
+                        if (newMsg && !messagesCache.some(m => m.id === newMsg.id)) {
+                            messagesCache.push(newMsg);
+                            saveLocalCache(messagesCache);
+                            renderMessages(messagesCache);
                         }
                     }
                 )
