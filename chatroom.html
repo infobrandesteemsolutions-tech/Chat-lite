@@ -10,56 +10,42 @@
 <style>
 html, body {
     height: 100%;
+    height: 100dvh;
     margin: 0;
     background: #f1f5f9;
     font-family: Arial, sans-serif;
+    overflow: hidden;
 }
 * {
     box-sizing: border-box;
 }
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background: #ffffff;
+}
 #messages {
-    scrollbar-width: thin;
-    width: 100%;
-    max-width: 780px;
-    margin: 0 auto;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-body > header {
-    width: 100%;
-    background: #ffffff;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-body > header > * {
-    flex-shrink: 0;
-}
-body > header .flex-1 {
-    min-width: 0;
-}
-#search-bar {
-    width: 100%;
-    background: #ffffff;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-#search-input {
-    display: block;
-    width: 100%;
-    max-width: 748px;
-    margin: 0 auto;
-    height: 42px;
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    space-y: 12px;
+    background: #f8fafc;
 }
 .message-bubble {
     word-break: break-word;
     overflow-wrap: anywhere;
-    max-width: min(82%, 520px);
+    max-width: min(85%, 520px);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 .message-image, .message-video {
     max-width: 260px;
     max-height: 320px;
-    border-radius: 14px;
+    border-radius: 12px;
     object-fit: cover;
     display: block;
 }
@@ -78,306 +64,97 @@ body > header .flex-1 {
     0%, 100% { opacity: 1; }
     50% { opacity: .45; }
 }
-.message-options {
-    box-shadow: 0 15px 40px rgba(0, 0, 0, .18);
-}
-
-/* =========================================================
-   ATTACHMENT MENU
-========================================================= */
-#attachment-menu {
-    background: transparent;
-    border-top: 0;
-    padding: 8px 12px 10px;
-}
-#attachment-menu > div {
-    width: 100%;
-    max-width: 780px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 10px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 18px;
-    box-shadow: 0 8px 25px rgba(15, 23, 42, .08);
-}
-#attachment-menu button {
-    flex: 1;
-    max-width: 130px;
-    min-width: 0;
-    height: 64px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 3px;
-    border-radius: 14px;
-    transition: background .15s ease, transform .15s ease;
-}
-#attachment-menu button:hover {
-    background: #f8fafc;
-}
-#attachment-menu button:active {
-    transform: scale(.96);
-}
-#attachment-menu button span:first-child {
-    font-size: 22px;
-    line-height: 1;
-}
-#attachment-menu button span:last-child {
-    font-size: 11px;
-    color: #475569;
-}
-
-/* =========================================================
-   REPLY & MEDIA PREVIEW
-========================================================= */
-#reply-preview, #media-preview {
-    background: #ffffff;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-#reply-preview > div, #media-preview > div {
-    width: 100%;
-    max-width: 748px;
-    margin: 0 auto;
-    min-height: 42px;
-}
-
-/* =========================================================
-   RECORDING BAR
-========================================================= */
-#recording-bar {
-    padding-left: 16px;
-    padding-right: 16px;
-}
-#recording-bar > div {
-    width: 100%;
-    max-width: 748px;
-    margin: 0 auto;
-}
-
-/* =========================================================
-   COMPOSER
-========================================================= */
-#message-form {
-    width: 100%;
-    background: #ffffff;
-    padding: 10px 16px;
-    gap: 8px;
-}
-#message-form > * {
-    flex-shrink: 0;
-}
-#message-form #message-input {
-    flex: 1 1 auto;
-    min-width: 0;
-    height: 42px;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-color: #cbd5e1;
-    background: #f8fafc;
-}
-#message-form #message-input:focus {
-    background: #ffffff;
-}
-#message-form button:first-child {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    border-radius: 50%;
-    font-size: 24px;
-    line-height: 1;
-    transition: background .15s ease, transform .15s ease;
-}
-#message-form button:first-child:hover {
-    background: #eef2ff;
-}
-#mic-button {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    border: 1px solid #e2e8f0;
-    background: #f8fafc;
-    border-radius: 50%;
-}
-#mic-button:hover {
-    background: #eef2ff;
-}
-#message-form button[type="submit"] {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    box-shadow: 0 4px 10px rgba(79, 70, 229, .22);
-}
-
-/* =========================================================
-   UNDO BANNER
-========================================================= */
-#undo-banner {
-    width: calc(100% - 24px);
-    max-width: 748px;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-}
-
-@media (min-width: 768px) {
-    html, body {
-        background: #e2e8f0;
-    }
-    #messages {
-        padding-top: 20px;
-        padding-bottom: 20px;
-    }
-    .message-bubble {
-        max-width: 520px;
-    }
-}
 </style>
 </head>
-<body class="h-screen flex flex-col">
+<body>
 
-    <!-- HEADER -->
-    <header class="bg-white border-b px-3 py-3 flex items-center gap-3">
-        <button onclick="goBack()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-xl">
-            ←
-        </button>
-        <div id="target-avatar" class="w-11 h-11 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-            ?
-        </div>
-        <div class="flex-1 min-w-0">
-            <div id="target-name" class="font-semibold truncate">Chat</div>
-            <div id="target-info" class="text-xs text-slate-500 truncate"></div>
-        </div>
-        <button onclick="toggleSearch()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center">
-            🔍
-        </button>
-    </header>
-
-    <!-- SEARCH -->
-    <div id="search-bar" class="hidden bg-white border-b px-3 py-2">
-        <input id="search-input" type="text" placeholder="Search messages..." class="w-full border rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-200" oninput="renderMessages()">
-    </div>
-
-    <!-- MESSAGES -->
-    <main id="messages" class="flex-1 overflow-y-auto px-3 py-4 space-y-3">
-    </main>
-
-    <!-- LOADING -->
-    <div id="loading-message" class="hidden text-center text-sm text-slate-400 py-3">
-        Loading messages...
-    </div>
-
-    <!-- UNDO -->
-    <div id="undo-banner" class="hidden fixed bottom-24 left-3 right-3 z-50 bg-slate-900 text-white rounded-xl px-4 py-3 flex items-center justify-between">
-        <span>Message deleted</span>
-        <button onclick="undoDelete()" class="font-semibold text-indigo-300">
-            UNDO
-        </button>
-    </div>
-
-    <!-- MESSAGE OPTIONS OVERLAY -->
-    <div id="message-options-overlay" class="hidden fixed inset-0 z-50 bg-black/30" onclick="closeMessageOptions()">
-        <div id="message-options" class="message-options absolute left-1/2 -translate-x-1/2 bottom-4 w-[calc(100%-24px)] max-w-md bg-white rounded-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="px-4 py-3 border-b">
-                <div class="text-xs text-slate-400">Message options</div>
-                <div id="options-preview" class="text-sm mt-1 truncate"></div>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="bg-white border-b px-4 py-3 flex items-center gap-3 shrink-0">
+            <button onclick="goBack()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-xl">
+                ←
+            </button>
+            <div id="target-avatar" class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                ?
             </div>
-            <button onclick="replyToSelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">↩️ Reply</button>
-            <button onclick="copySelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">📋 Copy</button>
-            <button onclick="forwardSelected()" class="w-full text-left px-4 py-4 hover:bg-slate-50">↗️ Forward</button>
-            <button onclick="deleteSelectedForMe()" class="w-full text-left px-4 py-4 hover:bg-slate-50">🗑️ Delete for me</button>
-            <button id="delete-everyone-button" onclick="deleteSelectedForEveryone()" class="w-full text-left px-4 py-4 hover:bg-slate-50 text-red-600 hidden">🗑️ Delete for everyone</button>
-            <button onclick="closeMessageOptions()" class="w-full text-left px-4 py-4 border-t hover:bg-slate-50">Cancel</button>
-        </div>
-    </div>
-
-    <!-- REPLY PREVIEW -->
-    <div id="reply-preview" class="hidden bg-white border-t px-3 py-2">
-        <div class="flex items-center gap-3">
             <div class="flex-1 min-w-0">
-                <div class="text-xs font-semibold text-indigo-600">Replying to <span id="reply-name"></span></div>
-                <div id="reply-text" class="text-sm text-slate-500 truncate"></div>
+                <div id="target-name" class="font-semibold truncate text-sm">Chat</div>
+                <div id="target-info" class="text-xs text-slate-500 truncate"></div>
             </div>
-            <button onclick="cancelReply()" class="w-8 h-8 rounded-full hover:bg-slate-100">✕</button>
-        </div>
-    </div>
+            <button onclick="toggleSearch()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-sm">
+                🔍
+            </button>
+        </header>
 
-    <!-- MEDIA PREVIEW -->
-    <div id="media-preview" class="hidden bg-white border-t px-3 py-2">
-        <div class="flex items-center gap-3">
-            <div id="media-preview-content" class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center"></div>
-            <div class="flex-1 min-w-0">
-                <div class="font-medium text-sm truncate" id="media-file-name"></div>
-                <div class="text-xs text-slate-400" id="media-file-type"></div>
+        <!-- SEARCH -->
+        <div id="search-bar" class="hidden bg-white border-b px-4 py-2 shrink-0">
+            <input id="search-input" type="text" placeholder="Search messages..." class="w-full border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200" oninput="renderMessages()">
+        </div>
+
+        <!-- MESSAGES -->
+        <main id="messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <!-- Messages injected dynamically -->
+        </main>
+
+        <!-- LOADING -->
+        <div id="loading-message" class="hidden text-center text-xs text-slate-400 py-2 shrink-0">
+            Loading messages...
+        </div>
+
+        <!-- REPLY PREVIEW -->
+        <div id="reply-preview" class="hidden bg-slate-50 border-t px-4 py-2 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-indigo-600">Replying to <span id="reply-name"></span></div>
+                    <div id="reply-text" class="text-xs text-slate-500 truncate"></div>
+                </div>
+                <button onclick="cancelReply()" class="w-7 h-7 rounded-full hover:bg-slate-200 text-xs">✕</button>
             </div>
-            <button onclick="cancelMedia()" class="w-8 h-8 rounded-full hover:bg-slate-100">✕</button>
         </div>
-    </div>
 
-    <!-- ATTACHMENT MENU -->
-    <div id="attachment-menu" class="hidden bg-white border-t px-3 py-3">
-        <div class="flex items-center justify-center gap-2">
-            <button onclick="openFilePicker()" class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
-                <span class="text-2xl">📎</span>
-                <span class="text-xs">File</span>
-            </button>
-            <button onclick="openImagePicker()" class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
-                <span class="text-2xl">🖼️</span>
-                <span class="text-xs">Photo</span>
-            </button>
-            <button onclick="openCameraPicker()" class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
-                <span class="text-2xl">📷</span>
-                <span class="text-xs">Camera</span>
-            </button>
-            <button onclick="startRecording()" class="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-slate-50">
-                <span class="text-2xl">🎙️</span>
-                <span class="text-xs">Voice</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- HIDDEN INPUTS -->
-    <input id="file-input" type="file" class="hidden" onchange="stageSelectedFile(this.files[0])">
-    <input id="image-input" type="file" accept="image/*" class="hidden" onchange="stageSelectedFile(this.files[0])">
-    <input id="camera-input" type="file" accept="image/*" capture="environment" class="hidden" onchange="stageSelectedFile(this.files[0])">
-
-    <!-- RECORDING BAR -->
-    <div id="recording-bar" class="hidden bg-red-50 border-t px-3 py-3">
-        <div class="flex items-center gap-3">
-            <div class="w-3 h-3 rounded-full bg-red-500 recording-pulse"></div>
-            <div class="flex-1">
-                <div class="font-semibold text-red-600">Recording</div>
-                <div id="recording-time" class="text-xs text-slate-500">00:00</div>
+        <!-- MEDIA PREVIEW -->
+        <div id="media-preview" class="hidden bg-slate-50 border-t px-4 py-2 shrink-0">
+            <div class="flex items-center gap-3">
+                <div id="media-preview-content" class="w-12 h-12 rounded-lg bg-slate-200 overflow-hidden flex items-center justify-center"></div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-xs truncate" id="media-file-name"></div>
+                    <div class="text-[10px] text-slate-400" id="media-file-type"></div>
+                </div>
+                <button onclick="cancelMedia()" class="w-7 h-7 rounded-full hover:bg-slate-200 text-xs">✕</button>
             </div>
-            <button id="pause-recording" onclick="togglePauseRecording()" class="px-3 py-2 rounded-lg bg-white border text-sm">Pause</button>
-            <button onclick="stopRecording()" class="px-3 py-2 rounded-lg bg-red-500 text-white text-sm">Stop</button>
         </div>
+
+        <!-- RECORDING BAR -->
+        <div id="recording-bar" class="hidden bg-red-50 border-t px-4 py-3 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full bg-red-500 recording-pulse"></div>
+                <div class="flex-1">
+                    <div class="font-semibold text-xs text-red-600">Recording voice note...</div>
+                    <div id="recording-time" class="text-[10px] text-slate-500">00:00</div>
+                </div>
+                <button onclick="stopRecording()" class="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs">Stop & Send</button>
+            </div>
+        </div>
+
+        <!-- COMPOSER -->
+        <form id="message-form" class="bg-white border-t px-4 py-3 flex items-center gap-2 shrink-0">
+            <button type="button" onclick="openImagePicker()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-lg shrink-0">
+                📎
+            </button>
+            <input id="message-input" type="text" autocomplete="off" placeholder="Type a message..." class="flex-1 min-w-0 border rounded-full px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-200 bg-slate-50">
+            <button type="button" onclick="startRecording()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-lg shrink-0">
+                🎙️
+            </button>
+            <button type="submit" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                ➤
+            </button>
+        </form>
     </div>
 
-    <!-- COMPOSER -->
-    <form id="message-form" class="bg-white border-t px-3 py-3 flex items-center gap-2">
-        <button type="button" onclick="toggleAttachmentMenu()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-xl">
-            +
-        </button>
-        <input id="message-input" type="text" autocomplete="off" placeholder="Message..." class="flex-1 min-w-0 border rounded-full px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-200">
-        <button id="mic-button" type="button" onclick="startRecording()" class="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center">
-            🎙️
-        </button>
-        <button type="submit" class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center">
-            ➤
-        </button>
-    </form>
+    <!-- HIDDEN INPUT -->
+    <input id="image-input" type="file" accept="image/*,video/*,.pdf,.doc,.docx" class="hidden" onchange="stageSelectedFile(this.files[0])">
 
     <script>
-    // --- PRIVATE CHAT CONTROLLER ---
     const currentUser = JSON.parse(localStorage.getItem('chatlite_user') || 'null');
     const params = new URLSearchParams(window.location.search);
     const targetUsername = decodeURIComponent(params.get('to') || '');
@@ -390,15 +167,10 @@ body > header .flex-1 {
     let audioChunks = [];
     let recordedBlob = null;
     let isRecording = false;
-    let isPaused = false;
     let recordingSeconds = 0;
     let recordingTimerInterval = null;
     let stagedPayload = null;
     let activeReplyMessage = null;
-    let selectedMessage = null;
-    let deletedForMe = new Set();
-    let pendingDeleteTimer = null;
-    let undoTargetMessage = null;
 
     document.addEventListener('DOMContentLoaded', initChat);
 
@@ -426,34 +198,11 @@ body > header .flex-1 {
     }
 
     function toggleSearch() {
-        const bar = document.getElementById('search-bar');
-        bar.classList.toggle('hidden');
-        if (!bar.classList.contains('hidden')) {
-            document.getElementById('search-input').focus();
-        }
-    }
-
-    function toggleAttachmentMenu() {
-        document.getElementById('attachment-menu').classList.toggle('hidden');
-    }
-
-    function closeAttachmentMenu() {
-        document.getElementById('attachment-menu').classList.add('hidden');
-    }
-
-    function openFilePicker() {
-        closeAttachmentMenu();
-        document.getElementById('file-input').click();
+        document.getElementById('search-bar').classList.toggle('hidden');
     }
 
     function openImagePicker() {
-        closeAttachmentMenu();
         document.getElementById('image-input').click();
-    }
-
-    function openCameraPicker() {
-        closeAttachmentMenu();
-        document.getElementById('camera-input').click();
     }
 
     function stageSelectedFile(file) {
@@ -463,14 +212,8 @@ body > header .flex-1 {
             let type = 'file';
             if (file.type.startsWith('image/')) type = 'image';
             else if (file.type.startsWith('video/')) type = 'video';
-            else if (file.type.startsWith('audio/')) type = 'audio';
 
-            stagedPayload = {
-                type,
-                content: event.target.result,
-                fileName: file.name,
-                mimeType: file.type
-            };
+            stagedPayload = { type, content: event.target.result, fileName: file.name };
             showMediaPreview();
         };
         reader.readAsDataURL(file);
@@ -479,32 +222,14 @@ body > header .flex-1 {
     function showMediaPreview() {
         if (!stagedPayload) return;
         const preview = document.getElementById('media-preview');
-        const previewContent = document.getElementById('media-preview-content');
-        document.getElementById('media-file-name').textContent = stagedPayload.fileName || 'Attachment';
-        document.getElementById('media-file-type').textContent = stagedPayload.type;
-
-        previewContent.innerHTML = '';
-        if (stagedPayload.type === 'image') {
-            const img = document.createElement('img');
-            img.src = stagedPayload.content;
-            img.className = 'w-full h-full object-cover';
-            previewContent.appendChild(img);
-        } else if (stagedPayload.type === 'video') {
-            const video = document.createElement('video');
-            video.src = stagedPayload.content;
-            video.className = 'w-full h-full object-cover';
-            video.muted = true;
-            previewContent.appendChild(video);
-        } else {
-            previewContent.innerHTML = '<span class="text-2xl">📎</span>';
-        }
+        document.getElementById('media-file-name').textContent = stagedPayload.fileName;
+        document.getElementById('media-file-type').textContent = stagedPayload.type.toUpperCase();
         preview.classList.remove('hidden');
     }
 
     function cancelMedia() {
         stagedPayload = null;
         document.getElementById('media-preview').classList.add('hidden');
-        document.getElementById('media-preview-content').innerHTML = '';
     }
 
     async function startRecording() {
@@ -513,97 +238,46 @@ body > header .flex-1 {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
             audioChunks = [];
-            recordedBlob = null;
-
+            
             mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-            mediaRecorder.onstop = () => {
-                recordedBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            mediaRecorder.onstop = async () => {
+                recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
                 stream.getTracks().forEach(t => t.stop());
                 isRecording = false;
-                isPaused = false;
                 clearInterval(recordingTimerInterval);
                 document.getElementById('recording-bar').classList.add('hidden');
-                document.getElementById('pause-recording').textContent = 'Pause';
-                sendRecordedAudio();
+                
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    await sendPrivatePayload({ type: 'audio', content: e.target.result, fileName: 'voice.webm' });
+                };
+                reader.readAsDataURL(recordedBlob);
             };
 
             mediaRecorder.start();
             isRecording = true;
-            isPaused = false;
             recordingSeconds = 0;
             document.getElementById('recording-bar').classList.remove('hidden');
-            updateRecordingTime();
             recordingTimerInterval = setInterval(() => {
-                if (!isPaused) {
-                    recordingSeconds++;
-                    updateRecordingTime();
-                }
+                recordingSeconds++;
+                const m = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+                const s = (recordingSeconds % 60).toString().padStart(2, '0');
+                document.getElementById('recording-time').textContent = `${m}:${s}`;
             }, 1000);
-        } catch (error) {
-            alert('Microphone access denied or unavailable.');
-        }
-    }
-
-    function togglePauseRecording() {
-        if (!mediaRecorder || !isRecording) return;
-        if (isPaused) {
-            mediaRecorder.resume();
-            isPaused = false;
-            document.getElementById('pause-recording').textContent = 'Pause';
-        } else {
-            mediaRecorder.pause();
-            isPaused = true;
-            document.getElementById('pause-recording').textContent = 'Resume';
+        } catch (err) {
+            alert('Microphone access is blocked or unavailable.');
         }
     }
 
     function stopRecording() {
-        if (!mediaRecorder || !isRecording) return;
-        mediaRecorder.stop();
-    }
-
-    function updateRecordingTime() {
-        const m = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
-        const s = (recordingSeconds % 60).toString().padStart(2, '0');
-        document.getElementById('recording-time').textContent = m + ':' + s;
-    }
-
-    function sendRecordedAudio() {
-        if (!recordedBlob) return;
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            await sendPrivatePayload({
-                type: 'audio',
-                content: event.target.result,
-                fileName: 'voice-note.webm',
-                mimeType: recordedBlob.type || 'audio/webm'
-            });
-            recordedBlob = null;
-        };
-        reader.readAsDataURL(recordedBlob);
-    }
-
-    function setReply(message) {
-        activeReplyMessage = message;
-        document.getElementById('reply-preview').classList.remove('hidden');
-        document.getElementById('reply-name').textContent = message.sender_username === currentUser.username ? 'You' : targetName;
-        document.getElementById('reply-text').textContent = getDisplayText(message);
-        document.getElementById('message-input').focus();
-    }
-
-    function cancelReply() {
-        activeReplyMessage = null;
-        document.getElementById('reply-preview').classList.add('hidden');
+        if (mediaRecorder && isRecording) mediaRecorder.stop();
     }
 
     async function handleSend(e) {
         e.preventDefault();
-        if (isRecording) { stopRecording(); return; }
-        if (recordedBlob) { sendRecordedAudio(); return; }
         if (stagedPayload) {
             const payload = stagedPayload;
-            stagedPayload = null;
-            document.getElementById('media-preview').classList.add('hidden');
+            cancelMedia();
             await sendPrivatePayload(payload);
             return;
         }
@@ -612,368 +286,133 @@ body > header .flex-1 {
         const text = input.value.trim();
         if (!text) return;
         input.value = '';
-        await sendPrivatePayload({ type: 'text', content: text });
-    }
-
-    function makeClientId() {
-        return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12);
-    }
-
-    function createPrivateEnvelope(payload) {
-        return {
-            __chatlite_private: true,
-            client_id: makeClientId(),
-            type: payload.type || 'text',
-            content: payload.content || '',
-            fileName: payload.fileName || null,
-            mimeType: payload.mimeType || null,
-            reply_to_sender: activeReplyMessage ? activeReplyMessage.sender_username : null,
-            reply_to_message: activeReplyMessage ? getDisplayText(activeReplyMessage) : null
-        };
+        
+        const payload = { type: 'text', content: text };
+        await sendPrivatePayload(payload);
     }
 
     async function sendPrivatePayload(payload) {
-        const envelope = createPrivateEnvelope(payload);
-        const localMessage = {
-            local_only: true,
-            client_id: envelope.client_id,
+        if (!supabaseClient) return;
+
+        const messageData = {
             sender_username: currentUser.username,
             receiver_username: targetUsername,
-            content: envelope.content,
-            raw_content: JSON.stringify(envelope),
-            type: envelope.type,
-            fileName: envelope.fileName,
-            mimeType: envelope.mimeType,
-            reply_to_sender: envelope.reply_to_sender,
-            reply_to_message: envelope.reply_to_message,
-            created_at: new Date().toISOString(),
-            is_pending: true
+            content: JSON.stringify(payload)
         };
 
-        messagesCache.push(localMessage);
+        // Instantly push to local array for fluid UI rendering
+        messagesCache.push({
+            ...messageData,
+            id: 'temp_' + Date.now(),
+            created_at: new Date().toISOString()
+        });
         renderMessages();
-        cancelReply();
-        await insertPrivateMessage(localMessage);
-    }
 
-    async function insertPrivateMessage(message) {
-        if (!supabaseClient) return;
-        try {
-            const { data, error } = await supabaseClient
-                .from('messages')
-                .insert({
-                    sender_username: message.sender_username,
-                    receiver_username: message.receiver_username,
-                    content: message.raw_content
-                })
-                .select('*')
-                .single();
-
-            if (error) {
-                markMessagePending(message.client_id, true);
-                renderMessages();
-                return;
-            }
-
-            if (data) {
-                const dbMsg = normalizeDatabaseMessage(data);
-                const idx = messagesCache.findIndex(item => item.local_only && item.client_id === message.client_id);
-                if (idx !== -1) messagesCache[idx] = dbMsg;
-                else messagesCache.push(dbMsg);
-            }
-            renderMessages();
-        } catch (err) {
-            markMessagePending(message.client_id, true);
-            renderMessages();
+        const { error } = await supabaseClient.from('messages').insert(messageData);
+        if (error) {
+            alert('Error sending message: ' + error.message);
+        } else {
+            await fetchPrivateMessages();
         }
     }
 
     async function fetchPrivateMessages() {
         if (!supabaseClient) return;
-        document.getElementById('loading-message').classList.remove('hidden');
+        
+        const { data, error } = await supabaseClient
+            .from('messages')
+            .select('*')
+            .or(`and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username})`)
+            .order('created_at', { ascending: true });
 
-        try {
-            const [sentRes, recvRes] = await Promise.all([
-                supabaseClient.from('messages').select('*').eq('sender_username', currentUser.username).eq('receiver_username', targetUsername).order('created_at', { ascending: true }),
-                supabaseClient.from('messages').select('*').eq('sender_username', targetUsername).eq('receiver_username', currentUser.username).order('created_at', { ascending: true })
-            ]);
-
-            const rows = [...(sentRes.data || []), ...(recvRes.data || [])];
-            rows.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
-
-            const dbMessages = rows.map(normalizeDatabaseMessage);
-            const dbIds = new Set(dbMessages.map(m => m.client_id).filter(Boolean));
-            const pendingLocals = messagesCache.filter(m => m.local_only && (!m.client_id || !dbIds.has(m.client_id)));
-
-            messagesCache = [...dbMessages, ...pendingLocals];
-            messagesCache.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+        if (!error && data) {
+            messagesCache = data;
             renderMessages();
-        } catch (err) {
-            console.error(err);
-        } finally {
-            document.getElementById('loading-message').classList.add('hidden');
         }
-    }
-
-    function normalizeDatabaseMessage(row) {
-        let envelope = null;
-        try {
-            if (typeof row.content === 'string' && row.content.trim().startsWith('{')) {
-                const parsed = JSON.parse(row.content);
-                if (parsed && parsed.__chatlite_private === true) envelope = parsed;
-            }
-        } catch (e) { envelope = null; }
-
-        if (!envelope) {
-            return {
-                ...row,
-                local_only: false,
-                client_id: null,
-                content: row.content || '',
-                raw_content: row.content || '',
-                type: 'text',
-                is_pending: false
-            };
-        }
-
-        return {
-            ...row,
-            local_only: false,
-            client_id: envelope.client_id || null,
-            content: envelope.content || '',
-            raw_content: row.content,
-            type: envelope.type || 'text',
-            fileName: envelope.fileName || null,
-            mimeType: envelope.mimeType || null,
-            reply_to_sender: envelope.reply_to_sender || null,
-            reply_to_message: envelope.reply_to_message || null,
-            is_pending: false
-        };
-    }
-
-    function markMessagePending(clientId, pending) {
-        const msg = messagesCache.find(m => m.client_id === clientId);
-        if (msg) msg.is_pending = pending;
     }
 
     function renderMessages() {
         const container = document.getElementById('messages');
-        const search = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+        const search = (document.getElementById('search-input')?.value || '').toLowerCase();
         container.innerHTML = '';
 
-        const filtered = messagesCache.filter(msg => {
-            if (deletedForMe.has(getMessageKey(msg))) return false;
-            if (!search) return true;
-            return getDisplayText(msg).toLowerCase().includes(search);
-        });
-
-        if (!filtered.length) {
-            const empty = document.createElement('div');
-            empty.className = 'text-center text-slate-400 text-sm py-10';
-            empty.textContent = search ? 'No matching messages' : 'No messages yet';
-            container.appendChild(empty);
+        if (!messagesCache.length) {
+            container.innerHTML = `<div class="text-center text-slate-400 text-xs py-8">No messages here yet. Say hello!</div>`;
             return;
         }
 
-        filtered.forEach(msg => appendMessageToDOM(msg, container));
-        requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
-    }
+        messagesCache.forEach(msg => {
+            let parsed = msg.content;
+            try {
+                if (typeof msg.content === 'string' && msg.content.startsWith('{')) {
+                    parsed = JSON.parse(msg.content);
+                }
+            } catch (e) {}
 
-    function appendMessageToDOM(message, container) {
-        const isMine = message.sender_username === currentUser.username;
-        const wrapper = document.createElement('div');
-        wrapper.className = 'flex ' + (isMine ? 'justify-end' : 'justify-start');
+            const textVal = typeof parsed === 'object' ? (parsed.content || '') : parsed;
+            if (search && !textVal.toLowerCase().includes(search)) return;
 
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble rounded-2xl px-3 py-2 ' + (
-            isMine ? 'bg-indigo-600 text-white rounded-br-md' : 'bg-white border text-slate-800 rounded-bl-md'
-        );
+            const isMine = msg.sender_username === currentUser.username;
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
 
-        let pressTimer = null;
-        bubble.addEventListener('pointerdown', () => { pressTimer = setTimeout(() => openMessageOptions(message), 600); });
-        bubble.addEventListener('pointerup', () => clearTimeout(pressTimer));
-        bubble.addEventListener('pointerleave', () => clearTimeout(pressTimer));
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble rounded-2xl px-3.5 py-2 text-sm ${
+                isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white border text-slate-800 rounded-bl-sm'
+            }`;
 
-        let startX = 0;
-        bubble.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-        bubble.addEventListener('touchend', e => { if (e.changedTouches[0].clientX - startX > 70) setReply(message); }, { passive: true });
+            if (typeof parsed === 'object' && parsed !== null) {
+                if (parsed.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = parsed.content;
+                    img.className = 'message-image mb-1';
+                    bubble.appendChild(img);
+                } else if (parsed.type === 'audio') {
+                    const aud = document.createElement('audio');
+                    aud.src = parsed.content;
+                    aud.controls = true;
+                    aud.className = 'message-audio mb-1';
+                    bubble.appendChild(aud);
+                } else {
+                    const t = document.createElement('div');
+                    t.textContent = parsed.content;
+                    bubble.appendChild(t);
+                }
+            } else {
+                const t = document.createElement('div');
+                t.textContent = parsed;
+                bubble.appendChild(t);
+            }
 
-        if (message.reply_to_message) {
-            const quote = document.createElement('div');
-            quote.className = 'reply-quote rounded-lg px-2 py-1 mb-2';
-            const qName = document.createElement('div');
-            qName.className = 'text-xs font-semibold';
-            qName.textContent = message.reply_to_sender === currentUser.username ? 'You' : targetName;
-            const qText = document.createElement('div');
-            qText.className = 'text-xs opacity-80 truncate';
-            qText.textContent = message.reply_to_message;
-            quote.appendChild(qName);
-            quote.appendChild(qText);
-            bubble.appendChild(quote);
-        }
+            const time = document.createElement('div');
+            time.className = `text-[9px] mt-1 text-right ${isMine ? 'text-indigo-200' : 'text-slate-400'}`;
+            time.textContent = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            bubble.appendChild(time);
 
-        if (message.type === 'image') {
-            const img = document.createElement('img');
-            img.src = message.content;
-            img.className = 'message-image';
-            bubble.appendChild(img);
-        } else if (message.type === 'video') {
-            const vid = document.createElement('video');
-            vid.src = message.content;
-            vid.controls = true;
-            vid.className = 'message-video';
-            bubble.appendChild(vid);
-        } else if (message.type === 'audio') {
-            const aud = document.createElement('audio');
-            aud.src = message.content;
-            aud.controls = true;
-            aud.className = 'message-audio';
-            bubble.appendChild(aud);
-        } else if (message.type === 'file') {
-            const link = document.createElement('a');
-            link.href = message.content;
-            link.download = message.fileName || 'download';
-            link.className = 'flex items-center gap-2 underline';
-            link.innerHTML = '📎 ' + escapeHtml(message.fileName || 'File');
-            bubble.appendChild(link);
-        } else {
-            const txt = document.createElement('div');
-            txt.textContent = message.content;
-            bubble.appendChild(txt);
-        }
+            wrapper.appendChild(bubble);
+            container.appendChild(wrapper);
+        });
 
-        const footer = document.createElement('div');
-        footer.className = 'flex items-center justify-end gap-1 mt-1';
-        const time = document.createElement('span');
-        time.className = 'text-[10px] ' + (isMine ? 'text-white/70' : 'text-slate-400');
-        time.textContent = formatTime(message.created_at);
-        footer.appendChild(time);
-
-        if (isMine) {
-            const status = document.createElement('span');
-            status.className = 'text-[11px]';
-            status.textContent = message.is_pending ? '🕒' : '✓✓';
-            footer.appendChild(status);
-        }
-
-        bubble.appendChild(footer);
-        wrapper.appendChild(bubble);
-        container.appendChild(wrapper);
-    }
-
-    function getDisplayText(msg) {
-        if (!msg) return '';
-        if (msg.type === 'text') return msg.content || '';
-        if (msg.type === 'image') return '📷 Photo';
-        if (msg.type === 'video') return '🎥 Video';
-        if (msg.type === 'audio') return '🎙️ Voice note';
-        if (msg.type === 'file') return '📎 ' + (msg.fileName || 'File');
-        return msg.content || '';
-    }
-
-    function formatTime(dStr) {
-        if (!dStr) return '';
-        const d = new Date(dStr);
-        return isNaN(d.getTime()) ? '' : d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function openMessageOptions(msg) {
-        selectedMessage = msg;
-        document.getElementById('options-preview').textContent = getDisplayText(msg);
-        const delEveryoneBtn = document.getElementById('delete-everyone-button');
-        if (msg.sender_username === currentUser.username && msg.id) {
-            delEveryoneBtn.classList.remove('hidden');
-        } else {
-            delEveryoneBtn.classList.add('hidden');
-        }
-        document.getElementById('message-options-overlay').classList.remove('hidden');
-    }
-
-    function closeMessageOptions() {
-        document.getElementById('message-options-overlay').classList.add('hidden');
-        selectedMessage = null;
-    }
-
-    function replyToSelected() {
-        if (!selectedMessage) return;
-        const m = selectedMessage;
-        closeMessageOptions();
-        setReply(m);
-    }
-
-    async function copySelected() {
-        if (!selectedMessage) return;
-        try { await navigator.clipboard.writeText(getDisplayText(selectedMessage)); } catch (e) {}
-        closeMessageOptions();
-    }
-
-    function forwardSelected() {
-        alert('Forwarding can be configured with contacts next.');
-        closeMessageOptions();
-    }
-
-    function getMessageKey(msg) {
-        return String(msg.id || msg.client_id || (msg.created_at + '_' + msg.sender_username));
-    }
-
-    function deleteSelectedForMe() {
-        if (!selectedMessage) return;
-        const msg = selectedMessage;
-        closeMessageOptions();
-        deletedForMe.add(getMessageKey(msg));
-        renderMessages();
-    }
-
-    async function deleteSelectedForEveryone() {
-        if (!selectedMessage) return;
-        const msg = selectedMessage;
-        closeMessageOptions();
-        if (msg.sender_username !== currentUser.username || !msg.id) return;
-
-        const deletedEnvelope = {
-            __chatlite_private: true,
-            client_id: msg.client_id || null,
-            type: 'text',
-            content: 'This message was deleted.',
-            deleted: true
-        };
-
-        try {
-            await supabaseClient.from('messages').update({ content: JSON.stringify(deletedEnvelope) }).eq('id', msg.id);
-            await fetchPrivateMessages();
-        } catch (e) {
-            alert('Could not delete message for everyone.');
-        }
+        container.scrollTop = container.scrollHeight;
     }
 
     function subscribeToPrivateMessages() {
         if (!supabaseClient) return;
-        if (messageSubscription) {
-            try { supabaseClient.removeChannel(messageSubscription); } catch (e) {}
-        }
+        if (messageSubscription) supabaseClient.removeChannel(messageSubscription);
 
         messageSubscription = supabaseClient
-            .channel('chatlite-private-' + currentUser.username + '-' + targetUsername)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, payload => {
-                const row = payload.new || payload.old;
-                if (!row) return;
-                const belongs = (row.sender_username === currentUser.username && row.receiver_username === targetUsername) ||
-                                (row.sender_username === targetUsername && row.receiver_username === currentUser.username);
-                if (belongs) fetchPrivateMessages();
+            .channel('public:messages:private')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                const newMsg = payload.new;
+                const relevant = (newMsg.sender_username === currentUser.username && newMsg.receiver_username === targetUsername) ||
+                                 (newMsg.sender_username === targetUsername && newMsg.receiver_username === currentUser.username);
+                if (relevant) {
+                    messagesCache.push(newMsg);
+                    renderMessages();
+                }
             })
             .subscribe();
     }
-
-    function escapeHtml(str) {
-        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
-
-    window.addEventListener('beforeunload', () => {
-        clearInterval(recordingTimerInterval);
-        if (messageSubscription && supabaseClient) {
-            try { supabaseClient.removeChannel(messageSubscription); } catch (e) {}
-        }
-    });
     </script>
 </body>
 </html>
