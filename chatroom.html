@@ -1083,7 +1083,9 @@
         img.className =
           'w-full h-full object-cover';
 
-        previewContent.appendChild(img);
+        previewContent.appendChild(
+          img
+        );
 
       } else if (
         stagedPayload.type === 'video'
@@ -1100,7 +1102,9 @@
 
         video.muted = true;
 
-        previewContent.appendChild(video);
+        previewContent.appendChild(
+          video
+        );
 
       } else {
 
@@ -1108,7 +1112,9 @@
           '<span class="text-2xl">📎</span>';
       }
 
-      preview.classList.remove('hidden');
+      preview.classList.remove(
+        'hidden'
+      );
     }
 
     function cancelMedia() {
@@ -1543,7 +1549,8 @@
         created_at:
           new Date().toISOString(),
 
-        is_pending: true
+        is_pending:
+          true
       };
 
       messagesCache.push(
@@ -1638,13 +1645,42 @@
         }
 
         /*
-         * The INSERT succeeded.
-         * Immediately show ✓✓.
+         * The database returned the newly inserted row.
+         * Use that real database row immediately.
          */
-        markMessagePending(
-          message.client_id,
-          false
-        );
+        if (data) {
+
+          const databaseMessage =
+            normalizeDatabaseMessage(data);
+
+          const localIndex =
+            messagesCache.findIndex(
+              item =>
+                item.local_only &&
+                item.client_id ===
+                  message.client_id
+            );
+
+          if (localIndex !== -1) {
+
+            messagesCache[
+              localIndex
+            ] = databaseMessage;
+
+          } else {
+
+            messagesCache.push(
+              databaseMessage
+            );
+          }
+
+        } else {
+
+          markMessagePending(
+            message.client_id,
+            false
+          );
+        }
 
         removeFromOfflineQueue(
           message.client_id
@@ -1653,11 +1689,8 @@
         renderMessages();
 
         /*
-         * Fetch again so the local message can be
-         * replaced by the real database row.
-         *
-         * fetchPrivateMessages() now safely keeps
-         * this local copy until Supabase returns it.
+         * Refresh from Supabase so the permanent database
+         * copy is also synchronized with the chat.
          */
         await fetchPrivateMessages();
 
@@ -1803,31 +1836,13 @@
 
           );
 
-
         /*
-         * =====================================================
-         * IMPORTANT FIX
-         * =====================================================
+         * Keep temporary local messages only when the database
+         * has not returned them yet.
          *
-         * Keep every local message that Supabase has NOT
-         * returned yet.
-         *
-         * Previously this only kept messages where
-         * is_pending === true.
-         *
-         * After a successful INSERT we change is_pending
-         * to false so the UI shows ✓✓.
-         *
-         * The following fetch could happen before Supabase's
-         * SELECT could see the newly inserted row.
-         *
-         * That caused the message to disappear.
-         *
-         * Now we keep the local message until its client_id
-         * is actually found in the database results.
-         * =====================================================
+         * Once the database contains the matching client_id,
+         * the real database copy replaces the local copy.
          */
-
         const localMessagesNotYetReturned =
           messagesCache.filter(
             message => {
@@ -1836,10 +1851,6 @@
                 return false;
               }
 
-              /*
-               * If the database already returned this exact
-               * client_id, remove the temporary local copy.
-               */
               if (
                 message.client_id &&
                 databaseClientIds.has(
@@ -1849,25 +1860,9 @@
                 return false;
               }
 
-              /*
-               * Otherwise keep the local message.
-               *
-               * This works whether it is still pending 🕒
-               * or has already successfully inserted and
-               * changed to ✓✓.
-               */
               return true;
             }
           );
-
-
-        /*
-         * Database messages are the source of truth once
-         * they are available.
-         *
-         * Local messages are only retained temporarily when
-         * the database has not returned them yet.
-         */
 
         messagesCache = [
 
@@ -1947,9 +1942,11 @@
 
           ...row,
 
-          local_only: false,
+          local_only:
+            false,
 
-          client_id: null,
+          client_id:
+            null,
 
           content:
             row.content || '',
@@ -2222,7 +2219,10 @@
 
         try {
 
-          const { error } =
+          const {
+            data,
+            error
+          } =
             await supabaseClient
               .from('messages')
               .insert({
@@ -2236,7 +2236,9 @@
                 content:
                   message.raw_content
 
-              });
+              })
+              .select('*')
+              .single();
 
           if (error) {
 
@@ -2246,6 +2248,35 @@
             );
 
             continue;
+          }
+
+          if (data) {
+
+            const databaseMessage =
+              normalizeDatabaseMessage(
+                data
+              );
+
+            const localIndex =
+              messagesCache.findIndex(
+                item =>
+                  item.local_only &&
+                  item.client_id ===
+                    message.client_id
+              );
+
+            if (localIndex !== -1) {
+
+              messagesCache[
+                localIndex
+              ] = databaseMessage;
+
+            } else {
+
+              messagesCache.push(
+                databaseMessage
+              );
+            }
           }
 
           removeFromOfflineQueue(
@@ -2260,6 +2291,22 @@
           );
         }
       }
+
+      messagesCache.sort(
+        (a, b) => {
+
+          return (
+            new Date(
+              a.created_at || 0
+            ) -
+            new Date(
+              b.created_at || 0
+            )
+          );
+        }
+      );
+
+      renderMessages();
 
       await fetchPrivateMessages();
     }
@@ -3426,11 +3473,3 @@
 
 </body>
 </html>
-
-The only functional change is the disappearing-message fix. Your database structure, "messages" table, media handling, replies, ticks, delete functions, realtime subscription, and UI remain intact.
-
-After replacing the file, a newly sent message should now go:
-
-message appears → 🕒 → INSERT succeeds → ✓✓ → stays visible → database copy arrives → remains ✓✓.
-
-If the database SELECT is slightly delayed, the local copy simply waits instead of disappearing.
