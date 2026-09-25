@@ -2961,4 +2961,717 @@
                         'message-input'
                     )
                     .classList.remove(
-                        '
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'mic-btn'
+                    )
+                    .classList.remove(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'media-preview-bar'
+                    )
+                    .classList.remove(
+                        'hidden'
+                    );
+
+                document
+                    .getElementById(
+                        'media-preview-bar'
+                    )
+                    .classList.add(
+                        'flex'
+                    );
+
+                document
+                    .getElementById(
+                        'preview-container'
+                    )
+                    .innerHTML =
+                    `<span class="text-indigo-400 font-bold text-xs">Voice Note Recorded (${recordingSeconds}s). Ready to Send.</span>`;
+
+                document
+                    .getElementById(
+                        'upload-progress-bar'
+                    )
+                    .style.width =
+                    '100%';
+
+                document
+                    .getElementById(
+                        'upload-status-text'
+                    )
+                    .textContent =
+                    'Hit the Send button to dispatch voice note.';
+            }
+        }
+
+
+        function cancelRecording() {
+
+            if (
+                mediaRecorder &&
+                (
+                    isRecording ||
+                    isPaused
+                )
+            ) {
+
+                if (
+                    mediaRecorder.state !==
+                    'inactive'
+                ) {
+
+                    mediaRecorder.stop();
+                }
+
+                if (
+                    mediaRecorder.stream
+                ) {
+
+                    mediaRecorder.stream
+                        .getTracks()
+                        .forEach(
+                            track =>
+                                track.stop()
+                        );
+                }
+            }
+
+            resetRecordingUI();
+
+            clearStagedMedia();
+        }
+
+
+        function resetRecordingUI() {
+
+            clearInterval(
+                recordingTimerInterval
+            );
+
+            isRecording =
+                false;
+
+            isPaused =
+                false;
+
+            document
+                .getElementById(
+                    'recording-ui'
+                )
+                .classList.add(
+                    'hidden'
+                );
+
+            document
+                .getElementById(
+                    'recording-ui'
+                )
+                .classList.remove(
+                    'flex'
+                );
+
+            document
+                .getElementById(
+                    'message-input'
+                )
+                .classList.remove(
+                    'hidden'
+                );
+
+            document
+                .getElementById(
+                    'mic-btn'
+                )
+                .classList.remove(
+                    'hidden'
+                );
+        }
+
+
+        /* ============================================================
+           SEND PRIVATE MESSAGE
+        ============================================================ */
+
+        async function sendPayloadToSupabase(
+            content,
+            type,
+            replyMeta = null
+        ) {
+
+            if (
+                !currentUser ||
+                !targetUsername
+            ) {
+                return;
+            }
+
+            if (
+                typeof supabaseClient ===
+                'undefined'
+            ) {
+
+                alert(
+                    'Supabase client is not available.'
+                );
+
+                return;
+            }
+
+            const createdAt =
+                new Date().toISOString();
+
+            const storedContent =
+                makeStoredContent(
+                    content,
+                    type || 'text',
+                    replyMeta,
+                    createdAt,
+                    false
+                );
+
+            const payload = {
+
+                id:
+                    crypto.randomUUID(),
+
+                sender_username:
+                    currentUser.username,
+
+                receiver_username:
+                    targetUsername,
+
+                content:
+                    storedContent
+            };
+
+            const {
+                data,
+                error
+            } =
+                await supabaseClient
+                    .from('private_messages')
+                    .insert([
+                        payload
+                    ])
+                    .select();
+
+            if (error) {
+
+                console.error(
+                    'PRIVATE MESSAGE INSERT ERROR:',
+                    error
+                );
+
+                alert(
+                    'Failed to send message: ' +
+                    error.message
+                );
+
+                return;
+            }
+
+            /*
+             * Realtime will normally add the message.
+             * Fetching here also keeps the sender's screen
+             * immediately synchronized.
+             */
+            await fetchMessages();
+
+            return data;
+        }
+
+
+        /* ============================================================
+           FORM SUBMIT
+        ============================================================ */
+
+        async function handleFormSubmit(e) {
+
+            e.preventDefault();
+
+            if (isRecording) {
+
+                stopRecordingOnly();
+
+                return;
+            }
+
+            let replyMeta =
+                null;
+
+            if (replyingToMessage) {
+
+                const repType =
+                    replyingToMessage.message_type ||
+                    'text';
+
+                replyMeta = {
+
+                    sender:
+                        replyingToMessage.sender_username ===
+                        currentUser.username
+                            ? 'You'
+                            : `@${replyingToMessage.sender_username}`,
+
+                    content:
+                        repType === 'text'
+                            ? replyingToMessage.content
+                            : `[${repType}]`
+                };
+            }
+
+            /* Voice note */
+
+            if (recordedBlob) {
+
+                const blobToSend =
+                    recordedBlob;
+
+                recordedBlob =
+                    null;
+
+                const reader =
+                    new FileReader();
+
+                reader.readAsDataURL(
+                    blobToSend
+                );
+
+                reader.onloadend =
+                    async () => {
+
+                        await sendPayloadToSupabase(
+                            reader.result,
+                            'audio',
+                            replyMeta
+                        );
+
+                        resetRecordingUI();
+
+                        clearStagedMedia();
+
+                        cancelReply();
+                    };
+
+                return;
+            }
+
+            /* File / image / video */
+
+            if (stagedPayload) {
+
+                const payloadToSend =
+                    stagedPayload;
+
+                stagedPayload =
+                    null;
+
+                await sendPayloadToSupabase(
+                    payloadToSend.content,
+                    payloadToSend.type,
+                    replyMeta
+                );
+
+                clearStagedMedia();
+
+                cancelReply();
+
+                return;
+            }
+
+            /* Normal text */
+
+            const input =
+                document.getElementById(
+                    'message-input'
+                );
+
+            const content =
+                input.value.trim();
+
+            if (!content) {
+                return;
+            }
+
+            input.value =
+                '';
+
+            await sendPayloadToSupabase(
+                content,
+                'text',
+                replyMeta
+            );
+
+            cancelReply();
+        }
+
+
+        /* ============================================================
+           MEDIA GALLERY
+        ============================================================ */
+
+        function openMediaGallery(
+            typeFilter
+        ) {
+
+            const modal =
+                document.getElementById(
+                    'media-gallery-modal'
+                );
+
+            const grid =
+                document.getElementById(
+                    'gallery-content-grid'
+                );
+
+            const title =
+                document.getElementById(
+                    'gallery-title'
+                );
+
+            modal.classList.remove(
+                'hidden'
+            );
+
+            grid.innerHTML =
+                '';
+
+            title.textContent =
+                `Chat ${typeFilter.toUpperCase()} Gallery`;
+
+            const matching =
+                messagesCache.filter(
+                    message => {
+
+                        if (
+                            message.is_deleted_for_everyone
+                        ) {
+                            return false;
+                        }
+
+                        const messageType =
+                            message.message_type ||
+                            'text';
+
+                        if (
+                            typeFilter === 'image' &&
+                            messageType === 'image'
+                        ) {
+                            return true;
+                        }
+
+                        if (
+                            typeFilter === 'video' &&
+                            messageType === 'video'
+                        ) {
+                            return true;
+                        }
+
+                        if (
+                            typeFilter === 'file' &&
+                            (
+                                messageType ===
+                                'file' ||
+                                messageType ===
+                                'audio'
+                            )
+                        ) {
+                            return true;
+                        }
+
+                        return false;
+                    }
+                );
+
+            if (
+                matching.length === 0
+            ) {
+
+                grid.innerHTML =
+                    `<span class="text-xs text-slate-500 col-span-2 text-center py-6">No ${typeFilter}s found in this chat.</span>`;
+
+                return;
+            }
+
+            matching.forEach(
+                message => {
+
+                    const card =
+                        document.createElement(
+                            'div'
+                        );
+
+                    card.className =
+                        'bg-slate-900 border border-slate-800 rounded-lg p-2 flex flex-col items-center justify-center gap-2';
+
+                    const messageType =
+                        message.message_type ||
+                        'text';
+
+                    if (
+                        messageType ===
+                        'image'
+                    ) {
+
+                        const image =
+                            document.createElement(
+                                'img'
+                            );
+
+                        image.src =
+                            message.content;
+
+                        image.className =
+                            'h-24 w-full object-cover rounded cursor-pointer';
+
+                        image.onclick =
+                            () => {
+
+                                window.open(
+                                    message.content,
+                                    '_blank'
+                                );
+                            };
+
+                        card.appendChild(
+                            image
+                        );
+
+                    } else if (
+                        messageType ===
+                        'video'
+                    ) {
+
+                        const video =
+                            document.createElement(
+                                'video'
+                            );
+
+                        video.src =
+                            message.content;
+
+                        video.className =
+                            'h-24 w-full rounded object-cover';
+
+                        video.controls =
+                            true;
+
+                        card.appendChild(
+                            video
+                        );
+
+                    } else {
+
+                        const link =
+                            document.createElement(
+                                'a'
+                            );
+
+                        link.href =
+                            message.content;
+
+                        link.download =
+                            '';
+
+                        link.className =
+                            'text-xs text-indigo-400 underline font-semibold py-4';
+
+                        link.textContent =
+                            `Download ${messageType}`;
+
+                        card.appendChild(
+                            link
+                        );
+                    }
+
+                    grid.appendChild(
+                        card
+                    );
+                }
+            );
+        }
+
+
+        function closeMediaGallery() {
+
+            document
+                .getElementById(
+                    'media-gallery-modal'
+                )
+                .classList.add(
+                    'hidden'
+                );
+        }
+
+
+        /* ============================================================
+           REALTIME PRIVATE CHAT
+        ============================================================ */
+
+        function subscribeToMessages() {
+
+            if (
+                typeof supabaseClient ===
+                'undefined'
+            ) {
+                return;
+            }
+
+            if (
+                messageSubscription
+            ) {
+
+                supabaseClient.removeChannel(
+                    messageSubscription
+                );
+            }
+
+            messageSubscription =
+                supabaseClient
+                    .channel(
+                        `private_chat_${currentUser.username}_${targetUsername}`
+                    )
+                    .on(
+                        'postgres_changes',
+                        {
+                            event:
+                                'INSERT',
+
+                            schema:
+                                'public',
+
+                            table:
+                                'private_messages'
+                        },
+                        payload => {
+
+                            const raw =
+                                payload.new;
+
+                            if (!raw) {
+                                return;
+                            }
+
+                            const isThisConversation =
+                                (
+                                    raw.sender_username ===
+                                        currentUser.username &&
+                                    raw.receiver_username ===
+                                        targetUsername
+                                ) ||
+                                (
+                                    raw.sender_username ===
+                                        targetUsername &&
+                                    raw.receiver_username ===
+                                        currentUser.username
+                                );
+
+                            if (
+                                !isThisConversation
+                            ) {
+                                return;
+                            }
+
+                            if (
+                                messagesCache.some(
+                                    message =>
+                                        message.id ===
+                                        raw.id
+                                )
+                            ) {
+                                return;
+                            }
+
+                            const decoded =
+                                decodePrivateMessage(
+                                    raw
+                                );
+
+                            if (!decoded) {
+                                return;
+                            }
+
+                            messagesCache.push(
+                                decoded
+                            );
+
+                            messagesCache.sort(
+                                (a, b) => {
+
+                                    if (
+                                        a.created_at &&
+                                        b.created_at
+                                    ) {
+
+                                        return (
+                                            new Date(
+                                                a.created_at
+                                            ).getTime() -
+                                            new Date(
+                                                b.created_at
+                                            ).getTime()
+                                        );
+                                    }
+
+                                    return 0;
+                                }
+                            );
+
+                            renderMessages(
+                                messagesCache
+                            );
+                        }
+                    )
+                    .subscribe(
+                        status => {
+
+                            console.log(
+                                'Private chat realtime status:',
+                                status
+                            );
+                        }
+                    );
+        }
+
+
+        /* ============================================================
+           CLEANUP
+        ============================================================ */
+
+        window.addEventListener(
+            'beforeunload',
+            () => {
+
+                if (
+                    messageSubscription &&
+                    typeof supabaseClient !==
+                        'undefined'
+                ) {
+
+                    supabaseClient.removeChannel(
+                        messageSubscription
+                    );
+                }
+            }
+        );
+
+
+        /* ============================================================
+           START PRIVATE CHAT
+        ============================================================ */
+
+        fetchMessages();
+
+        subscribeToMessages();
+
+    </script>
+
+</body>
+</html>
