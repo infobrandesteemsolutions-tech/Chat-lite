@@ -1,317 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Lite</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
+    <title>Chat Lite - Chat</title>
 
-<style>
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    color: #222;
-}
-
-.chat-container {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: white;
-}
-
-.chat-header {
-    height: 60px;
-    background: #075e54;
-    color: white;
-    display: flex;
-    align-items: center;
-    padding: 0 12px;
-    gap: 10px;
-}
-
-.back-btn {
-    border: none;
-    background: transparent;
-    color: white;
-    font-size: 25px;
-    cursor: pointer;
-}
-
-.profile-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-name {
-    font-size: 17px;
-    font-weight: bold;
-}
-
-.profile-username {
-    font-size: 12px;
-    opacity: .8;
-}
-
-.header-btn {
-    border: none;
-    background: transparent;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.search-bar {
-    display: none;
-    padding: 8px;
-    background: #eee;
-}
-
-.search-bar input {
-    width: 100%;
-    border: none;
-    padding: 9px 12px;
-    border-radius: 18px;
-    outline: none;
-}
-
-.messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px;
-    background: #e5ddd5;
-}
-
-.message-row {
-    display: flex;
-    margin-bottom: 7px;
-}
-
-.message-row.sent {
-    justify-content: flex-end;
-}
-
-.message-row.received {
-    justify-content: flex-start;
-}
-
-.message-bubble {
-    max-width: 78%;
-    padding: 8px 10px;
-    border-radius: 9px;
-    position: relative;
-    word-wrap: break-word;
-}
-
-.sent .message-bubble {
-    background: #dcf8c6;
-}
-
-.received .message-bubble {
-    background: white;
-}
-
-.message-text {
-    white-space: pre-wrap;
-    font-size: 15px;
-}
-
-.message-time {
-    font-size: 10px;
-    color: #777;
-    text-align: right;
-    margin-top: 3px;
-}
-
-.pending-icon {
-    font-size: 11px;
-    margin-left: 3px;
-}
-
-.reply-preview {
-    display: none;
-    background: #f0f0f0;
-    border-left: 4px solid #075e54;
-    padding: 7px 10px;
-    align-items: center;
-}
-
-.reply-preview-content {
-    flex: 1;
-}
-
-.reply-preview-name {
-    font-weight: bold;
-    font-size: 12px;
-    color: #075e54;
-}
-
-.reply-preview-text {
-    font-size: 12px;
-    color: #555;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.reply-close {
-    border: none;
-    background: transparent;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.input-area {
-    background: #f0f0f0;
-    padding: 7px;
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-}
-
-.input-area textarea {
-    flex: 1;
-    resize: none;
-    border: none;
-    border-radius: 20px;
-    padding: 10px 14px;
-    outline: none;
-    max-height: 110px;
-    font-family: Arial, sans-serif;
-}
-
-.send-btn,
-.attach-btn,
-.mic-btn {
-    width: 42px;
-    height: 42px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 18px;
-}
-
-.send-btn {
-    background: #075e54;
-    color: white;
-}
-
-.attach-btn,
-.mic-btn {
-    background: #ddd;
-}
-
-.context-menu {
-    display: none;
-    position: fixed;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.25);
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.context-menu button {
-    display: block;
-    width: 160px;
-    padding: 12px;
-    border: none;
-    background: white;
-    text-align: left;
-    cursor: pointer;
-}
-
-.context-menu button:hover {
-    background: #eee;
-}
-
-.media-input {
-    display: none;
-}
-
-.empty-chat {
-    text-align: center;
-    color: #777;
-    margin-top: 40px;
-    font-size: 14px;
-}
-</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase.js"></script>
 </head>
 
-<body>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
 
-<div class="chat-container">
+<div class="w-full max-w-md mx-auto h-screen flex flex-col bg-slate-900 shadow-2xl border-x border-slate-800">
 
-    <div class="chat-header">
-        <button class="back-btn" onclick="goBack()">‹</button>
+    <!-- HEADER -->
+    <div class="p-3 border-b border-slate-800 bg-slate-900 flex items-center gap-3">
 
-        <div class="profile-info">
-            <div class="profile-name" id="targetName">Chat</div>
-            <div class="profile-username" id="targetUsernameDisplay"></div>
+        <button
+            onclick="goBack()"
+            class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-xl text-slate-300">
+            ←
+        </button>
+
+        <div
+            id="target-avatar"
+            class="w-10 h-10 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-400 overflow-hidden">
         </div>
 
-        <button class="header-btn" onclick="toggleSearch()">🔍</button>
+        <div class="flex-1 min-w-0">
+
+            <h2
+                id="target-name"
+                class="font-bold text-sm text-white truncate">
+                Loading...
+            </h2>
+
+            <p
+                id="target-info"
+                class="text-xs text-slate-400 truncate">
+            </p>
+
+        </div>
+
+        <button
+            onclick="toggleSearch()"
+            class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center">
+            🔍
+        </button>
+
     </div>
 
-    <div class="search-bar" id="searchBar">
+
+    <!-- SEARCH -->
+    <div
+        id="search-container"
+        class="hidden px-3 py-2 bg-slate-950 border-b border-slate-800">
+
         <input
+            id="search-input"
             type="text"
-            id="searchInput"
             placeholder="Search messages..."
             oninput="searchMessages()"
-        >
+            class="w-full px-4 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-sm text-white outline-none focus:border-indigo-500">
     </div>
 
-    <div class="messages" id="messages"></div>
 
-    <div class="reply-preview" id="replyPreview">
-        <div class="reply-preview-content">
-            <div class="reply-preview-name" id="replyPreviewName"></div>
-            <div class="reply-preview-text" id="replyPreviewText"></div>
+    <!-- MESSAGES -->
+    <div
+        id="chat-messages"
+        class="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-950">
+
+        <div
+            id="loading-message"
+            class="text-center text-slate-500 text-sm py-8">
+            Loading messages...
         </div>
-        <button class="reply-close" onclick="cancelReply()">×</button>
+
     </div>
 
-    <div class="input-area">
-        <button class="attach-btn" onclick="document.getElementById('mediaInput').click()">📎</button>
 
-        <input
-            type="file"
-            id="mediaInput"
-            class="media-input"
-            accept="image/*,video/*"
-            onchange="handleMediaSelected(event)"
-        >
+    <!-- REPLY BAR -->
+    <div
+        id="reply-bar"
+        class="hidden px-3 py-2 bg-slate-800 border-t border-slate-700">
 
-        <textarea
-            id="messageInput"
-            rows="1"
-            placeholder="Message"
-            oninput="autoResize(this)"
-            onkeydown="handleEnter(event)"
-        ></textarea>
+        <div class="flex items-center gap-2">
 
-        <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎤</button>
+            <div class="w-1 h-10 bg-indigo-500 rounded-full"></div>
 
-        <button class="send-btn" onclick="sendMessage()">➤</button>
+            <div class="flex-1 min-w-0">
+
+                <p
+                    id="reply-name"
+                    class="text-xs font-semibold text-indigo-400">
+                </p>
+
+                <p
+                    id="reply-content"
+                    class="text-xs text-slate-300 truncate">
+                </p>
+
+            </div>
+
+            <button
+                onclick="cancelReply()"
+                class="text-slate-400 hover:text-white text-xl">
+                ×
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- INPUT -->
+    <div class="p-2 border-t border-slate-800 bg-slate-900">
+
+        <form
+            onsubmit="sendMessage(event)"
+            class="flex items-end gap-2">
+
+            <textarea
+                id="message-input"
+                rows="1"
+                placeholder="Type a message..."
+                oninput="autoResize(this)"
+                class="flex-1 resize-none bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-indigo-500 max-h-32"></textarea>
+
+            <button
+                type="submit"
+                class="w-11 h-11 rounded-full bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center text-white shadow-lg">
+                ➤
+            </button>
+
+        </form>
+
     </div>
 
 </div>
 
-<div class="context-menu" id="contextMenu">
-    <button onclick="replyToSelected()">↩ Reply</button>
-    <button onclick="deleteSelectedForMe()">Delete for me</button>
+
+<!-- CONTEXT MENU -->
+<div
+    id="context-menu"
+    class="hidden fixed z-50 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
+
+    <button
+        onclick="replyToSelected()"
+        class="block w-full text-left px-5 py-3 text-sm hover:bg-slate-700">
+        ↩ Reply
+    </button>
+
+    <button
+        onclick="deleteSelectedForMe()"
+        class="block w-full text-left px-5 py-3 text-sm hover:bg-slate-700 text-red-400">
+        Delete for me
+    </button>
+
 </div>
+
 
 <script>
+
+/* =========================================================
+   CHAT STATE
+========================================================= */
 
 let currentUser = null;
 let targetUsername = '';
@@ -321,122 +176,287 @@ let targetGender = '';
 let messagesCache = [];
 let selectedMessage = null;
 let activeReplyMessage = null;
-let stagedMedia = null;
-let mediaRecorder = null;
-let audioChunks = [];
 let realtimeChannel = null;
 
-const params = new URLSearchParams(window.location.search);
+
+/* =========================================================
+   GET CHAT USER FROM URL
+========================================================= */
+
+const params = new URLSearchParams(
+    window.location.search
+);
+
+
+/*
+   chatlist.html opens:
+
+   chatroom.html?to=username&name=name&gender=gender
+*/
 
 targetUsername =
+    params.get('to') ||
     params.get('username') ||
-    params.get('user') ||
-    params.get('target') ||
     '';
+
 
 targetName =
     params.get('name') ||
     targetUsername ||
     'Chat';
 
+
 targetGender =
     params.get('gender') ||
     '';
 
-const cacheKey = () =>
-    `chatlite_cache_${currentUser?.username}_${targetUsername}`;
 
-const offlineQueueKey = () =>
-    `chatlite_offline_queue_${currentUser?.username}_${targetUsername}`;
+/*
+   Decode URL values safely.
+*/
+
+try {
+    targetUsername = decodeURIComponent(targetUsername);
+} catch (e) {}
+
+try {
+    targetName = decodeURIComponent(targetName);
+} catch (e) {}
+
+try {
+    targetGender = decodeURIComponent(targetGender);
+} catch (e) {}
 
 
-/* =========================
-   INITIALIZATION
-========================= */
+/* =========================================================
+   CACHE KEYS
+========================================================= */
 
-async function initChat() {
+function getCacheKey() {
 
-    currentUser = JSON.parse(
-        localStorage.getItem('currentUser') ||
-        localStorage.getItem('user')
-    );
-
-    if (!currentUser || !currentUser.username) {
-        alert('Please login first.');
-        window.location.href = 'index.html';
-        return;
-    }
-
-    document.getElementById('targetName').textContent =
-        targetName || targetUsername;
-
-    document.getElementById('targetUsernameDisplay').textContent =
-        '@' + targetUsername;
-
-    loadLocalCache();
-
-    renderMessages(messagesCache);
-
-    await fetchMessages();
-
-    setupRealtime();
-
-    window.addEventListener('online', async () => {
-        await flushOfflineQueue();
-        await fetchMessages();
-    });
+    return `chatlite_cache_${currentUser.username}_${targetUsername}`;
 }
 
 
-/* =========================
+function getOfflineQueueKey() {
+
+    return `chatlite_offline_queue_${currentUser.username}_${targetUsername}`;
+}
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+async function initChat() {
+
+    /*
+       IMPORTANT:
+       Your chatlist.html stores the logged-in user
+       under "chatlite_user".
+
+       We MUST use that exact key.
+    */
+
+    const storedUser =
+        localStorage.getItem('chatlite_user');
+
+
+    if (!storedUser) {
+
+        window.location.href =
+            'index.html';
+
+        return;
+    }
+
+
+    try {
+
+        currentUser =
+            JSON.parse(storedUser);
+
+    } catch (error) {
+
+        console.error(
+            'Invalid stored user:',
+            error
+        );
+
+        localStorage.removeItem(
+            'chatlite_user'
+        );
+
+        window.location.href =
+            'index.html';
+
+        return;
+    }
+
+
+    /*
+       Verify the stored user has a username.
+    */
+
+    if (
+        !currentUser ||
+        !currentUser.username
+    ) {
+
+        localStorage.removeItem(
+            'chatlite_user'
+        );
+
+        window.location.href =
+            'index.html';
+
+        return;
+    }
+
+
+    /*
+       Make sure we actually have a target.
+    */
+
+    if (!targetUsername) {
+
+        alert(
+            'No chat user was selected.'
+        );
+
+        goBack();
+
+        return;
+    }
+
+
+    /*
+       Update header.
+    */
+
+    document.getElementById(
+        'target-name'
+    ).textContent =
+        targetName || targetUsername;
+
+
+    document.getElementById(
+        'target-info'
+    ).textContent =
+        '@' +
+        targetUsername +
+        (
+            targetGender
+                ? ' • ' + targetGender
+                : ''
+        );
+
+
+    document.getElementById(
+        'target-avatar'
+    ).textContent =
+        (
+            targetName ||
+            targetUsername ||
+            'U'
+        )
+        .charAt(0)
+        .toUpperCase();
+
+
+    /*
+       Load local messages first.
+    */
+
+    loadLocalCache();
+
+    renderMessages(
+        messagesCache
+    );
+
+
+    /*
+       Then get messages from Supabase.
+    */
+
+    await fetchMessages();
+
+
+    /*
+       Start realtime listener.
+    */
+
+    setupRealtime();
+}
+
+
+/* =========================================================
    LOCAL CACHE
-========================= */
+========================================================= */
 
 function loadLocalCache() {
 
     try {
 
         const saved =
-            localStorage.getItem(cacheKey());
+            localStorage.getItem(
+                getCacheKey()
+            );
+
 
         if (saved) {
-            messagesCache = JSON.parse(saved);
+
+            messagesCache =
+                JSON.parse(saved);
+
+        } else {
+
+            messagesCache = [];
         }
 
     } catch (error) {
 
-        console.error('Could not load local cache:', error);
+        console.error(
+            'Could not load message cache:',
+            error
+        );
+
         messagesCache = [];
     }
 }
 
 
-function saveLocalCache(messages = messagesCache) {
+function saveLocalCache() {
 
     try {
 
         localStorage.setItem(
-            cacheKey(),
-            JSON.stringify(messages)
+            getCacheKey(),
+            JSON.stringify(messagesCache)
         );
 
     } catch (error) {
 
-        console.error('Could not save local cache:', error);
+        console.error(
+            'Could not save message cache:',
+            error
+        );
     }
 }
 
 
-/* =========================
+/* =========================================================
    OFFLINE QUEUE
-========================= */
+========================================================= */
 
 function getOfflineQueue() {
 
     try {
 
         return JSON.parse(
-            localStorage.getItem(offlineQueueKey()) || '[]'
+            localStorage.getItem(
+                getOfflineQueueKey()
+            ) || '[]'
         );
 
     } catch (error) {
@@ -449,7 +469,7 @@ function getOfflineQueue() {
 function saveOfflineQueue(queue) {
 
     localStorage.setItem(
-        offlineQueueKey(),
+        getOfflineQueueKey(),
         JSON.stringify(queue)
     );
 }
@@ -457,7 +477,8 @@ function saveOfflineQueue(queue) {
 
 function queueOfflineMessage(message) {
 
-    const queue = getOfflineQueue();
+    const queue =
+        getOfflineQueue();
 
     queue.push(message);
 
@@ -465,491 +486,624 @@ function queueOfflineMessage(message) {
 }
 
 
-/* =========================
+/* =========================================================
    FETCH MESSAGES
-========================= */
+========================================================= */
 
 async function fetchMessages() {
 
     /*
-       If offline, NEVER replace the local cache.
-       This is important because the local pending
-       message must remain visible.
+       NEVER wipe local messages while offline.
     */
 
     if (!navigator.onLine) {
 
-        renderMessages(messagesCache);
+        renderMessages(
+            messagesCache
+        );
+
         return;
     }
 
-    const sentResult = await supabaseClient
-        .from('messages')
-        .select('*')
-        .eq('sender_username', currentUser.username)
-        .eq('receiver_username', targetUsername);
 
-    const receivedResult = await supabaseClient
-        .from('messages')
-        .select('*')
-        .eq('sender_username', targetUsername)
-        .eq('receiver_username', currentUser.username);
+    if (
+        !currentUser ||
+        !currentUser.username ||
+        !targetUsername
+    ) {
+        return;
+    }
+
+
+    /*
+       Fetch sent messages.
+    */
+
+    const sentResult =
+        await supabaseClient
+            .from('messages')
+            .select('*')
+            .eq(
+                'sender_username',
+                currentUser.username
+            )
+            .eq(
+                'receiver_username',
+                targetUsername
+            );
+
 
     if (sentResult.error) {
 
         console.error(
-            'Could not fetch sent messages:',
+            'Error fetching sent messages:',
             sentResult.error
         );
 
-        renderMessages(messagesCache);
+        /*
+           Keep existing local messages.
+        */
+
+        renderMessages(
+            messagesCache
+        );
+
         return;
     }
+
+
+    /*
+       Fetch received messages.
+    */
+
+    const receivedResult =
+        await supabaseClient
+            .from('messages')
+            .select('*')
+            .eq(
+                'sender_username',
+                targetUsername
+            )
+            .eq(
+                'receiver_username',
+                currentUser.username
+            );
+
 
     if (receivedResult.error) {
 
         console.error(
-            'Could not fetch received messages:',
+            'Error fetching received messages:',
             receivedResult.error
         );
 
-        renderMessages(messagesCache);
+        renderMessages(
+            messagesCache
+        );
+
         return;
     }
+
 
     const dbMessages = [
         ...(sentResult.data || []),
         ...(receivedResult.data || [])
     ];
 
+
     /*
        Sort database messages.
     */
 
-    dbMessages.sort((a, b) => {
-
-        return new Date(a.created_at || 0) -
-               new Date(b.created_at || 0);
-
-    });
+    dbMessages.sort(
+        (a, b) =>
+            new Date(a.created_at || 0) -
+            new Date(b.created_at || 0)
+    );
 
 
     /*
-       IMPORTANT FIX:
-       Keep local messages that have not yet been
-       confirmed by the database.
+       Find local messages which have not yet
+       been confirmed by Supabase.
     */
 
-    const localPendingMessages =
-        messagesCache.filter(message =>
-            message.is_offline_pending === true ||
-            message.is_pending === true
+    const pendingLocalMessages =
+        messagesCache.filter(
+            message =>
+                message.is_pending === true ||
+                message.is_offline_pending === true
         );
 
 
-    const mergedMessages = [...dbMessages];
+    const mergedMessages = [
+        ...dbMessages
+    ];
 
 
-    for (const localMessage of localPendingMessages) {
+    /*
+       Keep pending local messages unless we can
+       find their database copy.
+    */
 
-        const alreadyExists = dbMessages.some(dbMessage => {
+    for (
+        const localMessage
+        of pendingLocalMessages
+    ) {
 
-            if (
-                dbMessage.sender_username !==
-                localMessage.sender_username
-            ) {
-                return false;
-            }
+        const matchingDbMessage =
+            dbMessages.some(
+                dbMessage => {
 
-            if (
-                dbMessage.receiver_username !==
-                localMessage.receiver_username
-            ) {
-                return false;
-            }
-
-            if (
-                dbMessage.content !==
-                localMessage.content
-            ) {
-                return false;
-            }
+                    if (
+                        dbMessage.sender_username !==
+                        localMessage.sender_username
+                    ) {
+                        return false;
+                    }
 
 
-            /*
-               If both have created_at,
-               compare their timestamps.
-            */
+                    if (
+                        dbMessage.receiver_username !==
+                        localMessage.receiver_username
+                    ) {
+                        return false;
+                    }
 
-            if (
-                dbMessage.created_at &&
-                localMessage.created_at
-            ) {
 
-                const dbTime =
-                    new Date(dbMessage.created_at).getTime();
+                    if (
+                        dbMessage.content !==
+                        localMessage.content
+                    ) {
+                        return false;
+                    }
 
-                const localTime =
-                    new Date(localMessage.created_at).getTime();
 
-                /*
-                   Allow up to 30 seconds difference.
-                */
+                    /*
+                       If timestamps exist, use them
+                       to make the match safer.
+                    */
 
-                if (
-                    Math.abs(dbTime - localTime) <= 30000
-                ) {
+                    if (
+                        dbMessage.created_at &&
+                        localMessage.created_at
+                    ) {
+
+                        const dbTime =
+                            new Date(
+                                dbMessage.created_at
+                            ).getTime();
+
+
+                        const localTime =
+                            new Date(
+                                localMessage.created_at
+                            ).getTime();
+
+
+                        return (
+                            Math.abs(
+                                dbTime -
+                                localTime
+                            ) <= 30000
+                        );
+                    }
+
+
                     return true;
                 }
-
-            }
-
-            /*
-               If the table does not expose created_at,
-               content + sender/receiver is enough to
-               prevent the local message disappearing.
-            */
-
-            return !dbMessage.created_at;
-
-        });
+            );
 
 
-        if (!alreadyExists) {
+        /*
+           If the database does NOT contain it yet,
+           keep the local copy visible.
+        */
 
-            mergedMessages.push(localMessage);
+        if (!matchingDbMessage) {
 
+            mergedMessages.push(
+                localMessage
+            );
         }
     }
 
 
     /*
-       Sort again after adding local pending messages.
+       Sort everything.
     */
 
-    mergedMessages.sort((a, b) => {
+    mergedMessages.sort(
+        (a, b) =>
+            new Date(a.created_at || 0) -
+            new Date(b.created_at || 0)
+    );
 
-        return new Date(a.created_at || 0) -
-               new Date(b.created_at || 0);
 
-    });
+    messagesCache =
+        mergedMessages;
 
 
-    messagesCache = mergedMessages;
+    saveLocalCache();
 
-    saveLocalCache(messagesCache);
 
-    renderMessages(messagesCache);
+    renderMessages(
+        messagesCache
+    );
 }
 
 
-/* =========================
-   RENDER MESSAGES
-========================= */
+/* =========================================================
+   RENDER
+========================================================= */
 
 function renderMessages(messages) {
 
     const container =
-        document.getElementById('messages');
+        document.getElementById(
+            'chat-messages'
+        );
+
+
+    if (!container) {
+        return;
+    }
+
 
     container.innerHTML = '';
 
 
-    if (!messages || messages.length === 0) {
+    if (
+        !messages ||
+        messages.length === 0
+    ) {
 
-        container.innerHTML =
-            '<div class="empty-chat">No messages yet.</div>';
+        container.innerHTML = `
+
+            <div class="text-center text-slate-500 text-sm py-8">
+                No messages yet.
+            </div>
+
+        `;
 
         return;
     }
 
 
+    const searchInput =
+        document.getElementById(
+            'search-input'
+        );
+
+
     const searchText =
-        document.getElementById('searchInput')?.value
-        ?.toLowerCase() || '';
+        searchInput
+            ? searchInput.value
+                .trim()
+                .toLowerCase()
+            : '';
 
 
-    let visibleMessages = messages;
+    let visibleMessages =
+        messages;
 
 
     if (searchText) {
 
         visibleMessages =
-            messages.filter(message =>
-                String(message.content || '')
+            messages.filter(
+                message =>
+                    String(
+                        message.content || ''
+                    )
                     .toLowerCase()
                     .includes(searchText)
             );
     }
 
 
-    if (visibleMessages.length === 0) {
+    visibleMessages.forEach(
+        message => {
 
-        container.innerHTML =
-            '<div class="empty-chat">No matching messages.</div>';
+            /*
+               Local "delete for me".
+            */
 
-        return;
-    }
-
-
-    visibleMessages.forEach(message => {
-
-        /*
-           Do not display locally deleted messages.
-        */
-
-        if (message.local_deleted === true) {
-            return;
-        }
-
-        /*
-           If the old table has this field, respect it.
-           Otherwise it is simply ignored.
-        */
-
-        if (message.is_deleted_for_everyone === true) {
-            return;
-        }
+            if (
+                message.local_deleted === true
+            ) {
+                return;
+            }
 
 
-        const isSent =
-            message.sender_username ===
-            currentUser.username;
+            /*
+               Support old schema if these fields exist.
+            */
+
+            if (
+                message.is_deleted_for_everyone === true
+            ) {
+                return;
+            }
 
 
-        const row =
-            document.createElement('div');
-
-        row.className =
-            'message-row ' +
-            (isSent ? 'sent' : 'received');
+            const isMe =
+                message.sender_username ===
+                currentUser.username;
 
 
-        const bubble =
-            document.createElement('div');
-
-        bubble.className =
-            'message-bubble';
-
-
-        /*
-           Reply preview
-        */
-
-        if (message.reply_to) {
-
-            const replyBox =
+            const wrapper =
                 document.createElement('div');
 
-            replyBox.style.background = '#eee';
-            replyBox.style.padding = '5px';
-            replyBox.style.marginBottom = '5px';
-            replyBox.style.borderLeft =
-                '3px solid #075e54';
-            replyBox.style.fontSize = '11px';
 
-            replyBox.textContent =
-                typeof message.reply_to === 'string'
-                    ? message.reply_to
-                    : (
-                        message.reply_to.message ||
-                        'Reply'
-                    );
-
-            bubble.appendChild(replyBox);
-        }
+            wrapper.className =
+                'flex flex-col ' +
+                (
+                    isMe
+                        ? 'items-end'
+                        : 'items-start'
+                );
 
 
-        /*
-           Message content
-        */
+            /*
+               Bubble
+            */
 
-        const text =
-            document.createElement('div');
-
-        text.className = 'message-text';
-
-        text.textContent =
-            message.content || '';
-
-        bubble.appendChild(text);
+            const bubble =
+                document.createElement('div');
 
 
-        /*
-           Time
-        */
-
-        const time =
-            document.createElement('div');
-
-        time.className = 'message-time';
-
-
-        if (message.created_at) {
-
-            const date =
-                new Date(message.created_at);
-
-            if (!isNaN(date.getTime())) {
-
-                time.textContent =
-                    date.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-
-            }
-
-        }
+            bubble.className =
+                'max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ' +
+                (
+                    isMe
+                        ? 'bg-indigo-600 text-white rounded-br-none'
+                        : 'bg-slate-800 text-slate-100 rounded-bl-none border border-slate-700/50'
+                );
 
 
-        /*
-           Pending indicator
-        */
+            /*
+               Reply display.
+            */
 
-        if (
-            message.is_pending === true ||
-            message.is_offline_pending === true
-        ) {
+            if (message.reply_to) {
 
-            const pending =
-                document.createElement('span');
-
-            pending.className =
-                'pending-icon';
-
-            pending.textContent = '◷';
-
-            time.appendChild(pending);
-        }
+                const replyBox =
+                    document.createElement('div');
 
 
-        bubble.appendChild(time);
+                replyBox.className =
+                    'mb-2 px-2 py-1.5 rounded bg-black/10 border-l-2 border-white/30 text-xs';
 
-        row.appendChild(bubble);
+
+                let replyText =
+                    'Reply';
 
 
-        /*
-           Long press / right click
-        */
+                if (
+                    typeof message.reply_to ===
+                    'string'
+                ) {
 
-        bubble.addEventListener(
-            'contextmenu',
-            event => {
+                    replyText =
+                        message.reply_to;
 
-                event.preventDefault();
+                } else if (
+                    message.reply_to.content
+                ) {
 
-                selectedMessage = message;
+                    replyText =
+                        message.reply_to.content;
+                }
 
-                showContextMenu(
-                    event.clientX,
-                    event.clientY
+
+                replyBox.textContent =
+                    replyText;
+
+
+                bubble.appendChild(
+                    replyBox
                 );
             }
-        );
 
 
-        row.addEventListener(
-            'dblclick',
-            () => {
+            /*
+               Message text.
+            */
 
-                selectedMessage = message;
+            const messageText =
+                document.createElement('div');
 
-                replyToSelected();
+
+            messageText.textContent =
+                message.content || '';
+
+
+            messageText.className =
+                'whitespace-pre-wrap break-words';
+
+
+            bubble.appendChild(
+                messageText
+            );
+
+
+            /*
+               Time.
+            */
+
+            const time =
+                document.createElement('div');
+
+
+            time.className =
+                'text-[10px] mt-1 ' +
+                (
+                    isMe
+                        ? 'text-indigo-200'
+                        : 'text-slate-500'
+                );
+
+
+            if (message.created_at) {
+
+                const date =
+                    new Date(
+                        message.created_at
+                    );
+
+
+                if (
+                    !isNaN(
+                        date.getTime()
+                    )
+                ) {
+
+                    time.textContent =
+                        date.toLocaleTimeString(
+                            [],
+                            {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }
+                        );
+                }
             }
-        );
 
 
-        container.appendChild(row);
-    });
+            /*
+               Pending clock.
+            */
 
+            if (
+                message.is_pending === true ||
+                message.is_offline_pending === true
+            ) {
+
+                const pending =
+                    document.createElement('span');
+
+
+                pending.className =
+                    'ml-1';
+
+
+                pending.textContent =
+                    '◷';
+
+
+                time.appendChild(
+                    pending
+                );
+            }
+
+
+            bubble.appendChild(
+                time
+            );
+
+
+            wrapper.appendChild(
+                bubble
+            );
+
+
+            /*
+               Right click reply/delete menu.
+            */
+
+            bubble.addEventListener(
+                'contextmenu',
+                event => {
+
+                    event.preventDefault();
+
+                    selectedMessage =
+                        message;
+
+
+                    showContextMenu(
+                        event.clientX,
+                        event.clientY
+                    );
+                }
+            );
+
+
+            /*
+               Double click = reply.
+            */
+
+            bubble.addEventListener(
+                'dblclick',
+                () => {
+
+                    selectedMessage =
+                        message;
+
+                    replyToSelected();
+                }
+            );
+
+
+            container.appendChild(
+                wrapper
+            );
+        }
+    );
+
+
+    /*
+       Scroll to bottom.
+    */
 
     container.scrollTop =
         container.scrollHeight;
 }
 
 
-/* =========================
+/* =========================================================
    SEND MESSAGE
-========================= */
+========================================================= */
 
-async function sendMessage() {
+async function sendMessage(event) {
+
+    if (event) {
+        event.preventDefault();
+    }
+
 
     const input =
-        document.getElementById('messageInput');
+        document.getElementById(
+            'message-input'
+        );
+
 
     const content =
         input.value.trim();
 
 
-    if (!content && !stagedMedia) {
+    if (!content) {
         return;
     }
 
 
-    if (stagedMedia) {
+    if (
+        !currentUser ||
+        !currentUser.username ||
+        !targetUsername
+    ) {
 
-        await sendPayloadToSupabase(
-            stagedMedia.url,
-            stagedMedia.type
+        alert(
+            'Chat session is not ready.'
         );
 
-        stagedMedia = null;
-
-        input.value = '';
-
-        autoResize(input);
-
         return;
     }
 
 
-    await sendPayloadToSupabase(
-        content,
-        'text'
-    );
-
-    input.value = '';
-
-    autoResize(input);
-}
-
-
-/* =========================
-   SEND TO SUPABASE
-========================= */
-
-async function sendPayloadToSupabase(
-    content,
-    type = 'text'
-) {
-
     /*
-       Reply information remains LOCAL only
-       because the old messages table does not
-       have the reply_to column.
+       Create local pending copy FIRST.
     */
-
-    const replyMeta =
-        activeReplyMessage
-            ? {
-                sender_username:
-                    activeReplyMessage.sender_username,
-
-                content:
-                    activeReplyMessage.content
-              }
-            : null;
-
-
-    /*
-       Create the local message first.
-       This makes sending feel instant.
-    */
-
-    const now =
-        new Date().toISOString();
-
 
     const localMessage = {
 
@@ -963,22 +1117,24 @@ async function sendPayloadToSupabase(
             content,
 
         created_at:
-            now,
-
-        message_type:
-            type,
-
-        reply_to:
-            replyMeta,
-
-        is_read:
-            false,
+            new Date().toISOString(),
 
         is_pending:
             true,
 
         is_offline_pending:
-            false
+            false,
+
+        reply_to:
+            activeReplyMessage
+                ? {
+                    sender_username:
+                        activeReplyMessage.sender_username,
+
+                    content:
+                        activeReplyMessage.content
+                }
+                : null
     };
 
 
@@ -986,36 +1142,49 @@ async function sendPayloadToSupabase(
         localMessage
     );
 
-    saveLocalCache(
-        messagesCache
-    );
+
+    saveLocalCache();
+
 
     renderMessages(
         messagesCache
     );
 
+
     cancelReply();
 
 
     /*
-       If offline, keep it locally and queue it.
+       Clear input immediately.
+    */
+
+    input.value = '';
+
+    autoResize(input);
+
+
+    /*
+       OFFLINE
     */
 
     if (!navigator.onLine) {
 
-        localMessage.is_offline_pending = true;
+        localMessage.is_offline_pending =
+            true;
+
 
         queueOfflineMessage(
             localMessage
         );
 
-        saveLocalCache(
-            messagesCache
-        );
+
+        saveLocalCache();
+
 
         renderMessages(
             messagesCache
         );
+
 
         return;
     }
@@ -1023,8 +1192,8 @@ async function sendPayloadToSupabase(
 
     /*
        IMPORTANT:
-       Only send columns that are actually known
-       to exist in the old messages table.
+       Only use columns confirmed to exist
+       in your old messages table.
     */
 
     const payload = {
@@ -1043,52 +1212,65 @@ async function sendPayloadToSupabase(
     const { error } =
         await supabaseClient
             .from('messages')
-            .insert([payload]);
+            .insert([
+                payload
+            ]);
 
 
     if (error) {
 
         console.error(
-            'Message insert failed:',
+            'Message insert error:',
             error
         );
 
 
         /*
-           Keep the message visible and mark it
-           as pending/offline.
+           Keep the message visible.
         */
 
-        localMessage.is_pending = true;
-        localMessage.is_offline_pending = true;
+        localMessage.is_pending =
+            true;
+
+        localMessage.is_offline_pending =
+            true;
+
 
         queueOfflineMessage(
             localMessage
         );
 
-        saveLocalCache(
-            messagesCache
-        );
+
+        saveLocalCache();
+
 
         renderMessages(
             messagesCache
         );
+
 
         return;
     }
 
 
     /*
-       Insert succeeded.
-       DO NOT remove the local message yet.
+       INSERT SUCCEEDED.
+
+       Do NOT remove local message immediately.
+       We wait for fetchMessages() to confirm
+       the database copy exists.
     */
 
-    localMessage.is_pending = true;
-    localMessage.is_offline_pending = false;
+    localMessage.is_pending =
+        true;
 
-    saveLocalCache(
-        messagesCache
-    );
+
+    localMessage.is_offline_pending =
+        false;
+
+
+    saveLocalCache();
+
 
     renderMessages(
         messagesCache
@@ -1096,30 +1278,23 @@ async function sendPayloadToSupabase(
 
 
     /*
-       Give Supabase a moment to expose the new row,
-       then fetch it.
+       Fetch shortly after the insert.
     */
 
-    setTimeout(async () => {
+    setTimeout(
+        async () => {
 
-        await fetchMessages();
+            await fetchMessages();
 
-        /*
-           If the database copy is now present,
-           fetchMessages() will replace the pending
-           local copy naturally.
-
-           If it is not yet visible, the local copy
-           remains on screen.
-        */
-
-    }, 300);
+        },
+        300
+    );
 }
 
 
-/* =========================
-   OFFLINE QUEUE
-========================= */
+/* =========================================================
+   FLUSH OFFLINE QUEUE
+========================================================= */
 
 async function flushOfflineQueue() {
 
@@ -1140,7 +1315,10 @@ async function flushOfflineQueue() {
     const remaining = [];
 
 
-    for (const message of queue) {
+    for (
+        const message
+        of queue
+    ) {
 
         const payload = {
 
@@ -1158,7 +1336,9 @@ async function flushOfflineQueue() {
         const { error } =
             await supabaseClient
                 .from('messages')
-                .insert([payload]);
+                .insert([
+                    payload
+                ]);
 
 
         if (error) {
@@ -1168,19 +1348,23 @@ async function flushOfflineQueue() {
                 error
             );
 
-            remaining.push(message);
+
+            remaining.push(
+                message
+            );
 
         } else {
 
             /*
-               Remove the local pending copy only
-               after successful database insertion.
+               Remove only the local copy that
+               was successfully uploaded.
             */
 
             messagesCache =
                 messagesCache.filter(
-                    local =>
-                        local !== message
+                    localMessage =>
+                        localMessage !==
+                        message
                 );
         }
     }
@@ -1190,21 +1374,28 @@ async function flushOfflineQueue() {
         remaining
     );
 
-    saveLocalCache(
-        messagesCache
-    );
 
-    renderMessages(
-        messagesCache
-    );
+    saveLocalCache();
+
+
+    await fetchMessages();
 }
 
 
-/* =========================
+/* =========================================================
    REALTIME
-========================= */
+========================================================= */
 
 function setupRealtime() {
+
+    if (
+        !supabaseClient ||
+        !currentUser ||
+        !targetUsername
+    ) {
+        return;
+    }
+
 
     if (realtimeChannel) {
 
@@ -1235,25 +1426,34 @@ function setupRealtime() {
                         payload.new;
 
 
-                    const belongsToThisChat =
+                    const belongsToChat =
                         (
                             message.sender_username ===
-                                currentUser.username &&
+                            currentUser.username &&
                             message.receiver_username ===
-                                targetUsername
-                        ) ||
+                            targetUsername
+                        )
+                        ||
                         (
                             message.sender_username ===
-                                targetUsername &&
+                            targetUsername &&
                             message.receiver_username ===
-                                currentUser.username
+                            currentUser.username
                         );
 
 
-                    if (!belongsToThisChat) {
+                    if (
+                        !belongsToChat
+                    ) {
                         return;
                     }
 
+
+                    /*
+                       Fetch the conversation again.
+                       This lets the pending local copy
+                       be replaced by the database copy.
+                    */
 
                     fetchMessages();
                 }
@@ -1262,9 +1462,9 @@ function setupRealtime() {
 }
 
 
-/* =========================
+/* =========================================================
    REPLY
-========================= */
+========================================================= */
 
 function replyToSelected() {
 
@@ -1278,27 +1478,28 @@ function replyToSelected() {
 
 
     document.getElementById(
-        'replyPreviewName'
+        'reply-name'
     ).textContent =
         selectedMessage.sender_username ||
         'Message';
 
 
     document.getElementById(
-        'replyPreviewText'
+        'reply-content'
     ).textContent =
         selectedMessage.content ||
-        '[Media]';
+        '[Message]';
 
 
     document.getElementById(
-        'replyPreview'
-    ).style.display =
-        'flex';
+        'reply-bar'
+    ).classList.remove(
+        'hidden'
+    );
 
 
     document.getElementById(
-        'messageInput'
+        'message-input'
     ).focus();
 
 
@@ -1308,38 +1509,51 @@ function replyToSelected() {
 
 function cancelReply() {
 
-    activeReplyMessage = null;
+    activeReplyMessage =
+        null;
+
 
     document.getElementById(
-        'replyPreview'
-    ).style.display =
-        'none';
+        'reply-bar'
+    ).classList.add(
+        'hidden'
+    );
 }
 
 
-/* =========================
+/* =========================================================
    CONTEXT MENU
-========================= */
+========================================================= */
 
 function showContextMenu(x, y) {
 
     const menu =
         document.getElementById(
-            'contextMenu'
+            'context-menu'
         );
 
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
-    menu.style.display = 'block';
+
+    menu.style.left =
+        x + 'px';
+
+
+    menu.style.top =
+        y + 'px';
+
+
+    menu.classList.remove(
+        'hidden'
+    );
 }
 
 
 function hideContextMenu() {
 
     document.getElementById(
-        'contextMenu'
-    ).style.display =
-        'none';
+        'context-menu'
+    ).classList.add(
+        'hidden'
+    );
 }
 
 
@@ -1349,7 +1563,7 @@ document.addEventListener(
 
         if (
             !event.target.closest(
-                '#contextMenu'
+                '#context-menu'
             )
         ) {
 
@@ -1359,9 +1573,9 @@ document.addEventListener(
 );
 
 
-/* =========================
+/* =========================================================
    DELETE FOR ME
-========================= */
+========================================================= */
 
 function deleteSelectedForMe() {
 
@@ -1378,17 +1592,12 @@ function deleteSelectedForMe() {
 
     if (index !== -1) {
 
-        /*
-           Mark local copy as deleted.
-           This does NOT change the database.
-        */
-
         messagesCache[index].local_deleted =
             true;
 
-        saveLocalCache(
-            messagesCache
-        );
+
+        saveLocalCache();
+
 
         renderMessages(
             messagesCache
@@ -1396,42 +1605,51 @@ function deleteSelectedForMe() {
     }
 
 
-    selectedMessage = null;
+    selectedMessage =
+        null;
+
 
     hideContextMenu();
 }
 
 
-/* =========================
+/* =========================================================
    SEARCH
-========================= */
+========================================================= */
 
 function toggleSearch() {
 
-    const bar =
+    const search =
         document.getElementById(
-            'searchBar'
+            'search-container'
         );
 
-    if (bar.style.display === 'block') {
 
-        bar.style.display = 'none';
+    search.classList.toggle(
+        'hidden'
+    );
+
+
+    if (
+        !search.classList.contains(
+            'hidden'
+        )
+    ) {
 
         document.getElementById(
-            'searchInput'
+            'search-input'
+        ).focus();
+
+    } else {
+
+        document.getElementById(
+            'search-input'
         ).value = '';
+
 
         renderMessages(
             messagesCache
         );
-
-    } else {
-
-        bar.style.display = 'block';
-
-        document.getElementById(
-            'searchInput'
-        ).focus();
     }
 }
 
@@ -1444,202 +1662,64 @@ function searchMessages() {
 }
 
 
-/* =========================
-   MEDIA
-========================= */
-
-function handleMediaSelected(event) {
-
-    const file =
-        event.target.files[0];
-
-
-    if (!file) {
-        return;
-    }
-
-
-    /*
-       The old messages table only stores content,
-       so keep media staged locally.
-    */
-
-    const reader =
-        new FileReader();
-
-
-    reader.onload = () => {
-
-        stagedMedia = {
-
-            url:
-                reader.result,
-
-            type:
-                file.type.startsWith('video/')
-                    ? 'video'
-                    : 'image'
-        };
-
-
-        document.getElementById(
-            'messageInput'
-        ).value =
-            `[${stagedMedia.type}]`;
-    };
-
-
-    reader.readAsDataURL(file);
-}
-
-
-/* =========================
-   VOICE
-========================= */
-
-async function toggleRecording() {
-
-    if (mediaRecorder &&
-        mediaRecorder.state === 'recording') {
-
-        mediaRecorder.stop();
-
-        return;
-    }
-
-
-    if (!navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia) {
-
-        alert(
-            'Voice recording is not supported here.'
-        );
-
-        return;
-    }
-
-
-    try {
-
-        const stream =
-            await navigator.mediaDevices
-                .getUserMedia({
-                    audio: true
-                });
-
-
-        audioChunks = [];
-
-
-        mediaRecorder =
-            new MediaRecorder(stream);
-
-
-        mediaRecorder.ondataavailable =
-            event => {
-
-                if (event.data.size > 0) {
-
-                    audioChunks.push(
-                        event.data
-                    );
-                }
-            };
-
-
-        mediaRecorder.onstop =
-            () => {
-
-                const blob =
-                    new Blob(
-                        audioChunks,
-                        {
-                            type:
-                                'audio/webm'
-                        }
-                    );
-
-
-                /*
-                   Audio is not persisted to the old
-                   messages table. This keeps recording
-                   from interfering with normal text send.
-                */
-
-                stream
-                    .getTracks()
-                    .forEach(track =>
-                        track.stop()
-                    );
-
-
-                alert(
-                    'Voice message recording completed. Audio upload is not enabled yet.'
-                );
-            };
-
-
-        mediaRecorder.start();
-
-    } catch (error) {
-
-        console.error(
-            'Microphone error:',
-            error
-        );
-
-        alert(
-            'Could not access microphone.'
-        );
-    }
-}
-
-
-/* =========================
-   INPUT
-========================= */
+/* =========================================================
+   INPUT RESIZE
+========================================================= */
 
 function autoResize(textarea) {
 
     textarea.style.height =
         'auto';
 
+
     textarea.style.height =
         Math.min(
             textarea.scrollHeight,
-            110
+            128
         ) + 'px';
 }
 
 
-function handleEnter(event) {
-
-    if (
-        event.key === 'Enter' &&
-        !event.shiftKey
-    ) {
-
-        event.preventDefault();
-
-        sendMessage();
-    }
-}
-
-
-/* =========================
+/* =========================================================
    NAVIGATION
-========================= */
+========================================================= */
 
 function goBack() {
+
+    if (realtimeChannel) {
+
+        supabaseClient.removeChannel(
+            realtimeChannel
+        );
+
+        realtimeChannel =
+            null;
+    }
+
 
     window.location.href =
         'chatlist.html';
 }
 
 
-/* =========================
-   START
-========================= */
+/* =========================================================
+   ONLINE EVENT
+========================================================= */
+
+window.addEventListener(
+    'online',
+    async () => {
+
+        await flushOfflineQueue();
+
+        await fetchMessages();
+    }
+);
+
+
+/* =========================================================
+   START CHAT
+========================================================= */
 
 initChat();
 
