@@ -496,7 +496,7 @@ body > header .flex-1 {
 
     <script>
     /* =========================================================
-       PRIVATE CHAT
+       PRIVATE CHAT (PURE SUPABASE & MEMORY STATE)
     ========================================================= */
     const currentUser = JSON.parse(localStorage.getItem('chatlite_user') || 'null');
     const params = new URLSearchParams(window.location.search);
@@ -520,7 +520,7 @@ body > header .flex-1 {
     let stagedPayload = null;
     let activeReplyMessage = null;
     let selectedMessage = null;
-    let deletedForMe = loadDeletedForMe();
+    let deletedForMe = new Set(); // Stored purely in memory
     let pendingDeleteTimer = null;
     let undoTargetMessage = null;
 
@@ -551,19 +551,8 @@ body > header .flex-1 {
                 handleSend
             );
 
-        renderMessages();
         await fetchPrivateMessages();
         subscribeToPrivateMessages();
-
-        window.addEventListener(
-            'online',
-            async () => {
-                await sendOfflineQueue();
-                await fetchPrivateMessages();
-            }
-        );
-
-        await sendOfflineQueue();
     }
 
     /* =========================================================
@@ -1003,13 +992,6 @@ body > header .flex-1 {
         renderMessages();
         cancelReply();
 
-        if (!navigator.onLine) {
-            addToOfflineQueue(
-                localMessage
-            );
-            return;
-        }
-
         await insertPrivateMessage(
             localMessage
         );
@@ -1022,9 +1004,6 @@ body > header .flex-1 {
         if (!supabaseClient) {
             console.error(
                 'Supabase client is not available.'
-            );
-            addToOfflineQueue(
-                message
             );
             return;
         }
@@ -1044,9 +1023,6 @@ body > header .flex-1 {
                 console.error(
                     'PRIVATE MESSAGE INSERT ERROR:',
                     error
-                );
-                addToOfflineQueue(
-                    message
                 );
                 markMessagePending(
                     message.client_id,
@@ -1080,19 +1056,11 @@ body > header .flex-1 {
                 );
             }
 
-            removeFromOfflineQueue(
-                message.client_id
-            );
             renderMessages();
-            
-            // Race condition resolved: removed trailing await fetchPrivateMessages() here.
         } catch (error) {
             console.error(
                 'Could not save private chat:',
                 error
-            );
-            addToOfflineQueue(
-                message
             );
             markMessagePending(
                 message.client_id,
@@ -1308,185 +1276,6 @@ body > header .flex-1 {
         if (message) {
             message.is_pending = pending;
         }
-    }
-
-    /* =========================================================
-       OFFLINE QUEUE
-    ========================================================= */
-    const OFFLINE_QUEUE_KEY = 'chatlite_private_send_queue_v1_' + (
-        currentUser?.username || 'unknown'
-    ) + '_' + (
-        targetUsername || 'unknown'
-    );
-
-    function getOfflineQueue() {
-        try {
-            const value = localStorage.getItem(
-                OFFLINE_QUEUE_KEY
-            );
-            if (!value) return [];
-            const queue = JSON.parse(
-                value
-            );
-            return Array.isArray(
-                queue
-            ) ? queue : [];
-        } catch (error) {
-            console.warn(
-                'Offline queue unavailable:',
-                error
-            );
-            return [];
-        }
-    }
-
-    function saveOfflineQueue(queue) {
-        const safeQueue = queue.filter(
-            message => {
-                return message.type === 'text';
-            }
-        );
-        try {
-            localStorage.setItem(
-                OFFLINE_QUEUE_KEY,
-                JSON.stringify(
-                    safeQueue
-                )
-            );
-        } catch (error) {
-            console.warn(
-                'Could not save offline queue:',
-                error
-            );
-        }
-    }
-
-    function addToOfflineQueue(message) {
-        const queue = getOfflineQueue();
-        if (
-            queue.some(
-                item => item.client_id === message.client_id
-            )
-        ) {
-            return;
-        }
-
-        if (
-            message.type !== 'text'
-        ) {
-            console.warn(
-                'Media message could not be queued locally. ' + 'Please keep the chat online when sending media.'
-            );
-            return;
-        }
-
-        queue.push({
-            client_id: message.client_id,
-            sender_username: message.sender_username,
-            receiver_username: message.receiver_username,
-            raw_content: message.raw_content,
-            type: 'text',
-            content: message.content,
-            fileName: null,
-            mimeType: null,
-            reply_to_sender: message.reply_to_sender,
-            reply_to_message: message.reply_to_message,
-            created_at: message.created_at,
-            is_pending: true,
-            local_only: true
-        });
-
-        saveOfflineQueue(
-            queue
-        );
-    }
-
-    function removeFromOfflineQueue(
-        clientId
-    ) {
-        const queue = getOfflineQueue();
-        const filtered = queue.filter(
-            item => item.client_id !== clientId
-        );
-        saveOfflineQueue(
-            filtered
-        );
-    }
-
-    async function sendOfflineQueue() {
-        if (!navigator.onLine) {
-            return;
-        }
-
-        const queue = getOfflineQueue();
-        if (!queue.length) {
-            return;
-        }
-
-        for (
-            const message of queue
-        ) {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('messages')
-                    .insert({
-                        sender_username: message.sender_username,
-                        receiver_username: message.receiver_username,
-                        content: message.raw_content
-                    })
-                    .select('*')
-                    .single();
-
-                if (error) {
-                    console.error(
-                        'Offline message failed:',
-                        error
-                    );
-                    continue;
-                }
-
-                if (data) {
-                    const databaseMessage = normalizeDatabaseMessage(
-                        data
-                    );
-                    const localIndex = messagesCache.findIndex(
-                        item => item.local_only && item.client_id === message.client_id
-                    );
-                    if (localIndex !== -1) {
-                        messagesCache[
-                            localIndex
-                        ] = databaseMessage;
-                    } else {
-                        messagesCache.push(
-                            databaseMessage
-                        );
-                    }
-                }
-
-                removeFromOfflineQueue(
-                    message.client_id
-                );
-            } catch (error) {
-                console.error(
-                    'Offline queue error:',
-                    error
-                );
-            }
-        }
-
-        messagesCache.sort(
-            (a, b) => {
-                return (
-                    new Date(
-                        a.created_at || 0
-                    ) - new Date(
-                        b.created_at || 0
-                    )
-                );
-            }
-        );
-        renderMessages();
-        await fetchPrivateMessages();
     }
 
     /* =========================================================
@@ -1929,52 +1718,6 @@ body > header .flex-1 {
     /* =========================================================
        DELETE FOR ME
     ========================================================= */
-    function loadDeletedForMe() {
-        const key = 'chatlite_private_deleted_' + (
-            currentUser?.username || 'unknown'
-        ) + '_' + (
-            targetUsername || 'unknown'
-        );
-        try {
-            const value = localStorage.getItem(
-                key
-            );
-            if (!value) {
-                return new Set();
-            }
-            return new Set(
-                JSON.parse(
-                    value
-                )
-            );
-        } catch (error) {
-            return new Set();
-        }
-    }
-
-    function saveDeletedForMe() {
-        const key = 'chatlite_private_deleted_' + (
-            currentUser?.username || 'unknown'
-        ) + '_' + (
-            targetUsername || 'unknown'
-        );
-        try {
-            localStorage.setItem(
-                key,
-                JSON.stringify(
-                    Array.from(
-                        deletedForMe
-                    )
-                )
-            );
-        } catch (error) {
-            console.warn(
-                'Could not save deleted-message list:',
-                error
-            );
-        }
-    }
-
     function getMessageKey(
         message
     ) {
@@ -1996,7 +1739,6 @@ body > header .flex-1 {
                 message
             )
         );
-        saveDeletedForMe();
         renderMessages();
     }
 
@@ -2108,7 +1850,6 @@ body > header .flex-1 {
                 undoTargetMessage
             )
         );
-        saveDeletedForMe();
         undoTargetMessage = null;
         clearTimeout(
             pendingDeleteTimer
