@@ -48,7 +48,6 @@ html, body {
 .message-audio { width: 240px; max-width: 100%; }
 .recording-pulse { animation: pulse 1s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
-.status-dot { transition: opacity .2s; }
 </style>
 </head>
 <body>
@@ -77,8 +76,6 @@ html, body {
     <main id="messages" class="flex-1 overflow-y-auto p-4 space-y-3"></main>
 
     <div id="loading-message" class="text-center text-xs text-slate-400 py-2 shrink-0">Loading messages...</div>
-
-    <!-- REPLY PREVIEW (kept minimal, no-op UI removed from old build) -->
 
     <!-- MEDIA PREVIEW -->
     <div id="media-preview" class="hidden bg-slate-50 border-t px-4 py-2 shrink-0">
@@ -115,24 +112,24 @@ html, body {
 
 <input id="image-input" type="file" accept="image/*,video/*,.pdf,.doc,.docx" class="hidden" onchange="stageSelectedFile(this.files[0])">
 
+<script src="supabase.js"></script>
 <script>
 // ======================================================================
-// CONFIG — fill these in with your project's values
+// CONFIG
 // ======================================================================
-const SUPABASE_URL = 'https://qclfxoyxnihuttlemzmi.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_-jLY8uajMI_u_mxQHHUAsA_Q5d5FWVG';
 const MEDIA_BUCKET = 'chat-media'; // Supabase Storage bucket name
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// supabaseClient is expected to come from supabase.js (same as index.html)
 
 // ======================================================================
-// STATE
+// STATE — identity comes from the custom localStorage login (index.html),
+// NOT Supabase Auth. Matches the rest of the app.
 // ======================================================================
+const currentUser = JSON.parse(localStorage.getItem('chatlite_user') || 'null');
 const params = new URLSearchParams(window.location.search);
-const targetUserId = params.get('to') || '';           // the OTHER user's auth UUID
-const targetName = decodeURIComponent(params.get('name') || 'Chat');
+const targetUsername = decodeURIComponent(params.get('to') || '');
+const targetName = decodeURIComponent(params.get('name') || targetUsername || 'Chat');
+const targetGender = decodeURIComponent(params.get('gender') || '');
 
-let currentUser = null;         // Supabase auth user object
 let messagesCache = [];
 let messageChannel = null;
 let mediaRecorder = null;
@@ -140,7 +137,7 @@ let audioChunks = [];
 let isRecording = false;
 let recordingSeconds = 0;
 let recordingTimer = null;
-let stagedFile = null;          // { file, type } — uploaded lazily on send
+let stagedFile = null; // { file, type } — uploaded lazily on send
 
 document.addEventListener('DOMContentLoaded', initChat);
 
@@ -148,23 +145,10 @@ document.addEventListener('DOMContentLoaded', initChat);
 // INIT
 // ======================================================================
 async function initChat() {
-    if (!targetUserId) {
-        alert('No conversation target specified.');
-        window.location.href = 'chatlist.html';
-        return;
-    }
-
-    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-    if (sessionError || !session || !session.user) {
+    if (!currentUser || !currentUser.username || !targetUsername) {
         window.location.href = 'index.html';
         return;
     }
-    currentUser = session.user;
-
-    // Keep chat in sync if the session changes/expires mid-use
-    supabaseClient.auth.onAuthStateChange((_event, newSession) => {
-        if (!newSession) window.location.href = 'index.html';
-    });
 
     setupHeader();
     document.getElementById('message-form').addEventListener('submit', handleSend);
@@ -175,7 +159,8 @@ async function initChat() {
 
 function setupHeader() {
     document.getElementById('target-name').textContent = targetName;
-    document.getElementById('target-avatar').textContent = (targetName || '?').charAt(0).toUpperCase();
+    document.getElementById('target-info').textContent = '@' + targetUsername + (targetGender ? ' • ' + targetGender : '');
+    document.getElementById('target-avatar').textContent = (targetName || targetUsername || '?').charAt(0).toUpperCase();
 }
 
 function goBack() {
@@ -192,6 +177,7 @@ function showStatus(text, kind) {
     bar.textContent = text;
     bar.className = 'text-center text-xs py-1 shrink-0 ' +
         (kind === 'error' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600');
+    bar.classList.remove('hidden');
 }
 
 // ======================================================================
@@ -297,17 +283,16 @@ async function handleSend(e) {
 }
 
 async function sendMessage({ type, text, file }) {
+    if (!supabaseClient) return;
     const sendBtn = document.getElementById('send-btn');
     sendBtn.disabled = true;
 
     const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
     const optimistic = {
         id: tempId,
-        sender_id: currentUser.id,
-        receiver_id: targetUserId,
-        type,
-        text: text || null,
-        media_url: file ? URL.createObjectURL(file) : null, // local preview only
+        sender_username: currentUser.username,
+        receiver_username: targetUsername,
+        content: JSON.stringify({ type, content: text || (file ? URL.createObjectURL(file) : ''), fileName: file ? file.name : undefined }),
         created_at: new Date().toISOString(),
         _pending: true
     };
@@ -318,7 +303,7 @@ async function sendMessage({ type, text, file }) {
         let mediaUrl = null;
 
         if (file) {
-            const path = `${currentUser.id}/${Date.now()}-${file.name}`;
+            const path = `${currentUser.username}/${Date.now()}-${file.name}`;
             const { error: uploadError } = await supabaseClient
                 .storage
                 .from(MEDIA_BUCKET)
@@ -332,12 +317,11 @@ async function sendMessage({ type, text, file }) {
             mediaUrl = publicUrlData.publicUrl;
         }
 
+        const payload = { type, content: mediaUrl || text || '', fileName: file ? file.name : undefined };
         const row = {
-            sender_id: currentUser.id,
-            receiver_id: targetUserId,
-            type,
-            text: text || null,
-            media_url: mediaUrl
+            sender_username: currentUser.username,
+            receiver_username: targetUsername,
+            content: JSON.stringify(payload)
         };
 
         const { data, error } = await supabaseClient
@@ -374,6 +358,7 @@ function reconcileMessage(tempId, realRow) {
 // FETCH (initial load / manual refresh only — NOT called after each send)
 // ======================================================================
 async function fetchMessages() {
+    if (!supabaseClient) return;
     const loadingEl = document.getElementById('loading-message');
     loadingEl.classList.remove('hidden');
 
@@ -381,8 +366,8 @@ async function fetchMessages() {
         .from('messages')
         .select('*')
         .or(
-            `and(sender_id.eq.${currentUser.id},receiver_id.eq.${targetUserId}),` +
-            `and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUser.id})`
+            `and(sender_username.eq.${currentUser.username},receiver_username.eq.${targetUsername}),` +
+            `and(sender_username.eq.${targetUsername},receiver_username.eq.${currentUser.username})`
         )
         .order('created_at', { ascending: true });
 
@@ -412,10 +397,19 @@ function renderMessages() {
     }
 
     messagesCache.forEach(msg => {
-        const textVal = msg.type === 'text' ? (msg.text || '') : '';
-        if (search && !textVal.toLowerCase().includes(search)) return;
+        let parsed = msg.content;
+        try {
+            if (typeof msg.content === 'string' && msg.content.startsWith('{')) {
+                parsed = JSON.parse(msg.content);
+            }
+        } catch (e) {}
 
-        const isMine = msg.sender_id === currentUser.id;
+        const textVal = (typeof parsed === 'object' && parsed !== null)
+            ? (parsed.type === 'text' ? (parsed.content || '') : '')
+            : (parsed || '');
+        if (search && !String(textVal).toLowerCase().includes(search)) return;
+
+        const isMine = msg.sender_username === currentUser.username;
         const wrapper = document.createElement('div');
         wrapper.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
 
@@ -424,26 +418,32 @@ function renderMessages() {
             isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white border text-slate-800 rounded-bl-sm'
         } ${msg._pending ? 'opacity-60' : ''}`;
 
-        if (msg.type === 'image') {
-            const img = document.createElement('img');
-            img.src = msg.media_url;
-            img.className = 'message-image mb-1';
-            bubble.appendChild(img);
-        } else if (msg.type === 'audio') {
-            const aud = document.createElement('audio');
-            aud.src = msg.media_url;
-            aud.controls = true;
-            aud.className = 'message-audio mb-1';
-            bubble.appendChild(aud);
-        } else if (msg.type === 'video') {
-            const vid = document.createElement('video');
-            vid.src = msg.media_url;
-            vid.controls = true;
-            vid.className = 'message-video mb-1';
-            bubble.appendChild(vid);
+        if (typeof parsed === 'object' && parsed !== null) {
+            if (parsed.type === 'image') {
+                const img = document.createElement('img');
+                img.src = parsed.content;
+                img.className = 'message-image mb-1';
+                bubble.appendChild(img);
+            } else if (parsed.type === 'audio') {
+                const aud = document.createElement('audio');
+                aud.src = parsed.content;
+                aud.controls = true;
+                aud.className = 'message-audio mb-1';
+                bubble.appendChild(aud);
+            } else if (parsed.type === 'video') {
+                const vid = document.createElement('video');
+                vid.src = parsed.content;
+                vid.controls = true;
+                vid.className = 'message-video mb-1';
+                bubble.appendChild(vid);
+            } else {
+                const t = document.createElement('div');
+                t.textContent = parsed.content;
+                bubble.appendChild(t);
+            }
         } else {
             const t = document.createElement('div');
-            t.textContent = msg.text || '';
+            t.textContent = parsed;
             bubble.appendChild(t);
         }
 
@@ -463,15 +463,16 @@ function renderMessages() {
 // REALTIME
 // ======================================================================
 function subscribeToMessages() {
+    if (!supabaseClient) return;
     if (messageChannel) supabaseClient.removeChannel(messageChannel);
 
     messageChannel = supabaseClient
-        .channel(`messages:${currentUser.id}:${targetUserId}`)
+        .channel(`messages:${currentUser.username}:${targetUsername}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
             const m = payload.new;
             const relevant =
-                (m.sender_id === currentUser.id && m.receiver_id === targetUserId) ||
-                (m.sender_id === targetUserId && m.receiver_id === currentUser.id);
+                (m.sender_username === currentUser.username && m.receiver_username === targetUsername) ||
+                (m.sender_username === targetUsername && m.receiver_username === currentUser.username);
             if (relevant && !messagesCache.some(row => row.id === m.id)) {
                 messagesCache.push(m);
                 renderMessages();
